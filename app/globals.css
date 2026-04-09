@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.08), transparent 26%),
+    radial-gradient(circle at 82% 12%, rgba(180, 180, 180, 0.08), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.04), transparent 28%),
+    linear-gradient(180deg, #050505 0%, #111111 42%, #020202 100%);
+  min-height: 100vh;
+  color: #f5f5f5;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Franklin Gothic Medium", sans-serif;
+  letter-spacing: 0.03em;
+}
+
+::selection {
+  background: rgba(255, 255, 255, 0.24);
+  color: #111111;
+}
+
+@layer components {
+  .container-shell {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+  }
+
+  .section-space {
+    @apply py-10 sm:py-14 lg:py-16;
+  }
+
+  .panel {
+    @apply rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  body {
+    min-height: auto;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:bg-white {
+    background: white !important;
+  }
+
+  .print\:text-black,
+  .print\:text-black * {
+    color: black !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+  }
+}

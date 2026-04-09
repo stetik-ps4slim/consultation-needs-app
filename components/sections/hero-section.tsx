@@ -26,7 +26,7 @@ export function HeroSection() {
               Book Your Consultation
             </Button>
             <a
-              href="/consultation-needs"
+              href="/"
               className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-ink transition hover:border-accent hover:text-accent"
             >
               Open Consultation App

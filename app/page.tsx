@@ -1,23 +1,12 @@
-import { AboutSection } from "@/components/sections/about-section";
-import { BookingSection } from "@/components/sections/booking-section";
-import { CtaBanner } from "@/components/sections/cta-banner";
-import { FaqSection } from "@/components/sections/faq-section";
-import { HeroSection } from "@/components/sections/hero-section";
-import { LeadFormSection } from "@/components/sections/lead-form-section";
-import { ResultsSection } from "@/components/sections/results-section";
-import { ServicesSection } from "@/components/sections/services-section";
+import type { Metadata } from "next";
+import { ConsultationIntakeApp } from "@/components/consultation-intake-app";
+
+export const metadata: Metadata = {
+  title: "Consultation Needs Analysis App",
+  description:
+    "A consultation intake app for collecting client goals, planning details, training background, and pre-exercise screening."
+};
 
 export default function HomePage() {
-  return (
-    <main className="overflow-x-hidden">
-      <HeroSection />
-      <AboutSection />
-      <ServicesSection />
-      <ResultsSection />
-      <FaqSection />
-      <LeadFormSection />
-      <BookingSection />
-      <CtaBanner />
-    </main>
-  );
+  return <ConsultationIntakeApp />;
 }

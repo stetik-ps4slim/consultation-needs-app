@@ -518,6 +518,12 @@ export function ConsultationIntakeApp() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3 print:hidden">
+              <a
+                href="/clients"
+                className="rounded-full border border-sky-100 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60"
+              >
+                Client Records
+              </a>
               <button
                 type="button"
                 onClick={saveOnline}

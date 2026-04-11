@@ -314,6 +314,7 @@ export function ConsultationRecordsDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [screenings, setScreenings] = useState<ScreeningClient[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [hiddenClientKeys, setHiddenClientKeys] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState("Loading saved Supabase data...");
@@ -343,6 +344,7 @@ export function ConsultationRecordsDashboard() {
       setConsultations(nextConsultations);
       setLeads(nextLeads);
       setScreenings(nextScreenings);
+      setHiddenClientKeys(new Set());
 
       const nextBundles = buildClientBundles(nextConsultations, nextLeads, nextScreenings);
       setSelectedKey((currentKey) => currentKey ?? nextBundles[0]?.key ?? null);
@@ -364,14 +366,19 @@ export function ConsultationRecordsDashboard() {
     [consultations, leads, screenings]
   );
 
+  const visibleBundles = useMemo(
+    () => bundles.filter((bundle) => !hiddenClientKeys.has(bundle.key)),
+    [bundles, hiddenClientKeys]
+  );
+
   const filteredBundles = useMemo(() => {
     const cleanQuery = query.trim().toLowerCase();
 
     if (!cleanQuery) {
-      return bundles;
+      return visibleBundles;
     }
 
-    return bundles.filter((bundle) => {
+    return visibleBundles.filter((bundle) => {
       const searchableText = [
         bundle.displayName,
         bundle.phone,
@@ -387,11 +394,32 @@ export function ConsultationRecordsDashboard() {
 
       return searchableText.includes(cleanQuery);
     });
-  }, [bundles, query]);
+  }, [query, visibleBundles]);
 
   const selectedBundle = useMemo(() => {
     return filteredBundles.find((bundle) => bundle.key === selectedKey) ?? filteredBundles[0] ?? null;
   }, [filteredBundles, selectedKey]);
+
+  function clearSelectedFromPage() {
+    if (!selectedBundle) {
+      return;
+    }
+
+    const nextVisibleBundle = filteredBundles.find((bundle) => bundle.key !== selectedBundle.key) ?? null;
+
+    setHiddenClientKeys((currentKeys) => {
+      const nextKeys = new Set(currentKeys);
+      nextKeys.add(selectedBundle.key);
+      return nextKeys;
+    });
+    setSelectedKey(nextVisibleBundle?.key ?? null);
+    setStatus(`${selectedBundle.displayName} cleared from this page only. Supabase records are still saved. Press Refresh or Show all records to bring it back.`);
+  }
+
+  function showAllRecords() {
+    setHiddenClientKeys(new Set());
+    setStatus("All cleared page records are visible again. Supabase data was not changed.");
+  }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(135deg,#2cc5e8_0%,#93d5d2_32%,#c9a4ea_58%,#627bde_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
@@ -422,6 +450,15 @@ export function ConsultationRecordsDashboard() {
               >
                 {isLoading ? "Refreshing..." : "Refresh"}
               </button>
+              {hiddenClientKeys.size ? (
+                <button
+                  type="button"
+                  onClick={showAllRecords}
+                  className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60"
+                >
+                  Show all records
+                </button>
+              ) : null}
             </div>
           </div>
         </header>
@@ -493,6 +530,14 @@ export function ConsultationRecordsDashboard() {
                     <p><span className="font-semibold text-[#10233f]">Phone:</span> {displayValue(selectedBundle.phone)}</p>
                     <p className="mt-2"><span className="font-semibold text-[#10233f]">Email:</span> {displayValue(selectedBundle.email)}</p>
                     <p className="mt-2"><span className="font-semibold text-[#10233f]">Latest update:</span> {formatDate(selectedBundle.updatedAt)}</p>
+                    <button
+                      type="button"
+                      onClick={clearSelectedFromPage}
+                      className="mt-4 w-full rounded-full border border-sky-100 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60 print:hidden"
+                    >
+                      Clear from page
+                    </button>
+                    <p className="mt-2 text-xs leading-5 text-[#6b7b91] print:hidden">This only hides it here. Supabase records stay saved.</p>
                   </div>
                 </div>
 

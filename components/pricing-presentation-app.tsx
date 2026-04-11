@@ -1,6 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { PricingPresentationRecord } from "@/lib/pricing-presentations";
+
+type SavePricingResponse = {
+  pricingPresentation?: PricingPresentationRecord;
+  error?: string;
+};
 
 type PackageOption = {
   id: string;
@@ -106,6 +112,8 @@ export function PricingPresentationApp() {
   const [openPackageId, setOpenPackageId] = useState(initialPackages[1].id);
   const [editingPackageId, setEditingPackageId] = useState<string | null>(null);
   const [clientName, setClientName] = useState("Client Name");
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
   const [clientGoal, setClientGoal] = useState("Build strength, improve consistency, and feel confident in training.");
   const [clientNeeds, setClientNeeds] = useState("Needs structure, accountability, and a clear plan that fits work and lifestyle.");
   const [recommendation, setRecommendation] = useState("Based on the consultation, Transformation is the best fit because it gives enough weekly contact to build momentum while keeping the plan realistic.");
@@ -114,6 +122,8 @@ export function PricingPresentationApp() {
   const [nutritionDescription, setNutritionDescription] = useState(
     "Nutrition coaching add-on: calorie and protein targets, simple habit targets, meal structure guidance, weekly nutrition review, and accountability support."
   );
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
 
   const selectedPackage = packages.find((item) => item.id === selectedPackageId) ?? packages[0];
   const weeklyTotal = selectedPackage.weeklyPrice + (nutritionAdded ? nutritionWeeklyPrice : 0);
@@ -137,25 +147,66 @@ export function PricingPresentationApp() {
     );
   }
 
+  async function saveOnline() {
+    setIsSaving(true);
+    setSaveStatus("Saving pricing presentation online...");
+
+    try {
+      const response = await fetch("/api/pricing-presentations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName,
+          clientEmail,
+          clientPhone,
+          clientGoal,
+          clientNeeds,
+          recommendation,
+          selectedPackageId,
+          selectedPackage,
+          packages,
+          nutritionAdded,
+          nutritionWeeklyPrice,
+          nutritionDescription,
+          weeklyTotal,
+          upfrontTotal
+        })
+      });
+      const result = (await response.json()) as SavePricingResponse;
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not save this pricing presentation.");
+      }
+
+      setSaveStatus(`Saved online. This price presentation is now in Client Hub as record #${result.pricingPresentation?.id ?? "new"}.`);
+    } catch (error) {
+      setSaveStatus(error instanceof Error ? error.message : "Could not save this pricing presentation.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-6 text-[#101010] sm:px-6 lg:px-10 print:bg-white">
       <section className="mx-auto max-w-[1600px] rounded-[2rem] border border-white/10 bg-white p-5 shadow-[0_26px_100px_rgba(0,0,0,0.45)] sm:p-7 lg:p-9 print:shadow-none">
         <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.36em] text-[#c90068]">Upper Notch Coaching</p>
-            <h1 className="mt-3 text-3xl font-black uppercase tracking-[0.12em] text-[#101010] sm:text-5xl">Package Options</h1>
+            <p className="text-sm font-black uppercase tracking-[0.36em] text-[#c90068]">Upper Notch Coaching</p>
+            <h1 className="mt-3 text-3xl font-black uppercase tracking-[0.12em] text-[#101010] sm:text-6xl">Package Options</h1>
           </div>
-          <p className="max-w-2xl text-base font-semibold leading-8 text-zinc-700">
+          <p className="max-w-2xl text-xl font-bold leading-9 text-zinc-800">
             Tailor this to the consultation, select the best package, and show the client exactly what is included.
           </p>
         </div>
 
         <section className="mt-6 rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 sm:p-6 print:hidden">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-[#c90068]">Consultation Tailor</p>
-          <h2 className="mt-3 text-2xl font-black text-[#101010]">Personalise The Offer</h2>
+          <p className="text-sm font-black uppercase tracking-[0.28em] text-[#c90068]">Consultation Tailor</p>
+          <h2 className="mt-3 text-4xl font-black text-[#101010]">Personalise The Offer</h2>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <TextInput label="Client name" value={clientName} onChange={setClientName} />
+            <TextInput label="Client phone" value={clientPhone} onChange={setClientPhone} />
+            <TextInput label="Client email" value={clientEmail} onChange={setClientEmail} />
             <TextArea label="Goal / outcome" value={clientGoal} onChange={setClientGoal} rows={3} />
             <TextArea label="Consultation needs" value={clientNeeds} onChange={setClientNeeds} rows={3} />
             <TextArea label="Coach recommendation" value={recommendation} onChange={setRecommendation} rows={3} />
@@ -164,13 +215,13 @@ export function PricingPresentationApp() {
           <div className="mt-5 rounded-[1.5rem] border border-zinc-200 bg-white p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#c90068]">Nutrition Add-On</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">Add nutrition coaching to the selected package total.</p>
+                <p className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">Nutrition Add-On</p>
+                <p className="mt-2 text-lg font-semibold leading-8 text-zinc-700">Add nutrition coaching to the selected package total.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setNutritionAdded((current) => !current)}
-                className={`rounded-full px-5 py-3 text-sm font-bold transition ${nutritionAdded ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
+                className={`rounded-full px-5 py-3 text-base font-black transition ${nutritionAdded ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
               >
                 {nutritionAdded ? "Nutrition Added" : "Add Nutrition"}
               </button>
@@ -185,11 +236,11 @@ export function PricingPresentationApp() {
         <section className="mt-6">
           <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#c90068]">Presentation For</p>
-              <h2 className="mt-3 font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#101010] sm:text-6xl">{clientName || "Client"}</h2>
-              <p className="mt-3 max-w-3xl text-lg font-semibold leading-8 text-zinc-800">{clientGoal}</p>
+              <p className="text-sm font-black uppercase tracking-[0.28em] text-[#c90068]">Presentation For</p>
+              <h2 className="mt-3 font-[Arial_Narrow] text-6xl uppercase tracking-[0.08em] text-[#101010] sm:text-7xl">{clientName || "Client"}</h2>
+              <p className="mt-3 max-w-3xl text-xl font-bold leading-9 text-zinc-900">{clientGoal}</p>
             </div>
-            <div className="rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5 text-lg font-semibold leading-8 text-zinc-800">
+            <div className="rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5 text-xl font-bold leading-9 text-zinc-900">
               <p><span className="font-bold text-[#101010]">Selected:</span> {selectedPackage.name}</p>
               <p><span className="font-bold text-[#101010]">Weekly total:</span> {dollars(weeklyTotal)}/week</p>
               <p><span className="font-bold text-[#101010]">12-week upfront:</span> {dollars(upfrontTotal)}</p>
@@ -198,12 +249,12 @@ export function PricingPresentationApp() {
           </div>
 
           <div className="mt-6 rounded-[1.5rem] border border-[#c90068]/25 bg-[#fff3fa] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">Why This Recommendation Fits</p>
-            <p className="mt-3 whitespace-pre-wrap text-lg font-bold leading-9 text-[#101010]">{recommendation}</p>
-            <p className="mt-3 text-lg font-semibold leading-8 text-zinc-800">{packageRecommendation}</p>
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">Why This Recommendation Fits</p>
+            <p className="mt-3 whitespace-pre-wrap text-xl font-black leading-10 text-[#101010]">{recommendation}</p>
+            <p className="mt-3 text-xl font-bold leading-9 text-zinc-900">{packageRecommendation}</p>
           </div>
 
-          <div className="mt-6 grid gap-5 xl:grid-cols-3">
+          <div className="mt-6 grid gap-6 2xl:grid-cols-3">
             {packages.map((packageOption) => {
               const isSelected = packageOption.id === selectedPackageId;
               const isOpen = packageOption.id === openPackageId;
@@ -212,11 +263,11 @@ export function PricingPresentationApp() {
               return (
                 <article
                   key={packageOption.id}
-                  className={`rounded-[1.75rem] border bg-white p-5 transition ${isSelected ? "border-[#c90068] shadow-[0_18px_45px_rgba(240,47,155,0.18)]" : "border-zinc-200"}`}
+                  className={`rounded-[1.75rem] border bg-white p-6 transition ${isSelected ? "border-[#c90068] shadow-[0_18px_45px_rgba(240,47,155,0.18)]" : "border-zinc-200"}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">12 Week Minimum</p>
+                      <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">12 Week Minimum</p>
                       {isEditing ? (
                         <input
                           value={packageOption.name}
@@ -224,13 +275,13 @@ export function PricingPresentationApp() {
                           className="mt-2 w-full rounded-xl border border-zinc-200 px-3 py-2 text-lg font-black text-[#101010] outline-none focus:border-[#c90068]"
                         />
                       ) : (
-                        <h3 className="mt-2 text-2xl font-black uppercase tracking-[0.08em] text-[#101010]">{packageOption.name}</h3>
+                        <h3 className="mt-2 text-4xl font-black uppercase tracking-[0.08em] text-[#101010]">{packageOption.name}</h3>
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => setEditingPackageId(isEditing ? null : packageOption.id)}
-                      className="rounded-full bg-zinc-100 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#101010] print:hidden"
+                      className="rounded-full bg-zinc-100 px-3 py-2 text-sm font-black uppercase tracking-[0.16em] text-[#101010] print:hidden"
                     >
                       {isEditing ? "Done" : "Edit"}
                     </button>
@@ -247,19 +298,19 @@ export function PricingPresentationApp() {
                     </div>
                   ) : (
                     <>
-                      <p className="mt-3 text-lg font-semibold leading-8 text-zinc-800">{packageOption.tagline}</p>
+                      <p className="mt-3 text-xl font-bold leading-9 text-zinc-900">{packageOption.tagline}</p>
                       <div className="mt-5 rounded-2xl bg-zinc-50 p-4">
-                        <p className="font-[Arial_Narrow] text-5xl text-[#101010]">{dollars(packageOption.weeklyPrice)}</p>
-                        <p className="text-base font-bold text-zinc-700">per week</p>
-                        <p className="mt-3 text-lg font-semibold text-zinc-800">{dollars(packageOption.upfrontPrice)} upfront</p>
-                        <p className="text-base font-black text-[#c90068]">Save {dollars(packageOption.savings)}</p>
+                        <p className="font-[Arial_Narrow] text-7xl text-[#101010]">{dollars(packageOption.weeklyPrice)}</p>
+                        <p className="text-xl font-black text-zinc-800">per week</p>
+                        <p className="mt-3 text-xl font-bold text-zinc-900">{dollars(packageOption.upfrontPrice)} upfront</p>
+                        <p className="text-xl font-black text-[#c90068]">Save {dollars(packageOption.savings)}</p>
                       </div>
 
                       <div className="mt-5 flex flex-wrap gap-2 print:hidden">
                         <button
                           type="button"
                           onClick={() => setSelectedPackageId(packageOption.id)}
-                          className={`rounded-full px-4 py-2 text-sm font-bold transition ${isSelected ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
+                          className={`rounded-full px-5 py-3 text-lg font-black transition ${isSelected ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
                         >
                           {isSelected ? "Selected" : "Select"}
                         </button>
@@ -282,28 +333,42 @@ export function PricingPresentationApp() {
 
           {nutritionAdded ? (
             <div className="mt-6 rounded-[1.5rem] border border-[#c90068]/30 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">Nutrition Added To Package</p>
-              <p className="mt-3 text-lg font-semibold leading-8 text-zinc-800">{nutritionDescription}</p>
+              <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">Nutrition Added To Package</p>
+              <p className="mt-3 text-xl font-bold leading-9 text-zinc-900">{nutritionDescription}</p>
               <p className="mt-4 text-lg font-black text-[#101010]">+ {dollars(nutritionWeeklyPrice)}/week, included in total above</p>
             </div>
           ) : null}
 
           <div className="mt-6 rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">Consultation Notes</p>
-            <p className="mt-3 whitespace-pre-wrap text-lg font-semibold leading-8 text-zinc-800">{clientNeeds}</p>
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">Consultation Notes</p>
+            <p className="mt-3 whitespace-pre-wrap text-xl font-bold leading-9 text-zinc-900">{clientNeeds}</p>
           </div>
 
+          {saveStatus ? (
+            <div className="mt-6 rounded-[1.25rem] border border-zinc-200 bg-zinc-50 p-5 text-lg font-bold leading-8 text-zinc-900 print:hidden">
+              {saveStatus}
+            </div>
+          ) : null}
+
           <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-zinc-200 pt-6 print:hidden">
-            <a href="/onboarding" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#c90068]/60">
+            <a href="/onboarding" className="rounded-full border border-zinc-200 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:border-[#c90068]/60">
               Onboarding
             </a>
-            <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#c90068]/60">
+            <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:border-[#c90068]/60">
               Client Hub
             </a>
             <button
               type="button"
+              onClick={saveOnline}
+              disabled={isSaving}
+              className="rounded-full bg-[#101010] px-6 py-4 text-lg font-black text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSaving ? "Saving..." : "Save Online"}
+            </button>
+            <button
+              type="button"
               onClick={() => window.print()}
-              className="rounded-full bg-[#c90068] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+              className="rounded-full bg-[#c90068] px-6 py-4 text-lg font-black text-white transition hover:brightness-105"
             >
               Print / Save PDF
             </button>
@@ -316,20 +381,20 @@ export function PricingPresentationApp() {
 
 function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
   return (
-    <div className="mt-5 grid gap-4 text-lg font-semibold leading-8 text-zinc-800">
+    <div className="mt-5 grid gap-4 text-xl font-bold leading-9 text-zinc-900">
       <div>
-        <p className="rounded-full bg-[#101010] px-4 py-2 text-sm font-black uppercase tracking-[0.2em] text-white">Results and Benefits</p>
+        <p className="rounded-full bg-[#101010] px-4 py-2 text-lg font-black uppercase tracking-[0.2em] text-white">Results and Benefits</p>
         <ul className="mt-3 space-y-3">
           {packageOption.results.map((item) => (
-            <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">{item}</li>
+            <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">{item}</li>
           ))}
         </ul>
       </div>
       <div>
-        <p className="rounded-full bg-[#c90068] px-4 py-2 text-base font-black uppercase tracking-[0.2em] text-white">What Is Included</p>
+        <p className="rounded-full bg-[#c90068] px-4 py-2 text-xl font-black uppercase tracking-[0.2em] text-white">What Is Included</p>
         <ul className="mt-3 space-y-3">
           {packageOption.inclusions.map((item) => (
-            <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">{item}</li>
+            <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">{item}</li>
           ))}
         </ul>
       </div>
@@ -339,12 +404,12 @@ function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
 
 function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#c90068]">
+    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">
       {label}
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
       />
     </label>
   );
@@ -352,13 +417,13 @@ function TextInput({ label, value, onChange }: { label: string; value: string; o
 
 function NumberInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
-    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#c90068]">
+    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">
       {label}
       <input
         type="number"
         value={value}
         onChange={(event) => onChange(numberFromInput(event.target.value))}
-        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
       />
     </label>
   );
@@ -376,13 +441,13 @@ function TextArea({
   rows?: number;
 }) {
   return (
-    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#c90068]">
+    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">
       {label}
       <textarea
         value={value}
         rows={rows}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full resize-y rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold normal-case leading-7 tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
+        className="mt-2 w-full resize-y rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case leading-8 tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
       />
     </label>
   );

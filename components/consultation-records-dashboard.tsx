@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ConsultationNeedsForm, ConsultationNeedsRecord } from "@/lib/consultation-needs";
 import type { Lead } from "@/lib/leads";
+import type { PricingPresentationRecord } from "@/lib/pricing-presentations";
 import {
   getClientAverageScore,
   getCompletedTests,
@@ -14,6 +15,7 @@ type RecordsResponse = {
   records?: ConsultationNeedsRecord[];
   leads?: Lead[];
   clients?: ScreeningClient[];
+  pricingPresentations?: PricingPresentationRecord[];
   error?: string;
 };
 
@@ -27,6 +29,7 @@ type ClientBundle = {
   consultations: ConsultationNeedsRecord[];
   leads: Lead[];
   screenings: ScreeningClient[];
+  pricingPresentations: PricingPresentationRecord[];
 };
 
 type DetailItem = {
@@ -223,7 +226,8 @@ function upsertBundle(map: Map<string, ClientBundle>, key: string, defaults: Par
     updatedAt: defaults.updatedAt || "",
     consultations: [],
     leads: [],
-    screenings: []
+    screenings: [],
+    pricingPresentations: []
   };
 
   map.set(key, bundle);
@@ -233,7 +237,8 @@ function upsertBundle(map: Map<string, ClientBundle>, key: string, defaults: Par
 function buildClientBundles(
   consultations: ConsultationNeedsRecord[],
   leads: Lead[],
-  screenings: ScreeningClient[]
+  screenings: ScreeningClient[],
+  pricingPresentations: PricingPresentationRecord[]
 ) {
   const bundles = new Map<string, ClientBundle>();
 
@@ -293,6 +298,28 @@ function buildClientBundles(
     bundle.updatedAt = latestDate([bundle.updatedAt, screening.updatedAt, screening.createdAt]);
   });
 
+  pricingPresentations.forEach((record) => {
+    const key = createClientKey({
+      name: record.client_name,
+      email: record.client_email,
+      phone: record.client_phone
+    });
+    const bundle = upsertBundle(bundles, key, {
+      displayName: record.client_name,
+      phone: record.client_phone,
+      email: record.client_email,
+      goal: record.goal,
+      updatedAt: record.updated_at
+    });
+
+    bundle.pricingPresentations.push(record);
+    bundle.displayName = bundle.displayName || record.client_name;
+    bundle.phone = bundle.phone || record.client_phone;
+    bundle.email = bundle.email || record.client_email;
+    bundle.goal = bundle.goal || record.goal;
+    bundle.updatedAt = latestDate([bundle.updatedAt, record.updated_at, record.created_at]);
+  });
+
   return [...bundles.values()].sort(
     (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
   );
@@ -313,6 +340,7 @@ export function ConsultationRecordsDashboard() {
   const [consultations, setConsultations] = useState<ConsultationNeedsRecord[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [screenings, setScreenings] = useState<ScreeningClient[]>([]);
+  const [pricingPresentations, setPricingPresentations] = useState<PricingPresentationRecord[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [hiddenClientKeys, setHiddenClientKeys] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
@@ -324,10 +352,11 @@ export function ConsultationRecordsDashboard() {
     setStatus("Loading saved Supabase data...");
 
     try {
-      const [consultationResult, leadResult, screeningResult] = await Promise.allSettled([
+      const [consultationResult, leadResult, screeningResult, pricingResult] = await Promise.allSettled([
         fetchJson("/api/consultation-needs"),
         fetchJson("/api/leads"),
-        fetchJson("/api/screenings")
+        fetchJson("/api/screenings"),
+        fetchJson("/api/pricing-presentations")
       ]);
 
       const nextConsultations =
@@ -335,7 +364,9 @@ export function ConsultationRecordsDashboard() {
       const nextLeads = leadResult.status === "fulfilled" ? leadResult.value.leads ?? [] : [];
       const nextScreenings =
         screeningResult.status === "fulfilled" ? screeningResult.value.clients ?? [] : [];
-      const loadErrors = [consultationResult, leadResult, screeningResult].flatMap((result) =>
+      const nextPricingPresentations =
+        pricingResult.status === "fulfilled" ? pricingResult.value.pricingPresentations ?? [] : [];
+      const loadErrors = [consultationResult, leadResult, screeningResult, pricingResult].flatMap((result) =>
         result.status === "rejected"
           ? [result.reason instanceof Error ? result.reason.message : "A data source failed to load."]
           : []
@@ -344,11 +375,12 @@ export function ConsultationRecordsDashboard() {
       setConsultations(nextConsultations);
       setLeads(nextLeads);
       setScreenings(nextScreenings);
+      setPricingPresentations(nextPricingPresentations);
       setHiddenClientKeys(new Set());
 
-      const nextBundles = buildClientBundles(nextConsultations, nextLeads, nextScreenings);
+      const nextBundles = buildClientBundles(nextConsultations, nextLeads, nextScreenings, nextPricingPresentations);
       setSelectedKey((currentKey) => currentKey ?? nextBundles[0]?.key ?? null);
-      const successMessage = `${nextBundles.length} client profile${nextBundles.length === 1 ? "" : "s"} loaded from ${nextLeads.length} leads, ${nextConsultations.length} consultation forms, and ${nextScreenings.length} screenings.`;
+      const successMessage = `${nextBundles.length} client profile${nextBundles.length === 1 ? "" : "s"} loaded from ${nextLeads.length} leads, ${nextConsultations.length} consultation forms, ${nextScreenings.length} screenings, and ${nextPricingPresentations.length} pricing presentations.`;
       setStatus(loadErrors.length ? `${successMessage} Some sources need attention: ${loadErrors.join(" ")}` : successMessage);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not load saved Supabase data.");
@@ -362,8 +394,8 @@ export function ConsultationRecordsDashboard() {
   }, []);
 
   const bundles = useMemo(
-    () => buildClientBundles(consultations, leads, screenings),
-    [consultations, leads, screenings]
+    () => buildClientBundles(consultations, leads, screenings, pricingPresentations),
+    [consultations, leads, screenings, pricingPresentations]
   );
 
   const visibleBundles = useMemo(
@@ -386,7 +418,13 @@ export function ConsultationRecordsDashboard() {
         bundle.goal,
         ...bundle.leads.flatMap((lead) => [lead.status, lead.source, lead.service_interest, lead.budget, lead.notes]),
         ...bundle.consultations.flatMap((record) => [record.goal, record.form_data.goalWhy, record.form_data.occupation]),
-        ...bundle.screenings.flatMap((screening) => [screening.injury, screening.health, screening.overallNotes])
+        ...bundle.screenings.flatMap((screening) => [screening.injury, screening.health, screening.overallNotes]),
+        ...bundle.pricingPresentations.flatMap((record) => [
+          record.goal,
+          record.selected_package_name,
+          record.presentation_data.clientNeeds,
+          record.presentation_data.recommendation
+        ])
       ]
         .filter(Boolean)
         .join(" ")
@@ -432,7 +470,7 @@ export function ConsultationRecordsDashboard() {
                 Client Hub
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-[#4a5c73] sm:text-base">
-                Search one client and see their leads, consultation needs analysis, and movement screening records together.
+                Search one client and see their leads, consultation needs analysis, movement screening, and pricing presentation records together.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 print:hidden">
@@ -480,7 +518,7 @@ export function ConsultationRecordsDashboard() {
             <div className="mt-5 space-y-3">
               {filteredBundles.map((bundle) => {
                 const isSelected = selectedBundle?.key === bundle.key;
-                const recordCount = bundle.leads.length + bundle.consultations.length + bundle.screenings.length;
+                const recordCount = bundle.leads.length + bundle.consultations.length + bundle.screenings.length + bundle.pricingPresentations.length;
 
                 return (
                   <button
@@ -499,6 +537,7 @@ export function ConsultationRecordsDashboard() {
                       <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.leads.length} lead{bundle.leads.length === 1 ? "" : "s"}</span>
                       <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.consultations.length} consult{bundle.consultations.length === 1 ? "" : "s"}</span>
                       <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.screenings.length} screen{bundle.screenings.length === 1 ? "" : "s"}</span>
+                      <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.pricingPresentations.length} price{bundle.pricingPresentations.length === 1 ? "" : "s"}</span>
                     </span>
                     <span className="mt-2 block text-xs uppercase tracking-[0.18em] text-[#6b7b91]">
                       {recordCount} total record{recordCount === 1 ? "" : "s"} · {formatDate(bundle.updatedAt)}
@@ -541,22 +580,24 @@ export function ConsultationRecordsDashboard() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="mt-6 grid gap-4 md:grid-cols-4">
                   <SummaryCard label="Leads" value={selectedBundle.leads.length} />
                   <SummaryCard label="Consultation Forms" value={selectedBundle.consultations.length} />
                   <SummaryCard label="Movement Screenings" value={selectedBundle.screenings.length} />
+                  <SummaryCard label="Pricing Presentations" value={selectedBundle.pricingPresentations.length} />
                 </div>
 
                 <div className="mt-8 space-y-8">
                   <LeadsSection leads={selectedBundle.leads} />
                   <ConsultationsSection records={selectedBundle.consultations} />
                   <ScreeningsSection screenings={selectedBundle.screenings} />
+                  <PricingPresentationsSection records={selectedBundle.pricingPresentations} />
                 </div>
               </div>
             ) : (
               <div className="rounded-[1.5rem] border border-dashed border-sky-200 bg-white p-8 text-center text-[#4a5c73]">
                 <h2 className="font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f]">No Client Selected</h2>
-                <p className="mt-3 text-sm leading-7">Save a lead, consultation form, or screening first, then come back here and search for the client.</p>
+                <p className="mt-3 text-sm leading-7">Save a lead, consultation form, screening, or pricing presentation first, then come back here and search for the client.</p>
               </div>
             )}
           </section>
@@ -738,6 +779,54 @@ function ScreeningsSection({ screenings }: { screenings: ScreeningClient[] }) {
             </article>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function PricingPresentationsSection({ records }: { records: PricingPresentationRecord[] }) {
+  return (
+    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+      <h3 className="text-xl font-bold text-[#10233f]">Pricing Presentations</h3>
+      {!records.length ? <EmptyDataCard label="pricing presentations" /> : null}
+      <div className="mt-4 space-y-4">
+        {records.map((record) => (
+          <article key={record.id} className="rounded-2xl border border-sky-100 bg-white p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-lg font-bold text-[#10233f]">{record.selected_package_name || "Pricing presentation"}</p>
+                <p className="mt-1 text-sm text-[#4a5c73]">Saved: {formatDate(record.updated_at)}</p>
+              </div>
+              <span className="rounded-full bg-[#f02f9b]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#f02f9b]">
+                {record.nutrition_added ? "Nutrition added" : "Training only"}
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 text-sm text-[#4a5c73] md:grid-cols-2">
+              <p><span className="font-semibold text-[#10233f]">Goal:</span> {displayValue(record.goal)}</p>
+              <p><span className="font-semibold text-[#10233f]">Weekly total:</span> ${record.weekly_total}/week</p>
+              <p><span className="font-semibold text-[#10233f]">12-week upfront:</span> ${record.upfront_total}</p>
+              <p><span className="font-semibold text-[#10233f]">Nutrition:</span> {record.nutrition_added ? "Included" : "Not added"}</p>
+            </div>
+            <div className="mt-5 grid gap-4 xl:grid-cols-2">
+              <div className="rounded-[1.25rem] border border-sky-100 p-4">
+                <h4 className="font-bold text-[#10233f]">Recommendation</h4>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.recommendation)}</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-sky-100 p-4">
+                <h4 className="font-bold text-[#10233f]">Consultation Needs</h4>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.clientNeeds)}</p>
+              </div>
+            </div>
+            <div className="mt-5 rounded-[1.25rem] border border-sky-100 p-4">
+              <h4 className="font-bold text-[#10233f]">What Was Included</h4>
+              <ul className="mt-3 grid gap-2 text-sm text-[#4a5c73] md:grid-cols-2">
+                {record.presentation_data.selectedPackage.inclusions.map((item) => (
+                  <li key={`${record.id}-${item}`} className="rounded-2xl bg-sky-50/70 px-3 py-2">{item}</li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );

@@ -140,3 +140,63 @@ on public.consultation_needs
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');
+
+create table if not exists public.pricing_presentations (
+  id bigint generated always as identity primary key,
+  client_name text not null,
+  client_email text not null default '',
+  client_phone text not null default '',
+  goal text not null default '',
+  selected_package_name text not null default '',
+  weekly_total numeric not null default 0,
+  upfront_total numeric not null default 0,
+  nutrition_added boolean not null default false,
+  presentation_data jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+alter table public.pricing_presentations
+  add column if not exists client_email text not null default '',
+  add column if not exists client_phone text not null default '',
+  add column if not exists goal text not null default '',
+  add column if not exists selected_package_name text not null default '',
+  add column if not exists weekly_total numeric not null default 0,
+  add column if not exists upfront_total numeric not null default 0,
+  add column if not exists nutrition_added boolean not null default false,
+  add column if not exists presentation_data jsonb not null default '{}'::jsonb,
+  add column if not exists created_at timestamptz not null default timezone('utc', now()),
+  add column if not exists updated_at timestamptz not null default timezone('utc', now());
+
+create index if not exists pricing_presentations_client_email_idx
+  on public.pricing_presentations (client_email);
+
+create index if not exists pricing_presentations_client_phone_idx
+  on public.pricing_presentations (client_phone);
+
+create or replace function public.set_pricing_presentations_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = timezone('utc', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists set_pricing_presentations_updated_at on public.pricing_presentations;
+
+create trigger set_pricing_presentations_updated_at
+before update on public.pricing_presentations
+for each row
+execute function public.set_pricing_presentations_updated_at();
+
+alter table public.pricing_presentations enable row level security;
+
+drop policy if exists "Service role can manage pricing presentations" on public.pricing_presentations;
+
+create policy "Service role can manage pricing presentations"
+on public.pricing_presentations
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');

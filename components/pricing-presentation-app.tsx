@@ -116,7 +116,6 @@ export function PricingPresentationApp() {
   );
 
   const selectedPackage = packages.find((item) => item.id === selectedPackageId) ?? packages[0];
-  const openPackage = packages.find((item) => item.id === openPackageId) ?? selectedPackage;
   const weeklyTotal = selectedPackage.weeklyPrice + (nutritionAdded ? nutritionWeeklyPrice : 0);
   const upfrontTotal = selectedPackage.upfrontPrice + (nutritionAdded ? nutritionWeeklyPrice * 12 : 0);
 
@@ -139,203 +138,198 @@ export function PricingPresentationApp() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(255,255,255,0.9),transparent_26%),linear-gradient(135deg,#2cc5e8_0%,#93d5d2_32%,#c9a4ea_58%,#627bde_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-[1500px]">
-        <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_90px_rgba(39,71,132,0.24)] backdrop-blur-xl sm:p-8 print:shadow-none">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#f02f9b]">Upper Notch Coaching</p>
-              <h1 className="mt-4 max-w-4xl font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f] sm:text-7xl">
-                In-Person Price Presentation
-              </h1>
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-[#4a5c73] sm:text-base">
-                Tailor the offer live during the consultation, show exactly what is included, and add nutrition coaching with one button.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 print:hidden">
-              <a href="/onboarding" className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60">
-                Onboarding
-              </a>
-              <a href="/clients" className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60">
-                Client Hub
-              </a>
+    <main className="min-h-screen bg-[#050505] px-4 py-6 text-[#101010] sm:px-6 lg:px-10 print:bg-white">
+      <section className="mx-auto max-w-[1600px] rounded-[2rem] border border-white/10 bg-white p-5 shadow-[0_26px_100px_rgba(0,0,0,0.45)] sm:p-7 lg:p-9 print:shadow-none">
+        <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.36em] text-[#f02f9b]">Upper Notch Coaching</p>
+            <h1 className="mt-3 text-3xl font-black uppercase tracking-[0.12em] text-[#101010] sm:text-5xl">Package Options</h1>
+          </div>
+          <p className="max-w-2xl text-sm leading-7 text-zinc-600">
+            Tailor this to the consultation, select the best package, and show the client exactly what is included.
+          </p>
+        </div>
+
+        <section className="mt-6 rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 sm:p-6 print:hidden">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f02f9b]">Consultation Tailor</p>
+          <h2 className="mt-3 text-2xl font-black text-[#101010]">Personalise The Offer</h2>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <TextInput label="Client name" value={clientName} onChange={setClientName} />
+            <TextArea label="Goal / outcome" value={clientGoal} onChange={setClientGoal} rows={3} />
+            <TextArea label="Consultation needs" value={clientNeeds} onChange={setClientNeeds} rows={3} />
+            <TextArea label="Coach recommendation" value={recommendation} onChange={setRecommendation} rows={3} />
+          </div>
+
+          <div className="mt-5 rounded-[1.5rem] border border-zinc-200 bg-white p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#f02f9b]">Nutrition Add-On</p>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">Add nutrition coaching to the selected package total.</p>
+              </div>
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+                onClick={() => setNutritionAdded((current) => !current)}
+                className={`rounded-full px-5 py-3 text-sm font-bold transition ${nutritionAdded ? "bg-[#f02f9b] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
               >
-                Print / Save PDF
+                {nutritionAdded ? "Nutrition Added" : "Add Nutrition"}
               </button>
             </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-[220px_1fr]">
+              <NumberInput label="Nutrition weekly price" value={nutritionWeeklyPrice} onChange={setNutritionWeeklyPrice} />
+              <TextArea label="Nutrition description" value={nutritionDescription} onChange={setNutritionDescription} rows={3} />
+            </div>
           </div>
-        </header>
-
-        <section className="mt-6 grid gap-6 xl:grid-cols-[420px_1fr]">
-          <aside className="rounded-[2rem] border border-white/70 bg-white/92 p-5 shadow-[0_20px_80px_rgba(39,71,132,0.18)] backdrop-blur-xl sm:p-6 print:shadow-none">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f02f9b]">Consultation Tailor</p>
-            <h2 className="mt-3 text-2xl font-black text-[#10233f]">Personalise The Offer</h2>
-
-            <div className="mt-5 grid gap-4">
-              <TextInput label="Client name" value={clientName} onChange={setClientName} />
-              <TextArea label="Goal / outcome" value={clientGoal} onChange={setClientGoal} rows={4} />
-              <TextArea label="Consultation needs" value={clientNeeds} onChange={setClientNeeds} rows={4} />
-              <TextArea label="Coach recommendation" value={recommendation} onChange={setRecommendation} rows={5} />
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] border border-sky-100 bg-white p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[#f02f9b]">Nutrition Add-On</p>
-                  <p className="mt-2 text-sm leading-6 text-[#4a5c73]">Add nutrition coaching to the selected package total.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setNutritionAdded((current) => !current)}
-                  className={`rounded-full px-4 py-2 text-sm font-bold transition ${nutritionAdded ? "bg-[#f02f9b] text-white" : "bg-sky-100 text-[#15314a] hover:bg-white"}`}
-                >
-                  {nutritionAdded ? "Added" : "Add"}
-                </button>
-              </div>
-              <div className="mt-4 grid gap-3">
-                <NumberInput label="Nutrition weekly price" value={nutritionWeeklyPrice} onChange={setNutritionWeeklyPrice} />
-                <TextArea label="Nutrition description" value={nutritionDescription} onChange={setNutritionDescription} rows={4} />
-              </div>
-            </div>
-          </aside>
-
-          <section className="rounded-[2rem] border border-white/70 bg-white/92 p-5 shadow-[0_20px_80px_rgba(39,71,132,0.18)] backdrop-blur-xl sm:p-6 print:shadow-none">
-            <div className="flex flex-col gap-4 border-b border-sky-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f02f9b]">Presentation For</p>
-                <h2 className="mt-3 font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f] sm:text-6xl">{clientName || "Client"}</h2>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-[#4a5c73]">{clientGoal}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-sky-100 bg-white p-4 text-sm leading-7 text-[#4a5c73]">
-                <p><span className="font-bold text-[#10233f]">Selected:</span> {selectedPackage.name}</p>
-                <p><span className="font-bold text-[#10233f]">Weekly total:</span> {dollars(weeklyTotal)}/week</p>
-                <p><span className="font-bold text-[#10233f]">12-week upfront:</span> {dollars(upfrontTotal)}</p>
-                <p><span className="font-bold text-[#10233f]">Nutrition:</span> {nutritionAdded ? "Included" : "Not added"}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] border border-[#f02f9b]/25 bg-[#f02f9b]/10 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Why This Recommendation Fits</p>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#15314a]">{recommendation}</p>
-              <p className="mt-3 text-sm leading-7 text-[#4a5c73]">{packageRecommendation}</p>
-            </div>
-
-            <div className="mt-6 grid gap-4 lg:grid-cols-3">
-              {packages.map((packageOption) => {
-                const isSelected = packageOption.id === selectedPackageId;
-                const isOpen = packageOption.id === openPackageId;
-                const isEditing = packageOption.id === editingPackageId;
-
-                return (
-                  <article
-                    key={packageOption.id}
-                    className={`rounded-[1.75rem] border bg-white p-5 transition ${isSelected ? "border-[#f02f9b] shadow-[0_18px_45px_rgba(240,47,155,0.2)]" : "border-sky-100"}`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">12 Week Minimum</p>
-                        {isEditing ? (
-                          <input
-                            value={packageOption.name}
-                            onChange={(event) => updatePackage(packageOption.id, { name: event.target.value })}
-                            className="mt-2 w-full rounded-xl border border-sky-100 px-3 py-2 text-lg font-black text-[#10233f] outline-none focus:border-[#f02f9b]"
-                          />
-                        ) : (
-                          <h3 className="mt-2 text-2xl font-black uppercase tracking-[0.08em] text-[#10233f]">{packageOption.name}</h3>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setEditingPackageId(isEditing ? null : packageOption.id)}
-                        className="rounded-full bg-sky-100 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a] print:hidden"
-                      >
-                        {isEditing ? "Done" : "Edit"}
-                      </button>
-                    </div>
-
-                    {isEditing ? (
-                      <div className="mt-4 grid gap-3">
-                        <TextArea label="Tagline" value={packageOption.tagline} onChange={(value) => updatePackage(packageOption.id, { tagline: value })} rows={2} />
-                        <NumberInput label="Weekly price" value={packageOption.weeklyPrice} onChange={(value) => updatePackage(packageOption.id, { weeklyPrice: value })} />
-                        <NumberInput label="Upfront price" value={packageOption.upfrontPrice} onChange={(value) => updatePackage(packageOption.id, { upfrontPrice: value })} />
-                        <NumberInput label="Upfront saving" value={packageOption.savings} onChange={(value) => updatePackage(packageOption.id, { savings: value })} />
-                        <TextArea label="Results and benefits" value={listToText(packageOption.results)} onChange={(value) => updatePackage(packageOption.id, { results: textToList(value) })} rows={5} />
-                        <TextArea label="What's included" value={listToText(packageOption.inclusions)} onChange={(value) => updatePackage(packageOption.id, { inclusions: textToList(value) })} rows={5} />
-                      </div>
-                    ) : (
-                      <>
-                        <p className="mt-3 text-sm leading-6 text-[#4a5c73]">{packageOption.tagline}</p>
-                        <div className="mt-5 rounded-2xl bg-sky-50/80 p-4">
-                          <p className="font-[Arial_Narrow] text-5xl text-[#10233f]">{dollars(packageOption.weeklyPrice)}</p>
-                          <p className="text-sm font-semibold text-[#4a5c73]">per week</p>
-                          <p className="mt-3 text-sm text-[#4a5c73]">{dollars(packageOption.upfrontPrice)} upfront</p>
-                          <p className="text-sm text-[#f02f9b]">Save {dollars(packageOption.savings)}</p>
-                        </div>
-
-                        <div className="mt-5 flex flex-wrap gap-2 print:hidden">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedPackageId(packageOption.id)}
-                            className={`rounded-full px-4 py-2 text-sm font-bold transition ${isSelected ? "bg-[#f02f9b] text-white" : "bg-sky-100 text-[#15314a] hover:bg-white"}`}
-                          >
-                            {isSelected ? "Selected" : "Select"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setOpenPackageId(isOpen ? "" : packageOption.id)}
-                            className="rounded-full border border-sky-100 bg-white px-4 py-2 text-sm font-bold text-[#15314a] transition hover:border-[#f02f9b]/60"
-                          >
-                            {isOpen ? "Hide included" : "Show included"}
-                          </button>
-                        </div>
-
-                        {isOpen ? <PackageDetails packageOption={packageOption} /> : null}
-                      </>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-
-            {nutritionAdded ? (
-              <div className="mt-6 rounded-[1.5rem] border border-[#f02f9b]/30 bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Nutrition Added To Package</p>
-                <p className="mt-3 text-sm leading-7 text-[#4a5c73]">{nutritionDescription}</p>
-                <p className="mt-4 text-lg font-black text-[#10233f]">+ {dollars(nutritionWeeklyPrice)}/week, included in total above</p>
-              </div>
-            ) : null}
-
-            <div className="mt-6 rounded-[1.5rem] border border-sky-100 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Consultation Notes</p>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#4a5c73]">{clientNeeds}</p>
-            </div>
-          </section>
         </section>
-      </div>
+
+        <section className="mt-6">
+          <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f02f9b]">Presentation For</p>
+              <h2 className="mt-3 font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#101010] sm:text-6xl">{clientName || "Client"}</h2>
+              <p className="mt-3 max-w-3xl text-base leading-8 text-zinc-700">{clientGoal}</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5 text-base leading-8 text-zinc-700">
+              <p><span className="font-bold text-[#101010]">Selected:</span> {selectedPackage.name}</p>
+              <p><span className="font-bold text-[#101010]">Weekly total:</span> {dollars(weeklyTotal)}/week</p>
+              <p><span className="font-bold text-[#101010]">12-week upfront:</span> {dollars(upfrontTotal)}</p>
+              <p><span className="font-bold text-[#101010]">Nutrition:</span> {nutritionAdded ? "Included" : "Not added"}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[1.5rem] border border-[#f02f9b]/25 bg-[#fff3fa] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Why This Recommendation Fits</p>
+            <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-[#101010]">{recommendation}</p>
+            <p className="mt-3 text-base leading-8 text-zinc-700">{packageRecommendation}</p>
+          </div>
+
+          <div className="mt-6 grid gap-5 xl:grid-cols-3">
+            {packages.map((packageOption) => {
+              const isSelected = packageOption.id === selectedPackageId;
+              const isOpen = packageOption.id === openPackageId;
+              const isEditing = packageOption.id === editingPackageId;
+
+              return (
+                <article
+                  key={packageOption.id}
+                  className={`rounded-[1.75rem] border bg-white p-5 transition ${isSelected ? "border-[#f02f9b] shadow-[0_18px_45px_rgba(240,47,155,0.18)]" : "border-zinc-200"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">12 Week Minimum</p>
+                      {isEditing ? (
+                        <input
+                          value={packageOption.name}
+                          onChange={(event) => updatePackage(packageOption.id, { name: event.target.value })}
+                          className="mt-2 w-full rounded-xl border border-zinc-200 px-3 py-2 text-lg font-black text-[#101010] outline-none focus:border-[#f02f9b]"
+                        />
+                      ) : (
+                        <h3 className="mt-2 text-2xl font-black uppercase tracking-[0.08em] text-[#101010]">{packageOption.name}</h3>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingPackageId(isEditing ? null : packageOption.id)}
+                      className="rounded-full bg-zinc-100 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[#101010] print:hidden"
+                    >
+                      {isEditing ? "Done" : "Edit"}
+                    </button>
+                  </div>
+
+                  {isEditing ? (
+                    <div className="mt-4 grid gap-3">
+                      <TextArea label="Tagline" value={packageOption.tagline} onChange={(value) => updatePackage(packageOption.id, { tagline: value })} rows={2} />
+                      <NumberInput label="Weekly price" value={packageOption.weeklyPrice} onChange={(value) => updatePackage(packageOption.id, { weeklyPrice: value })} />
+                      <NumberInput label="Upfront price" value={packageOption.upfrontPrice} onChange={(value) => updatePackage(packageOption.id, { upfrontPrice: value })} />
+                      <NumberInput label="Upfront saving" value={packageOption.savings} onChange={(value) => updatePackage(packageOption.id, { savings: value })} />
+                      <TextArea label="Results and benefits" value={listToText(packageOption.results)} onChange={(value) => updatePackage(packageOption.id, { results: textToList(value) })} rows={5} />
+                      <TextArea label="What is included" value={listToText(packageOption.inclusions)} onChange={(value) => updatePackage(packageOption.id, { inclusions: textToList(value) })} rows={5} />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="mt-3 text-base leading-7 text-zinc-700">{packageOption.tagline}</p>
+                      <div className="mt-5 rounded-2xl bg-zinc-50 p-4">
+                        <p className="font-[Arial_Narrow] text-5xl text-[#101010]">{dollars(packageOption.weeklyPrice)}</p>
+                        <p className="text-sm font-semibold text-zinc-600">per week</p>
+                        <p className="mt-3 text-base text-zinc-700">{dollars(packageOption.upfrontPrice)} upfront</p>
+                        <p className="text-sm font-bold text-[#f02f9b]">Save {dollars(packageOption.savings)}</p>
+                      </div>
+
+                      <div className="mt-5 flex flex-wrap gap-2 print:hidden">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPackageId(packageOption.id)}
+                          className={`rounded-full px-4 py-2 text-sm font-bold transition ${isSelected ? "bg-[#f02f9b] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
+                        >
+                          {isSelected ? "Selected" : "Select"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOpenPackageId(isOpen ? "" : packageOption.id)}
+                          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-[#101010] transition hover:border-[#f02f9b]/60"
+                        >
+                          {isOpen ? "Hide included" : "Show included"}
+                        </button>
+                      </div>
+
+                      {isOpen ? <PackageDetails packageOption={packageOption} /> : null}
+                    </>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+
+          {nutritionAdded ? (
+            <div className="mt-6 rounded-[1.5rem] border border-[#f02f9b]/30 bg-white p-5">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Nutrition Added To Package</p>
+              <p className="mt-3 text-base leading-8 text-zinc-700">{nutritionDescription}</p>
+              <p className="mt-4 text-lg font-black text-[#101010]">+ {dollars(nutritionWeeklyPrice)}/week, included in total above</p>
+            </div>
+          ) : null}
+
+          <div className="mt-6 rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Consultation Notes</p>
+            <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-zinc-700">{clientNeeds}</p>
+          </div>
+
+          <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-zinc-200 pt-6 print:hidden">
+            <a href="/onboarding" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#f02f9b]/60">
+              Onboarding
+            </a>
+            <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#f02f9b]/60">
+              Client Hub
+            </a>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+            >
+              Print / Save PDF
+            </button>
+          </div>
+        </section>
+      </section>
     </main>
   );
 }
 
 function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
   return (
-    <div className="mt-5 grid gap-4 text-sm leading-6 text-[#4a5c73]">
+    <div className="mt-5 grid gap-4 text-base leading-7 text-zinc-700">
       <div>
         <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f02f9b]">Results and Benefits</p>
         <ul className="mt-3 space-y-2">
           {packageOption.results.map((item) => (
-            <li key={item} className="rounded-2xl bg-sky-50/80 px-3 py-2">{item}</li>
+            <li key={item} className="rounded-2xl bg-zinc-50 px-3 py-2">{item}</li>
           ))}
         </ul>
       </div>
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f02f9b]">What's Included</p>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f02f9b]">What Is Included</p>
         <ul className="mt-3 space-y-2">
           {packageOption.inclusions.map((item) => (
-            <li key={item} className="rounded-2xl bg-sky-50/80 px-3 py-2">{item}</li>
+            <li key={item} className="rounded-2xl bg-zinc-50 px-3 py-2">{item}</li>
           ))}
         </ul>
       </div>
@@ -350,7 +344,7 @@ function TextInput({ label, value, onChange }: { label: string; value: string; o
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
       />
     </label>
   );
@@ -364,7 +358,7 @@ function NumberInput({ label, value, onChange }: { label: string; value: number;
         type="number"
         value={value}
         onChange={(event) => onChange(numberFromInput(event.target.value))}
-        className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
       />
     </label>
   );
@@ -388,7 +382,7 @@ function TextArea({
         value={value}
         rows={rows}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full resize-y rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case leading-6 tracking-normal text-[#10233f] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+        className="mt-2 w-full resize-y rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm normal-case leading-6 tracking-normal text-[#101010] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
       />
     </label>
   );

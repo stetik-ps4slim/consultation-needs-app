@@ -142,16 +142,16 @@ export function PricingPresentationApp() {
       <section className="mx-auto max-w-[1600px] rounded-[2rem] border border-white/10 bg-white p-5 shadow-[0_26px_100px_rgba(0,0,0,0.45)] sm:p-7 lg:p-9 print:shadow-none">
         <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.36em] text-[#f02f9b]">Upper Notch Coaching</p>
+            <p className="text-xs font-black uppercase tracking-[0.36em] text-[#c90068]">Upper Notch Coaching</p>
             <h1 className="mt-3 text-3xl font-black uppercase tracking-[0.12em] text-[#101010] sm:text-5xl">Package Options</h1>
           </div>
-          <p className="max-w-2xl text-sm leading-7 text-zinc-600">
+          <p className="max-w-2xl text-base font-semibold leading-8 text-zinc-700">
             Tailor this to the consultation, select the best package, and show the client exactly what is included.
           </p>
         </div>
 
         <section className="mt-6 rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 sm:p-6 print:hidden">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f02f9b]">Consultation Tailor</p>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-[#c90068]">Consultation Tailor</p>
           <h2 className="mt-3 text-2xl font-black text-[#101010]">Personalise The Offer</h2>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -164,13 +164,13 @@ export function PricingPresentationApp() {
           <div className="mt-5 rounded-[1.5rem] border border-zinc-200 bg-white p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#f02f9b]">Nutrition Add-On</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#c90068]">Nutrition Add-On</p>
                 <p className="mt-2 text-sm leading-6 text-zinc-600">Add nutrition coaching to the selected package total.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setNutritionAdded((current) => !current)}
-                className={`rounded-full px-5 py-3 text-sm font-bold transition ${nutritionAdded ? "bg-[#f02f9b] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
+                className={`rounded-full px-5 py-3 text-sm font-bold transition ${nutritionAdded ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
               >
                 {nutritionAdded ? "Nutrition Added" : "Add Nutrition"}
               </button>
@@ -185,11 +185,11 @@ export function PricingPresentationApp() {
         <section className="mt-6">
           <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f02f9b]">Presentation For</p>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#c90068]">Presentation For</p>
               <h2 className="mt-3 font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#101010] sm:text-6xl">{clientName || "Client"}</h2>
-              <p className="mt-3 max-w-3xl text-base leading-8 text-zinc-700">{clientGoal}</p>
+              <p className="mt-3 max-w-3xl text-lg font-semibold leading-8 text-zinc-800">{clientGoal}</p>
             </div>
-            <div className="rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5 text-base leading-8 text-zinc-700">
+            <div className="rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5 text-lg font-semibold leading-8 text-zinc-800">
               <p><span className="font-bold text-[#101010]">Selected:</span> {selectedPackage.name}</p>
               <p><span className="font-bold text-[#101010]">Weekly total:</span> {dollars(weeklyTotal)}/week</p>
               <p><span className="font-bold text-[#101010]">12-week upfront:</span> {dollars(upfrontTotal)}</p>
@@ -197,10 +197,10 @@ export function PricingPresentationApp() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-[#f02f9b]/25 bg-[#fff3fa] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Why This Recommendation Fits</p>
-            <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-[#101010]">{recommendation}</p>
-            <p className="mt-3 text-base leading-8 text-zinc-700">{packageRecommendation}</p>
+          <div className="mt-6 rounded-[1.5rem] border border-[#c90068]/25 bg-[#fff3fa] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">Why This Recommendation Fits</p>
+            <p className="mt-3 whitespace-pre-wrap text-lg font-bold leading-9 text-[#101010]">{recommendation}</p>
+            <p className="mt-3 text-lg font-semibold leading-8 text-zinc-800">{packageRecommendation}</p>
           </div>
 
           <div className="mt-6 grid gap-5 xl:grid-cols-3">
@@ -212,16 +212,16 @@ export function PricingPresentationApp() {
               return (
                 <article
                   key={packageOption.id}
-                  className={`rounded-[1.75rem] border bg-white p-5 transition ${isSelected ? "border-[#f02f9b] shadow-[0_18px_45px_rgba(240,47,155,0.18)]" : "border-zinc-200"}`}
+                  className={`rounded-[1.75rem] border bg-white p-5 transition ${isSelected ? "border-[#c90068] shadow-[0_18px_45px_rgba(240,47,155,0.18)]" : "border-zinc-200"}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">12 Week Minimum</p>
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">12 Week Minimum</p>
                       {isEditing ? (
                         <input
                           value={packageOption.name}
                           onChange={(event) => updatePackage(packageOption.id, { name: event.target.value })}
-                          className="mt-2 w-full rounded-xl border border-zinc-200 px-3 py-2 text-lg font-black text-[#101010] outline-none focus:border-[#f02f9b]"
+                          className="mt-2 w-full rounded-xl border border-zinc-200 px-3 py-2 text-lg font-black text-[#101010] outline-none focus:border-[#c90068]"
                         />
                       ) : (
                         <h3 className="mt-2 text-2xl font-black uppercase tracking-[0.08em] text-[#101010]">{packageOption.name}</h3>
@@ -247,26 +247,26 @@ export function PricingPresentationApp() {
                     </div>
                   ) : (
                     <>
-                      <p className="mt-3 text-base leading-7 text-zinc-700">{packageOption.tagline}</p>
+                      <p className="mt-3 text-lg font-semibold leading-8 text-zinc-800">{packageOption.tagline}</p>
                       <div className="mt-5 rounded-2xl bg-zinc-50 p-4">
                         <p className="font-[Arial_Narrow] text-5xl text-[#101010]">{dollars(packageOption.weeklyPrice)}</p>
-                        <p className="text-sm font-semibold text-zinc-600">per week</p>
-                        <p className="mt-3 text-base text-zinc-700">{dollars(packageOption.upfrontPrice)} upfront</p>
-                        <p className="text-sm font-bold text-[#f02f9b]">Save {dollars(packageOption.savings)}</p>
+                        <p className="text-base font-bold text-zinc-700">per week</p>
+                        <p className="mt-3 text-lg font-semibold text-zinc-800">{dollars(packageOption.upfrontPrice)} upfront</p>
+                        <p className="text-base font-black text-[#c90068]">Save {dollars(packageOption.savings)}</p>
                       </div>
 
                       <div className="mt-5 flex flex-wrap gap-2 print:hidden">
                         <button
                           type="button"
                           onClick={() => setSelectedPackageId(packageOption.id)}
-                          className={`rounded-full px-4 py-2 text-sm font-bold transition ${isSelected ? "bg-[#f02f9b] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
+                          className={`rounded-full px-4 py-2 text-sm font-bold transition ${isSelected ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
                         >
                           {isSelected ? "Selected" : "Select"}
                         </button>
                         <button
                           type="button"
                           onClick={() => setOpenPackageId(isOpen ? "" : packageOption.id)}
-                          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-[#101010] transition hover:border-[#f02f9b]/60"
+                          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-[#101010] transition hover:border-[#c90068]/60"
                         >
                           {isOpen ? "Hide included" : "Show included"}
                         </button>
@@ -281,29 +281,29 @@ export function PricingPresentationApp() {
           </div>
 
           {nutritionAdded ? (
-            <div className="mt-6 rounded-[1.5rem] border border-[#f02f9b]/30 bg-white p-5">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Nutrition Added To Package</p>
-              <p className="mt-3 text-base leading-8 text-zinc-700">{nutritionDescription}</p>
+            <div className="mt-6 rounded-[1.5rem] border border-[#c90068]/30 bg-white p-5">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">Nutrition Added To Package</p>
+              <p className="mt-3 text-lg font-semibold leading-8 text-zinc-800">{nutritionDescription}</p>
               <p className="mt-4 text-lg font-black text-[#101010]">+ {dollars(nutritionWeeklyPrice)}/week, included in total above</p>
             </div>
           ) : null}
 
           <div className="mt-6 rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">Consultation Notes</p>
-            <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-zinc-700">{clientNeeds}</p>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#c90068]">Consultation Notes</p>
+            <p className="mt-3 whitespace-pre-wrap text-lg font-semibold leading-8 text-zinc-800">{clientNeeds}</p>
           </div>
 
           <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-zinc-200 pt-6 print:hidden">
-            <a href="/onboarding" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#f02f9b]/60">
+            <a href="/onboarding" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#c90068]/60">
               Onboarding
             </a>
-            <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#f02f9b]/60">
+            <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-[#101010] transition hover:border-[#c90068]/60">
               Client Hub
             </a>
             <button
               type="button"
               onClick={() => window.print()}
-              className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+              className="rounded-full bg-[#c90068] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
             >
               Print / Save PDF
             </button>
@@ -316,20 +316,20 @@ export function PricingPresentationApp() {
 
 function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
   return (
-    <div className="mt-5 grid gap-4 text-base leading-7 text-zinc-700">
+    <div className="mt-5 grid gap-4 text-lg font-semibold leading-8 text-zinc-800">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f02f9b]">Results and Benefits</p>
-        <ul className="mt-3 space-y-2">
+        <p className="rounded-full bg-[#101010] px-4 py-2 text-sm font-black uppercase tracking-[0.2em] text-white">Results and Benefits</p>
+        <ul className="mt-3 space-y-3">
           {packageOption.results.map((item) => (
-            <li key={item} className="rounded-2xl bg-zinc-50 px-3 py-2">{item}</li>
+            <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">{item}</li>
           ))}
         </ul>
       </div>
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f02f9b]">What Is Included</p>
-        <ul className="mt-3 space-y-2">
+        <p className="rounded-full bg-[#c90068] px-4 py-2 text-base font-black uppercase tracking-[0.2em] text-white">What Is Included</p>
+        <ul className="mt-3 space-y-3">
           {packageOption.inclusions.map((item) => (
-            <li key={item} className="rounded-2xl bg-zinc-50 px-3 py-2">{item}</li>
+            <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">{item}</li>
           ))}
         </ul>
       </div>
@@ -339,12 +339,12 @@ function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
 
 function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#f02f9b]">
+    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#c90068]">
       {label}
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
       />
     </label>
   );
@@ -352,13 +352,13 @@ function TextInput({ label, value, onChange }: { label: string; value: string; o
 
 function NumberInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
-    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#f02f9b]">
+    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#c90068]">
       {label}
       <input
         type="number"
         value={value}
         onChange={(event) => onChange(numberFromInput(event.target.value))}
-        className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
       />
     </label>
   );
@@ -376,13 +376,13 @@ function TextArea({
   rows?: number;
 }) {
   return (
-    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#f02f9b]">
+    <label className="text-xs font-bold uppercase tracking-[0.2em] text-[#c90068]">
       {label}
       <textarea
         value={value}
         rows={rows}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full resize-y rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm normal-case leading-6 tracking-normal text-[#101010] outline-none transition focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+        className="mt-2 w-full resize-y rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold normal-case leading-7 tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
       />
     </label>
   );

@@ -323,15 +323,22 @@ export function ConsultationRecordsDashboard() {
     setStatus("Loading saved Supabase data...");
 
     try {
-      const [consultationResult, leadResult, screeningResult] = await Promise.all([
+      const [consultationResult, leadResult, screeningResult] = await Promise.allSettled([
         fetchJson("/api/consultation-needs"),
         fetchJson("/api/leads"),
         fetchJson("/api/screenings")
       ]);
 
-      const nextConsultations = consultationResult.records ?? [];
-      const nextLeads = leadResult.leads ?? [];
-      const nextScreenings = screeningResult.clients ?? [];
+      const nextConsultations =
+        consultationResult.status === "fulfilled" ? consultationResult.value.records ?? [] : [];
+      const nextLeads = leadResult.status === "fulfilled" ? leadResult.value.leads ?? [] : [];
+      const nextScreenings =
+        screeningResult.status === "fulfilled" ? screeningResult.value.clients ?? [] : [];
+      const loadErrors = [consultationResult, leadResult, screeningResult].flatMap((result) =>
+        result.status === "rejected"
+          ? [result.reason instanceof Error ? result.reason.message : "A data source failed to load."]
+          : []
+      );
 
       setConsultations(nextConsultations);
       setLeads(nextLeads);
@@ -339,9 +346,8 @@ export function ConsultationRecordsDashboard() {
 
       const nextBundles = buildClientBundles(nextConsultations, nextLeads, nextScreenings);
       setSelectedKey((currentKey) => currentKey ?? nextBundles[0]?.key ?? null);
-      setStatus(
-        `${nextBundles.length} client profile${nextBundles.length === 1 ? "" : "s"} loaded from ${nextLeads.length} leads, ${nextConsultations.length} consultation forms, and ${nextScreenings.length} screenings.`
-      );
+      const successMessage = `${nextBundles.length} client profile${nextBundles.length === 1 ? "" : "s"} loaded from ${nextLeads.length} leads, ${nextConsultations.length} consultation forms, and ${nextScreenings.length} screenings.`;
+      setStatus(loadErrors.length ? `${successMessage} Some sources need attention: ${loadErrors.join(" ")}` : successMessage);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not load saved Supabase data.");
     } finally {

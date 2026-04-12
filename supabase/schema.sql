@@ -200,3 +200,9 @@ on public.pricing_presentations
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');
+
+alter table public.pricing_presentations
+  add column if not exists decision_status text not null default 'presented',
+  add column if not exists accepted_package_name text not null default '',
+  add column if not exists follow_up_at timestamptz,
+  add column if not exists follow_up_note text not null default '';

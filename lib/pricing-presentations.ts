@@ -1,3 +1,12 @@
+export const pricingDecisionStatuses = [
+  "presented",
+  "follow-up-needed",
+  "signed-up",
+  "not-proceeding"
+] as const;
+
+export type PricingDecisionStatus = (typeof pricingDecisionStatuses)[number];
+
 export type PricingPackageOption = {
   id: string;
   name: string;
@@ -36,10 +45,21 @@ export type PricingPresentationRecord = {
   weekly_total: number;
   upfront_total: number;
   nutrition_added: boolean;
+  decision_status: PricingDecisionStatus;
+  accepted_package_name: string;
+  follow_up_at: string | null;
+  follow_up_note: string;
   presentation_data: PricingPresentationForm;
   created_at: string;
   updated_at: string;
 };
+
+export type PricingPresentationUpdate = Partial<{
+  decision_status: PricingDecisionStatus;
+  accepted_package_name: string;
+  follow_up_at: string | null;
+  follow_up_note: string;
+}>;
 
 export function hasSupabaseConfig() {
   return Boolean(
@@ -77,6 +97,29 @@ function cleanPackage(value: unknown): PricingPackageOption {
   };
 }
 
+function parseDecisionStatus(value: unknown): PricingDecisionStatus | undefined {
+  return typeof value === "string" && pricingDecisionStatuses.includes(value as PricingDecisionStatus)
+    ? (value as PricingDecisionStatus)
+    : undefined;
+}
+
+function normalizeDateTime(value: unknown): string | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === "") {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
 export function normalizePricingPresentation(input: Partial<PricingPresentationForm>) {
   const packages = Array.isArray(input.packages) ? input.packages.map(cleanPackage) : [];
   const selectedPackage = cleanPackage(input.selectedPackage);
@@ -111,6 +154,25 @@ export function buildPricingPresentationInsert(input: Partial<PricingPresentatio
     weekly_total: normalized.weeklyTotal,
     upfront_total: normalized.upfrontTotal,
     nutrition_added: normalized.nutritionAdded,
+    decision_status: "presented" satisfies PricingDecisionStatus,
+    accepted_package_name: "",
+    follow_up_at: null,
+    follow_up_note: "",
     presentation_data: normalized
   };
+}
+
+export function normalizePricingPresentationUpdate(input: Record<string, unknown>) {
+  const followUpAt = normalizeDateTime(input.follow_up_at);
+
+  return {
+    ...(parseDecisionStatus(input.decision_status) ? { decision_status: parseDecisionStatus(input.decision_status) } : {}),
+    ...(input.accepted_package_name !== undefined ? { accepted_package_name: cleanString(input.accepted_package_name) } : {}),
+    ...(followUpAt !== undefined ? { follow_up_at: followUpAt } : {}),
+    ...(input.follow_up_note !== undefined ? { follow_up_note: cleanString(input.follow_up_note) } : {})
+  } satisfies PricingPresentationUpdate;
+}
+
+export function formatPricingDecisionStatus(status: PricingDecisionStatus) {
+  return status.replaceAll("-", " ").replace(/\b\w/g, (match) => match.toUpperCase());
 }

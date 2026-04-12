@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ConsultationNeedsForm, ConsultationNeedsRecord } from "@/lib/consultation-needs";
 import type { Lead } from "@/lib/leads";
-import type { PricingPresentationRecord } from "@/lib/pricing-presentations";
+import {
+  formatPricingDecisionStatus,
+  pricingDecisionStatuses,
+  type PricingDecisionStatus,
+  type PricingPresentationRecord,
+  type PricingPresentationUpdate
+} from "@/lib/pricing-presentations";
 import {
   getClientAverageScore,
   getCompletedTests,
@@ -192,6 +198,53 @@ function formatDate(value: string | null | undefined) {
     month: "short",
     year: "numeric"
   }).format(date);
+}
+
+function formatDateTimeLocal(value: string | null | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function formatClientStatus(bundle: ClientBundle) {
+  if (bundle.pricingPresentations.some((record) => record.decision_status === "signed-up")) {
+    return "Signed Up";
+  }
+
+  if (bundle.pricingPresentations.some((record) => record.decision_status === "follow-up-needed")) {
+    return "Follow-Up Needed";
+  }
+
+  if (bundle.pricingPresentations.length) {
+    return "Pricing Presented";
+  }
+
+  if (bundle.screenings.length) {
+    return "Screening Done";
+  }
+
+  if (bundle.consultations.length) {
+    return "Needs Analysis Done";
+  }
+
+  if (bundle.leads.some((lead) => lead.status === "consult-booked")) {
+    return "Consult Booked";
+  }
+
+  if (bundle.leads.some((lead) => lead.status === "contacted")) {
+    return "Contacted";
+  }
+
+  return bundle.leads.length ? "New Lead" : "Client Record";
 }
 
 function latestDate(values: Array<string | null | undefined>) {
@@ -459,6 +512,26 @@ export function ConsultationRecordsDashboard() {
     setStatus("All cleared page records are visible again. Supabase data was not changed.");
   }
 
+  async function updatePricingPresentation(recordId: number, updates: PricingPresentationUpdate) {
+    const response = await fetch(`/api/pricing-presentations/${recordId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+    const result = (await response.json()) as { pricingPresentation?: PricingPresentationRecord; error?: string };
+
+    if (!response.ok || !result.pricingPresentation) {
+      throw new Error(result.error || "Could not update pricing presentation.");
+    }
+
+    setPricingPresentations((currentRecords) =>
+      currentRecords.map((record) =>
+        record.id === recordId ? result.pricingPresentation as PricingPresentationRecord : record
+      )
+    );
+    setStatus("Pricing presentation updated and saved in Supabase.");
+  }
+
   return (
     <main className="min-h-screen bg-[linear-gradient(135deg,#2cc5e8_0%,#93d5d2_32%,#c9a4ea_58%,#627bde_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
@@ -564,6 +637,7 @@ export function ConsultationRecordsDashboard() {
                       {selectedBundle.displayName}
                     </h2>
                     <p className="mt-3 max-w-3xl text-sm leading-7 text-[#4a5c73]">{selectedBundle.goal || "No main goal recorded."}</p>
+                    <span className="mt-4 inline-flex rounded-full bg-[#f02f9b]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">{formatClientStatus(selectedBundle)}</span>
                   </div>
                   <div className="rounded-2xl border border-sky-100 bg-white p-4 text-sm text-[#4a5c73]">
                     <p><span className="font-semibold text-[#10233f]">Phone:</span> {displayValue(selectedBundle.phone)}</p>
@@ -571,8 +645,15 @@ export function ConsultationRecordsDashboard() {
                     <p className="mt-2"><span className="font-semibold text-[#10233f]">Latest update:</span> {formatDate(selectedBundle.updatedAt)}</p>
                     <button
                       type="button"
+                      onClick={() => window.print()}
+                      className="mt-4 w-full rounded-full bg-[#f02f9b] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 print:hidden"
+                    >
+                      Export / Print Summary
+                    </button>
+                    <button
+                      type="button"
                       onClick={clearSelectedFromPage}
-                      className="mt-4 w-full rounded-full border border-sky-100 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60 print:hidden"
+                      className="mt-3 w-full rounded-full border border-sky-100 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60 print:hidden"
                     >
                       Clear from page
                     </button>
@@ -587,11 +668,16 @@ export function ConsultationRecordsDashboard() {
                   <SummaryCard label="Pricing Presentations" value={selectedBundle.pricingPresentations.length} />
                 </div>
 
+                <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                  <ClientSnapshot bundle={selectedBundle} />
+                  <OnboardingChecklist bundle={selectedBundle} />
+                </div>
+
                 <div className="mt-8 space-y-8">
                   <LeadsSection leads={selectedBundle.leads} />
                   <ConsultationsSection records={selectedBundle.consultations} />
                   <ScreeningsSection screenings={selectedBundle.screenings} />
-                  <PricingPresentationsSection records={selectedBundle.pricingPresentations} />
+                  <PricingPresentationsSection records={selectedBundle.pricingPresentations} onUpdate={updatePricingPresentation} />
                 </div>
               </div>
             ) : (
@@ -784,50 +870,224 @@ function ScreeningsSection({ screenings }: { screenings: ScreeningClient[] }) {
   );
 }
 
-function PricingPresentationsSection({ records }: { records: PricingPresentationRecord[] }) {
+function ClientSnapshot({ bundle }: { bundle: ClientBundle }) {
+  const latestPricing = bundle.pricingPresentations[0];
+  const latestConsultation = bundle.consultations[0];
+  const latestScreening = bundle.screenings[0];
+
+  return (
+    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+      <h3 className="text-xl font-bold text-[#10233f]">Client Snapshot</h3>
+      <div className="mt-4 grid gap-3 text-sm leading-6 text-[#4a5c73]">
+        <p><span className="font-semibold text-[#10233f]">Status:</span> {formatClientStatus(bundle)}</p>
+        <p><span className="font-semibold text-[#10233f]">Goal:</span> {displayValue(bundle.goal)}</p>
+        <p><span className="font-semibold text-[#10233f]">Recommended package:</span> {displayValue(latestPricing?.selected_package_name)}</p>
+        <p><span className="font-semibold text-[#10233f]">Accepted package:</span> {displayValue(latestPricing?.accepted_package_name)}</p>
+        <p><span className="font-semibold text-[#10233f]">Budget / investment:</span> {displayValue(latestConsultation?.form_data.weeklyInvestmentRange || bundle.leads[0]?.budget)}</p>
+        <p><span className="font-semibold text-[#10233f]">Needs / barrier:</span> {displayValue(latestPricing?.presentation_data.clientNeeds || latestConsultation?.form_data.whatsStoppingYou)}</p>
+        <p><span className="font-semibold text-[#10233f]">Injury / screening focus:</span> {displayValue(latestScreening?.injury || latestConsultation?.form_data.injuriesHistory)}</p>
+        <p><span className="font-semibold text-[#10233f]">Next follow-up:</span> {formatDate(latestPricing?.follow_up_at || bundle.leads[0]?.next_follow_up_at)}</p>
+      </div>
+    </section>
+  );
+}
+
+function OnboardingChecklist({ bundle }: { bundle: ClientBundle }) {
+  const signedUp = bundle.pricingPresentations.some((record) => record.decision_status === "signed-up");
+  const acceptedPackage = bundle.pricingPresentations.some((record) => record.accepted_package_name);
+  const followUpSet = bundle.pricingPresentations.some((record) => record.follow_up_at);
+  const items = [
+    { label: "Lead captured", done: bundle.leads.length > 0 },
+    { label: "Needs analysis completed", done: bundle.consultations.length > 0 },
+    { label: "Movement screening completed", done: bundle.screenings.length > 0 },
+    { label: "Pricing presented", done: bundle.pricingPresentations.length > 0 },
+    { label: "Accepted package recorded", done: acceptedPackage },
+    { label: "Signed up", done: signedUp },
+    { label: "Follow-up reminder set if needed", done: signedUp || followUpSet }
+  ];
+
+  return (
+    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+      <h3 className="text-xl font-bold text-[#10233f]">Onboarding Checklist</h3>
+      <div className="mt-4 grid gap-3">
+        {items.map((item) => (
+          <div key={item.label} className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${item.done ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-sky-100 bg-sky-50/60 text-[#4a5c73]"}`}>
+            {item.done ? "Done" : "Next"}: {item.label}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PricingPresentationsSection({
+  records,
+  onUpdate
+}: {
+  records: PricingPresentationRecord[];
+  onUpdate: (recordId: number, updates: PricingPresentationUpdate) => Promise<void>;
+}) {
   return (
     <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Pricing Presentations</h3>
       {!records.length ? <EmptyDataCard label="pricing presentations" /> : null}
       <div className="mt-4 space-y-4">
         {records.map((record) => (
-          <article key={record.id} className="rounded-2xl border border-sky-100 bg-white p-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-lg font-bold text-[#10233f]">{record.selected_package_name || "Pricing presentation"}</p>
-                <p className="mt-1 text-sm text-[#4a5c73]">Saved: {formatDate(record.updated_at)}</p>
-              </div>
-              <span className="rounded-full bg-[#f02f9b]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#f02f9b]">
-                {record.nutrition_added ? "Nutrition added" : "Training only"}
-              </span>
-            </div>
-            <div className="mt-4 grid gap-3 text-sm text-[#4a5c73] md:grid-cols-2">
-              <p><span className="font-semibold text-[#10233f]">Goal:</span> {displayValue(record.goal)}</p>
-              <p><span className="font-semibold text-[#10233f]">Weekly total:</span> ${record.weekly_total}/week</p>
-              <p><span className="font-semibold text-[#10233f]">12-week upfront:</span> ${record.upfront_total}</p>
-              <p><span className="font-semibold text-[#10233f]">Nutrition:</span> {record.nutrition_added ? "Included" : "Not added"}</p>
-            </div>
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
-              <div className="rounded-[1.25rem] border border-sky-100 p-4">
-                <h4 className="font-bold text-[#10233f]">Recommendation</h4>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.recommendation)}</p>
-              </div>
-              <div className="rounded-[1.25rem] border border-sky-100 p-4">
-                <h4 className="font-bold text-[#10233f]">Consultation Needs</h4>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.clientNeeds)}</p>
-              </div>
-            </div>
-            <div className="mt-5 rounded-[1.25rem] border border-sky-100 p-4">
-              <h4 className="font-bold text-[#10233f]">What Was Included</h4>
-              <ul className="mt-3 grid gap-2 text-sm text-[#4a5c73] md:grid-cols-2">
-                {record.presentation_data.selectedPackage.inclusions.map((item) => (
-                  <li key={`${record.id}-${item}`} className="rounded-2xl bg-sky-50/70 px-3 py-2">{item}</li>
-                ))}
-              </ul>
-            </div>
-          </article>
+          <PricingPresentationCard key={record.id} record={record} onUpdate={onUpdate} />
         ))}
       </div>
     </section>
+  );
+}
+
+function PricingPresentationCard({
+  record,
+  onUpdate
+}: {
+  record: PricingPresentationRecord;
+  onUpdate: (recordId: number, updates: PricingPresentationUpdate) => Promise<void>;
+}) {
+  const [decisionStatus, setDecisionStatus] = useState<PricingDecisionStatus>(record.decision_status || "presented");
+  const [acceptedPackageName, setAcceptedPackageName] = useState(record.accepted_package_name || record.selected_package_name || "");
+  const [followUpAt, setFollowUpAt] = useState(formatDateTimeLocal(record.follow_up_at));
+  const [followUpNote, setFollowUpNote] = useState(record.follow_up_note || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const packageNames = Array.from(
+    new Set([
+      record.selected_package_name,
+      record.accepted_package_name,
+      ...record.presentation_data.packages.map((packageOption) => packageOption.name)
+    ].filter(Boolean))
+  );
+
+  async function saveUpdates(nextStatus = decisionStatus) {
+    setIsSaving(true);
+    setMessage("Saving...");
+
+    try {
+      await onUpdate(record.id, {
+        decision_status: nextStatus,
+        accepted_package_name: acceptedPackageName,
+        follow_up_at: followUpAt || null,
+        follow_up_note: followUpNote
+      });
+      setDecisionStatus(nextStatus);
+      setMessage("Saved to Supabase.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save pricing update.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function markSignedUp() {
+    setDecisionStatus("signed-up");
+    await saveUpdates("signed-up");
+  }
+
+  return (
+    <article className="rounded-2xl border border-sky-100 bg-white p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-lg font-bold text-[#10233f]">{record.selected_package_name || "Pricing presentation"}</p>
+          <p className="mt-1 text-sm text-[#4a5c73]">Saved: {formatDate(record.updated_at)}</p>
+        </div>
+        <span className="rounded-full bg-[#f02f9b]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#f02f9b]">
+          {formatPricingDecisionStatus(record.decision_status || "presented")}
+        </span>
+      </div>
+      <div className="mt-4 grid gap-3 text-sm text-[#4a5c73] md:grid-cols-2">
+        <p><span className="font-semibold text-[#10233f]">Goal:</span> {displayValue(record.goal)}</p>
+        <p><span className="font-semibold text-[#10233f]">Weekly total:</span> ${record.weekly_total}/week</p>
+        <p><span className="font-semibold text-[#10233f]">12-week upfront:</span> ${record.upfront_total}</p>
+        <p><span className="font-semibold text-[#10233f]">Nutrition:</span> {record.nutrition_added ? "Included" : "Not added"}</p>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2 print:hidden">
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+          Client status
+          <select
+            value={decisionStatus}
+            onChange={(event) => setDecisionStatus(event.target.value as PricingDecisionStatus)}
+            className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+          >
+            {pricingDecisionStatuses.map((status) => (
+              <option key={status} value={status}>{formatPricingDecisionStatus(status)}</option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+          Package accepted
+          <select
+            value={acceptedPackageName}
+            onChange={(event) => setAcceptedPackageName(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+          >
+            <option value="">Not recorded yet</option>
+            {packageNames.map((packageName) => (
+              <option key={packageName} value={packageName}>{packageName}</option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+          Follow-up reminder
+          <input
+            type="datetime-local"
+            value={followUpAt}
+            onChange={(event) => setFollowUpAt(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+          />
+        </label>
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+          Follow-up note
+          <textarea
+            value={followUpNote}
+            rows={3}
+            onChange={(event) => setFollowUpNote(event.target.value)}
+            className="mt-2 w-full resize-y rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case leading-6 tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+          />
+        </label>
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-3 print:hidden">
+        <button
+          type="button"
+          onClick={markSignedUp}
+          disabled={isSaving}
+          className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          Mark as Signed Up
+        </button>
+        <button
+          type="button"
+          onClick={() => void saveUpdates()}
+          disabled={isSaving}
+          className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isSaving ? "Saving..." : "Save Follow-Up"}
+        </button>
+        {message ? <p className="self-center text-sm font-semibold text-[#4a5c73]">{message}</p> : null}
+      </div>
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-2">
+        <div className="rounded-[1.25rem] border border-sky-100 p-4">
+          <h4 className="font-bold text-[#10233f]">Recommendation</h4>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.recommendation)}</p>
+        </div>
+        <div className="rounded-[1.25rem] border border-sky-100 p-4">
+          <h4 className="font-bold text-[#10233f]">Consultation Needs</h4>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.clientNeeds)}</p>
+        </div>
+      </div>
+      <div className="mt-5 rounded-[1.25rem] border border-sky-100 p-4">
+        <h4 className="font-bold text-[#10233f]">What Was Included</h4>
+        <ul className="mt-3 grid gap-2 text-sm text-[#4a5c73] md:grid-cols-2">
+          {record.presentation_data.selectedPackage.inclusions.map((item) => (
+            <li key={`${record.id}-${item}`} className="rounded-2xl bg-sky-50/70 px-3 py-2">{item}</li>
+          ))}
+        </ul>
+      </div>
+    </article>
   );
 }

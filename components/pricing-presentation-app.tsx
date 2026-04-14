@@ -37,7 +37,8 @@ const initialPackages: PackageOption[] = [
       "1x personal training session per week",
       "Structured training program tailored to your goals",
       "Weekly check-ins and habit tracking: steps, sleep, water",
-      "Basic support for accountability and consistency"
+      "Basic support for accountability and consistency",
+      "Coaching app access"
     ]
   },
   {
@@ -57,7 +58,8 @@ const initialPackages: PackageOption[] = [
       "2x personal training sessions per week",
       "Progressively updated training program",
       "Weekly check-ins and direct messaging support: Mon-Fri",
-      "Technique feedback and habit coaching system"
+      "Technique feedback and habit coaching system",
+      "Coaching app access"
     ]
   },
   {
@@ -77,7 +79,8 @@ const initialPackages: PackageOption[] = [
       "3x personal training sessions per week",
       "Fully customised training and progression system",
       "Priority check-ins and unlimited support",
-      "Weekly program and lifestyle optimisation"
+      "Weekly program and lifestyle optimisation",
+      "Coaching app access"
     ]
   }
 ];

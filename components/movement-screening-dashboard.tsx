@@ -423,6 +423,15 @@ export function MovementScreeningDashboard({
       <PillBackdrop />
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {/* Nav */}
+        <div className="flex flex-wrap items-center gap-3 print:hidden">
+          <span className="rounded-full bg-[#fdf3e3] px-4 py-1.5 text-xs font-semibold tracking-widest text-[#9a6820] uppercase">The Upper Notch</span>
+          <a href="/" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">New Consultation</a>
+          <a href="/clients" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Client Hub</a>
+          <a href="/onboarding" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Onboarding</a>
+          <a href="/leads" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Lead Tracker</a>
+        </div>
+
         <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/55 p-6 shadow-[0_30px_90px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
             <div className="space-y-5">
@@ -431,7 +440,7 @@ export function MovementScreeningDashboard({
               </div>
               <div className="space-y-3">
                 <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                  Movement Screning "Upper Notch"
+                  Movement Screening | The Upper Notch
                 </h1>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

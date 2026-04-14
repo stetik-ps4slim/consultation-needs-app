@@ -422,6 +422,9 @@ export function OnboardingDashboard() {
               <a href="/leads" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Lead Tracker
               </a>
+              <a href="/screening" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                Movement Screening
+              </a>
               <button
                 type="button"
                 onClick={loadOnboardingData}

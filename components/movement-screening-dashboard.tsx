@@ -21,10 +21,65 @@ type DashboardProps = {
 
 const storageKey = "movement-screening-clients";
 
-export function MovementScreeningDashboard({
-  initialClients,
-  isPersistent
-}: DashboardProps) {
+const inputCls =
+  "w-full rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20";
+
+function scoreColor(score: number | null) {
+  if (!score) return "bg-stone-100 text-stone-500";
+  if (score <= 2) return "bg-rose-100 text-rose-700";
+  if (score === 3) return "bg-amber-100 text-amber-700";
+  return "bg-emerald-100 text-emerald-700";
+}
+
+function scoreLabel(score: number | null) {
+  if (!score) return "—";
+  if (score === 1) return "1 – Needs work";
+  if (score === 2) return "2 – Below avg";
+  if (score === 3) return "3 – Average";
+  if (score === 4) return "4 – Good";
+  return "5 – Excellent";
+}
+
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderSection(section: MovementSection) {
+  const rows = section.tests
+    .filter((test) => test.completed)
+    .map(
+      (test) => `
+      <tr>
+        <td>${escapeHtml(test.name)}</td>
+        <td style="text-align:center;font-weight:600">${test.score ?? "—"}</td>
+        <td>${escapeHtml(test.observations)}</td>
+        <td>${escapeHtml(test.notes)}</td>
+        <td>${escapeHtml(test.assessedOn)}</td>
+      </tr>`
+    )
+    .join("");
+
+  if (!rows) return "";
+
+  return `
+    <div class="section">
+      <h3>${escapeHtml(section.title)}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Test</th><th>Score</th><th>Observations</th><th>Notes</th><th>Date</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+export function MovementScreeningDashboard({ initialClients, isPersistent }: DashboardProps) {
   const [clients, setClients] = useState(initialClients);
   const [selectedClientId, setSelectedClientId] = useState(initialClients[0]?.id ?? null);
   const [query, setQuery] = useState("");
@@ -35,6 +90,7 @@ export function MovementScreeningDashboard({
   const [isSyncing, setIsSyncing] = useState(false);
   const [dirtyClientIds, setDirtyClientIds] = useState<number[]>([]);
   const [showPrintHint, setShowPrintHint] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const hydratedRef = useRef(false);
   const deferredQuery = useDeferredValue(query);
 
@@ -43,942 +99,506 @@ export function MovementScreeningDashboard({
       hydratedRef.current = true;
       return;
     }
-
-    const storedValue = window.localStorage.getItem(storageKey);
-
-    if (!storedValue) {
-      hydratedRef.current = true;
-      return;
-    }
-
+    const stored = window.localStorage.getItem(storageKey);
+    if (!stored) { hydratedRef.current = true; return; }
     try {
-      const parsed = JSON.parse(storedValue) as ScreeningClient[];
+      const parsed = JSON.parse(stored) as ScreeningClient[];
       if (Array.isArray(parsed) && parsed.length) {
         setClients(parsed);
         setSelectedClientId(parsed[0].id);
       }
-    } catch (error) {
-      console.error("Could not read saved movement screening data", error);
-    } finally {
+    } catch { /* ignore */ } finally {
       hydratedRef.current = true;
     }
   }, [isPersistent]);
 
   useEffect(() => {
-    if (!hydratedRef.current || isPersistent) {
-      return;
-    }
-
+    if (!hydratedRef.current || isPersistent) return;
     window.localStorage.setItem(storageKey, JSON.stringify(clients));
   }, [clients, isPersistent]);
 
   useEffect(() => {
-    if (!isPersistent || !dirtyClientIds.length) {
-      return;
-    }
-
+    if (!isPersistent || !dirtyClientIds.length) return;
     const timer = window.setTimeout(async () => {
-      const idsToSync = [...new Set(dirtyClientIds)];
+      const ids = [...new Set(dirtyClientIds)];
       setIsSyncing(true);
-      setStatusMessage("Saving changes to the cloud...");
-
+      setStatusMessage("Saving to cloud…");
       try {
-        const currentClients = idsToSync
-          .map((id) => clients.find((client) => client.id === id))
-          .filter((client): client is ScreeningClient => Boolean(client));
-
         await Promise.all(
-          currentClients.map(async (client) => {
-            const response = await fetch(`/api/screenings/${client.id}`, {
+          ids.map(async (id) => {
+            const client = clients.find((c) => c.id === id);
+            if (!client) return;
+            const res = await fetch(`/api/screenings/${client.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                name: client.name,
-                injury: client.injury,
-                screeningDate: client.screeningDate,
-                contact: client.contact,
-                health: client.health,
-                conductedBy: client.conductedBy,
-                warmupNotes: client.warmupNotes,
-                overallNotes: client.overallNotes,
+                name: client.name, injury: client.injury,
+                screeningDate: client.screeningDate, contact: client.contact,
+                health: client.health, conductedBy: client.conductedBy,
+                warmupNotes: client.warmupNotes, overallNotes: client.overallNotes,
                 sections: client.sections
               })
             });
-
-            if (!response.ok) {
-              throw new Error("Patch failed");
-            }
-
-            const payload = (await response.json()) as { client?: ScreeningClient };
-
+            if (!res.ok) throw new Error("Patch failed");
+            const payload = (await res.json()) as { client?: ScreeningClient };
             if (payload.client) {
-              setClients((current) =>
-                current.map((entry) => (entry.id === payload.client?.id ? payload.client : entry))
-              );
+              setClients((cur) => cur.map((c) => c.id === payload.client?.id ? payload.client! : c));
             }
           })
         );
-
-        setDirtyClientIds((current) => current.filter((id) => !idsToSync.includes(id)));
-        setStatusMessage("All changes synced to the cloud.");
-      } catch (error) {
-        console.error("Could not sync screening updates", error);
-        setStatusMessage("Cloud sync failed. Your edits are still on screen.");
+        setDirtyClientIds((cur) => cur.filter((id) => !ids.includes(id)));
+        setStatusMessage("All changes synced.");
+      } catch {
+        setStatusMessage("Sync failed — edits still on screen.");
       } finally {
         setIsSyncing(false);
       }
     }, 700);
-
     return () => window.clearTimeout(timer);
   }, [clients, dirtyClientIds, isPersistent]);
 
   const visibleClients = useMemo(() => {
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
-
-    const filtered = clients.filter((client) => {
-      if (!normalizedQuery) {
-        return true;
-      }
-
-      const searchBlob = [
-        client.name,
-        client.injury,
-        client.contact,
-        client.health,
-        client.overallNotes,
-        client.sections
-          .flatMap((section) => section.tests)
-          .map((test) => `${test.name} ${test.observations} ${test.notes}`)
-          .join(" ")
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return searchBlob.includes(normalizedQuery);
+    const q = deferredQuery.trim().toLowerCase();
+    const filtered = clients.filter((c) => {
+      if (!q) return true;
+      const blob = [c.name, c.injury, c.contact, c.health, c.overallNotes,
+        c.sections.flatMap((s) => s.tests).map((t) => `${t.name} ${t.observations} ${t.notes}`).join(" ")
+      ].join(" ").toLowerCase();
+      return blob.includes(q);
     });
-
     return sortClients(filtered, sortBy);
   }, [clients, deferredQuery, sortBy]);
 
   const selectedClient =
-    visibleClients.find((client) => client.id === selectedClientId) ??
-    clients.find((client) => client.id === selectedClientId) ??
-    visibleClients[0] ??
-    null;
+    visibleClients.find((c) => c.id === selectedClientId) ??
+    clients.find((c) => c.id === selectedClientId) ??
+    visibleClients[0] ?? null;
 
   useEffect(() => {
-    if (!selectedClient && visibleClients[0]) {
-      setSelectedClientId(visibleClients[0].id);
-    }
+    if (!selectedClient && visibleClients[0]) setSelectedClientId(visibleClients[0].id);
   }, [selectedClient, visibleClients]);
 
   const stats = useMemo(() => {
-    const totalClients = clients.length;
-    const completedScreens = clients.filter((client) => getCompletedTests(client) > 0).length;
-    const averageScore = clients
-      .map((client) => getClientAverageScore(client))
-      .filter((score): score is number => score !== null);
-
+    const scores = clients.map((c) => getClientAverageScore(c)).filter((s): s is number => s !== null);
     return {
-      totalClients,
-      completedScreens,
-      averageScore: averageScore.length
-        ? (averageScore.reduce((sum, score) => sum + score, 0) / averageScore.length).toFixed(1)
-        : "-",
+      totalClients: clients.length,
+      completedScreens: clients.filter((c) => getCompletedTests(c) > 0).length,
+      averageScore: scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "—",
       filteredCount: visibleClients.length
     };
   }, [clients, visibleClients]);
 
-  function markDirty(clientId: number) {
-    if (!isPersistent) {
-      return;
-    }
-
-    setDirtyClientIds((current) => (current.includes(clientId) ? current : [...current, clientId]));
+  function markDirty(id: number) {
+    if (!isPersistent) return;
+    setDirtyClientIds((cur) => cur.includes(id) ? cur : [...cur, id]);
   }
 
-  function updateClient(clientId: number, updater: (client: ScreeningClient) => ScreeningClient) {
-    setClients((current) =>
-      current.map((client) =>
-        client.id === clientId
-          ? {
-              ...updater(client),
-              updatedAt: new Date().toISOString()
-            }
-          : client
-      )
-    );
-    markDirty(clientId);
+  function updateClient(id: number, updater: (c: ScreeningClient) => ScreeningClient) {
+    setClients((cur) => cur.map((c) => c.id === id ? { ...updater(c), updatedAt: new Date().toISOString() } : c));
+    markDirty(id);
   }
 
-  function updateTest(
-    clientId: number,
-    sectionIndex: number,
-    testIndex: number,
-    updater: (test: MovementTest) => MovementTest
-  ) {
-    updateClient(clientId, (client) => ({
-      ...client,
-      sections: client.sections.map((section, currentSectionIndex) =>
-        currentSectionIndex === sectionIndex
-          ? {
-              ...section,
-              tests: section.tests.map((test, currentTestIndex) =>
-                currentTestIndex === testIndex ? updater(test) : test
-              )
-            }
-          : section
+  function updateTest(clientId: number, si: number, ti: number, updater: (t: MovementTest) => MovementTest) {
+    updateClient(clientId, (c) => ({
+      ...c,
+      sections: c.sections.map((s, i) =>
+        i === si ? { ...s, tests: s.tests.map((t, j) => j === ti ? updater(t) : t) } : s
       )
     }));
   }
 
   async function handleNewClient() {
-    const nextId = clients.length ? Math.max(...clients.map((client) => client.id)) + 1 : 1;
+    const nextId = clients.length ? Math.max(...clients.map((c) => c.id)) + 1 : 1;
     const client = createEmptyClient(nextId);
-
     if (!isPersistent) {
-      setClients((current) => [client, ...current]);
+      setClients((cur) => [client, ...cur]);
       setSelectedClientId(client.id);
       setStatusMessage("Client added locally.");
       return;
     }
-
     setIsSyncing(true);
-    setStatusMessage("Creating client in the cloud...");
-
+    setStatusMessage("Creating client…");
     try {
-      const response = await fetch("/api/screenings", {
+      const res = await fetch("/api/screenings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: client.name,
-          injury: client.injury,
-          screeningDate: client.screeningDate,
-          contact: client.contact,
-          health: client.health,
-          conductedBy: client.conductedBy,
-          warmupNotes: client.warmupNotes,
-          overallNotes: client.overallNotes,
-          sections: client.sections
+          name: client.name, injury: client.injury, screeningDate: client.screeningDate,
+          contact: client.contact, health: client.health, conductedBy: client.conductedBy,
+          warmupNotes: client.warmupNotes, overallNotes: client.overallNotes, sections: client.sections
         })
       });
-
-      if (!response.ok) {
-        throw new Error("Create failed");
-      }
-
-      const payload = (await response.json()) as { client?: ScreeningClient };
-
-      if (!payload.client) {
-        throw new Error("Missing client payload");
-      }
-
-      setClients((current) => [payload.client!, ...current]);
+      if (!res.ok) throw new Error();
+      const payload = (await res.json()) as { client?: ScreeningClient };
+      if (!payload.client) throw new Error();
+      setClients((cur) => [payload.client!, ...cur]);
       setSelectedClientId(payload.client.id);
-      setStatusMessage("Client saved to the cloud.");
-    } catch (error) {
-      console.error("Could not create screening client", error);
-      setStatusMessage("Cloud create failed. Add Supabase keys or try again.");
+      setStatusMessage("Client saved to cloud.");
+    } catch {
+      setStatusMessage("Cloud create failed. Check Supabase keys.");
     } finally {
       setIsSyncing(false);
     }
   }
 
-  async function handleDeleteClient(clientId: number) {
-    const nextClients = clients.filter((client) => client.id !== clientId);
-
-    if (!isPersistent) {
-      setClients(nextClients);
-      setSelectedClientId(nextClients[0]?.id ?? null);
-      setStatusMessage("Client deleted locally.");
-      return;
-    }
-
-    setClients(nextClients);
-    setSelectedClientId(nextClients[0]?.id ?? null);
+  async function handleDeleteClient(id: number) {
+    const next = clients.filter((c) => c.id !== id);
+    setClients(next);
+    setSelectedClientId(next[0]?.id ?? null);
+    setDeleteConfirm(null);
+    if (!isPersistent) { setStatusMessage("Client deleted."); return; }
     setIsSyncing(true);
-    setStatusMessage("Removing client from the cloud...");
-
+    setStatusMessage("Removing from cloud…");
     try {
-      const response = await fetch(`/api/screenings/${clientId}`, {
-        method: "DELETE"
-      });
-
-      if (!response.ok) {
-        throw new Error("Delete failed");
-      }
-
-      setStatusMessage("Client removed from the cloud.");
-    } catch (error) {
-      console.error("Could not delete screening client", error);
-      setStatusMessage("Cloud delete failed. Refresh before making more changes.");
+      const res = await fetch(`/api/screenings/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setStatusMessage("Client removed.");
+    } catch {
+      setStatusMessage("Cloud delete failed. Refresh before continuing.");
     } finally {
       setIsSyncing(false);
     }
   }
 
   function handlePrint(client: ScreeningClient) {
-    const printWindow = window.open("", "_blank", "width=1080,height=900");
-
-    if (!printWindow) {
-      setShowPrintHint(true);
-      return;
-    }
-
-    const averageScore = getClientAverageScore(client);
-    const completed = getCompletedTests(client);
+    const win = window.open("", "_blank", "width=1080,height=900");
+    if (!win) { setShowPrintHint(true); return; }
+    const avg = getClientAverageScore(client);
+    const done = getCompletedTests(client);
     const total = getTotalTests(client);
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${escapeHtml(client.name)} Movement Screening</title>
-          <style>
-            body {
-              font-family: "Avenir Next", "Segoe UI", sans-serif;
-              color: #111111;
-              margin: 32px;
-              background: #ffffff;
-            }
-            h1, h2, h3 { margin: 0 0 12px; }
-            .hero {
-              padding: 24px;
-              border-radius: 24px;
-              background: linear-gradient(180deg, #111111 0%, #2b2b2b 56%, #4a4a4a 100%);
-              color: white;
-            }
-            .meta {
-              display: grid;
-              grid-template-columns: repeat(3, minmax(0, 1fr));
-              gap: 12px;
-              margin: 20px 0 28px;
-            }
-            .card {
-              border: 1px solid #d4d4d4;
-              border-radius: 18px;
-              padding: 14px 16px;
-              background: #f5f5f5;
-            }
-            .section {
-              margin-top: 24px;
-              page-break-inside: avoid;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 12px;
-            }
-            th, td {
-              border: 1px solid #d4d4d4;
-              padding: 10px;
-              text-align: left;
-              vertical-align: top;
-              font-size: 14px;
-            }
-            th {
-              background: #ebebeb;
-            }
-            .note {
-              margin-top: 20px;
-              padding: 14px 16px;
-              border-radius: 18px;
-              background: #f5f5f5;
-              border: 1px solid #d4d4d4;
-            }
-            @media print {
-              body { margin: 14mm; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="hero">
-            <h1>${escapeHtml(client.name)}</h1>
-            <p>Movement Screening Report</p>
-            <p>Conducted by ${escapeHtml(client.conductedBy || "Jazzay Sallah")}</p>
-          </div>
-          <div class="meta">
-            <div class="card"><strong>Date</strong><br />${escapeHtml(client.screeningDate || "-")}</div>
-            <div class="card"><strong>Injury</strong><br />${escapeHtml(client.injury || "-")}</div>
-            <div class="card"><strong>Contact</strong><br />${escapeHtml(client.contact || "-")}</div>
-            <div class="card"><strong>Health</strong><br />${escapeHtml(client.health || "-")}</div>
-            <div class="card"><strong>Completed tests</strong><br />${completed}/${total}</div>
-            <div class="card"><strong>Average score</strong><br />${averageScore ?? "-"}</div>
-          </div>
-          <div class="note"><strong>Warm up</strong><br />${escapeHtml(client.warmupNotes || "-")}</div>
-          ${client.sections
-            .map((section) => renderSection(section))
-            .join("")}
-          <div class="note"><strong>Overall notes</strong><br />${escapeHtml(client.overallNotes || "-")}</div>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    win.document.write(`
+      <html><head>
+        <title>${escapeHtml(client.name)} – Movement Screening</title>
+        <style>
+          body { font-family: "Avenir Next","Segoe UI",sans-serif; color:#10233f; margin:32px; background:#fff; }
+          h1,h2,h3 { margin:0 0 10px; }
+          .hero { padding:24px 28px; border-radius:20px; background:linear-gradient(135deg,#d2a86c,#9a6820); color:#fff; }
+          .hero p { margin:4px 0 0; opacity:.85; font-size:14px; }
+          .meta { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0 24px; }
+          .card { border:1px solid #e8e0d5; border-radius:16px; padding:14px 16px; background:#fdf8ef; }
+          .card strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:#9a6820; margin-bottom:4px; }
+          .section { margin-top:24px; page-break-inside:avoid; }
+          .section h3 { font-size:15px; text-transform:uppercase; letter-spacing:.1em; color:#9a6820; border-bottom:1px solid #e8e0d5; padding-bottom:8px; }
+          table { width:100%; border-collapse:collapse; margin-top:10px; }
+          th,td { border:1px solid #e8e0d5; padding:9px 11px; text-align:left; vertical-align:top; font-size:13px; }
+          th { background:#fdf3e3; color:#9a6820; font-size:11px; text-transform:uppercase; letter-spacing:.1em; }
+          .note { margin-top:20px; padding:14px 16px; border-radius:16px; background:#fdf8ef; border:1px solid #e8e0d5; font-size:14px; }
+          .note strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:#9a6820; margin-bottom:6px; }
+          @media print { body { margin:14mm; } }
+        </style>
+      </head><body>
+        <div class="hero">
+          <h1>${escapeHtml(client.name)}</h1>
+          <p>Movement Screening Report &nbsp;·&nbsp; The Upper Notch</p>
+          <p>Conducted by ${escapeHtml(client.conductedBy || "Jazzay Sallah")}</p>
+        </div>
+        <div class="meta">
+          <div class="card"><strong>Date</strong>${escapeHtml(client.screeningDate || "—")}</div>
+          <div class="card"><strong>Injury / notes</strong>${escapeHtml(client.injury || "—")}</div>
+          <div class="card"><strong>Contact</strong>${escapeHtml(client.contact || "—")}</div>
+          <div class="card"><strong>Health</strong>${escapeHtml(client.health || "—")}</div>
+          <div class="card"><strong>Tests completed</strong>${done} / ${total}</div>
+          <div class="card"><strong>Avg score</strong>${avg ?? "—"} / 5</div>
+        </div>
+        <div class="note"><strong>Warm up</strong>${escapeHtml(client.warmupNotes || "—")}</div>
+        ${client.sections.map(renderSection).join("")}
+        <div class="note"><strong>Overall notes</strong>${escapeHtml(client.overallNotes || "—")}</div>
+      </body></html>`);
+    win.document.close();
+    win.focus();
+    win.print();
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_14%,rgba(255,255,255,0.18),transparent_20%),radial-gradient(circle_at_52%_26%,rgba(180,180,180,0.12),transparent_18%),radial-gradient(circle_at_80%_16%,rgba(110,110,110,0.18),transparent_24%),linear-gradient(180deg,#f6f6f6_0%,#e2e2e2_40%,#fafafa_100%)] text-slate-900">
-      <PillBackdrop />
+    <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         {/* Nav */}
-        <div className="flex flex-wrap items-center gap-3 print:hidden">
+        <nav className="flex flex-wrap items-center gap-2 print:hidden">
           <span className="rounded-full bg-[#fdf3e3] px-4 py-1.5 text-xs font-semibold tracking-widest text-[#9a6820] uppercase">The Upper Notch</span>
-          <a href="/" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">New Consultation</a>
-          <a href="/clients" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Client Hub</a>
-          <a href="/onboarding" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Onboarding</a>
-          <a href="/leads" className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Lead Tracker</a>
-        </div>
+          {[
+            { href: "/", label: "New Consultation" },
+            { href: "/clients", label: "Client Hub" },
+            { href: "/onboarding", label: "Onboarding" },
+            { href: "/leads", label: "Lead Tracker" }
+          ].map((link) => (
+            <a key={link.href} href={link.href}
+              className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              {link.label}
+            </a>
+          ))}
+        </nav>
 
-        <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/55 p-6 shadow-[0_30px_90px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-            <div className="space-y-5">
-              <div className="inline-flex w-fit items-center rounded-full border border-slate-300 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-800">
-                Movement Screening Tracker
-              </div>
-              <div className="space-y-3">
-                <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                  Movement Screening | The Upper Notch
-                </h1>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Clients" value={String(stats.totalClients)} />
-                <StatCard label="Screened" value={String(stats.completedScreens)} />
-                <StatCard label="Avg Score" value={String(stats.averageScore)} />
-                <StatCard label="Showing" value={String(stats.filteredCount)} />
+        {/* Header */}
+        <section className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
+            <div>
+              <p className="text-xs uppercase tracking-[0.32em] text-[#9a6820]">Movement Screening Tracker</p>
+              <h1 className="mt-2 text-3xl font-bold text-[#10233f] sm:text-4xl">Movement Screening</h1>
+              <p className="mt-2 text-sm leading-6 text-[#4a5c73]">
+                Record, score, and track client movement assessments across all key patterns.
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  { label: "Clients", value: String(stats.totalClients) },
+                  { label: "Screened", value: String(stats.completedScreens) },
+                  { label: "Avg Score", value: String(stats.averageScore) },
+                  { label: "Showing", value: String(stats.filteredCount) }
+                ].map((s) => (
+                  <div key={s.label} className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-widest text-[#9a6820]">{s.label}</p>
+                    <p className="mt-1 text-2xl font-bold text-[#10233f]">{s.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-slate-300 bg-[linear-gradient(180deg,#111111_0%,#2b2b2b_44%,#4a4a4a_100%)] p-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_20px_60px_rgba(0,0,0,0.22)] sm:p-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-200">
-                Save + Export
-              </p>
-              <div className="mt-4 space-y-3 text-sm leading-6 text-white/85">
-                <div className="rounded-[1.25rem] border border-white/15 bg-white/10 p-4 backdrop-blur">
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">
-                    Storage mode
-                  </p>
-                  <p className="mt-1">{isPersistent ? "Cloud sync enabled" : "Browser-only saving"}</p>
-                </div>
-                <div className="rounded-[1.25rem] border border-white/15 bg-white/10 p-4 backdrop-blur">
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">
-                    Status
-                  </p>
-                  <p className="mt-1">{statusMessage}</p>
-                </div>
-                <div className="rounded-[1.25rem] border border-white/15 bg-white/10 p-4 backdrop-blur">
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">
-                    PDF export
-                  </p>
-                  <p className="mt-1">
-                    Use “Print / Save PDF” on any client to open a clean report layout.
-                  </p>
-                </div>
+            <div className="flex flex-col gap-3 rounded-2xl border border-[#e8d5b0] bg-[#fdf3e3] p-5 text-sm print:hidden sm:min-w-[220px]">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#9a6820]">Save + Export</p>
+              <div className="space-y-2 text-[#4a5c73]">
+                <p><span className="font-medium text-[#10233f]">Storage:</span> {isPersistent ? "Cloud sync on" : "Browser only"}</p>
+                <p><span className="font-medium text-[#10233f]">Status:</span> {isSyncing ? "Saving…" : statusMessage}</p>
+                <p className="text-xs text-[#6b7b91]">Use "Print / Save PDF" on any client to export a clean branded report.</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-8 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="rounded-[2rem] border border-white/70 bg-white/58 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.1)] backdrop-blur-xl">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
-                  Client List
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-950">Search and sort</h2>
+        {/* Main grid */}
+        <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+
+          {/* Client list */}
+          <aside className="flex flex-col gap-4 print:hidden">
+            <div className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-[#9a6820]">Client List</p>
+                  <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">Search & sort</h2>
+                </div>
+                <button type="button" onClick={handleNewClient}
+                  className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7a5218]">
+                  + New client
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleNewClient}
-                className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,0,0,0.22)] transition hover:bg-slate-800"
-              >
-                New client
-              </button>
+
+              <input value={query} onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name, injury, notes…" className={inputCls} />
+
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as ClientSort)}
+                className={`${inputCls} mt-2`}>
+                <option value="recent">Recently updated</option>
+                <option value="name-asc">Name A–Z</option>
+                <option value="name-desc">Name Z–A</option>
+                <option value="score-high">Highest score</option>
+                <option value="score-low">Lowest score</option>
+              </select>
             </div>
 
-            <div className="mt-5 space-y-3">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-600">Search</span>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search by name, injury, notes..."
-                  className={inputClassName}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-600">Sort by</span>
-                <select
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value as ClientSort)}
-                  className={inputClassName}
-                >
-                  <option value="recent">Recently updated</option>
-                  <option value="name-asc">Name A-Z</option>
-                  <option value="name-desc">Name Z-A</option>
-                  <option value="score-high">Highest score</option>
-                  <option value="score-low">Lowest score</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="mt-4 rounded-[1.35rem] border border-white/60 bg-white/45 px-4 py-3 text-sm text-slate-600">
-              {isSyncing ? "Syncing changes..." : statusMessage}
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {visibleClients.length ? (
-                visibleClients.map((client) => {
-                  const averageScore = getClientAverageScore(client);
-                  const isActive = client.id === selectedClient?.id;
-
-                  return (
-                    <button
-                      key={client.id}
-                      type="button"
-                      onClick={() => setSelectedClientId(client.id)}
-                      className={`w-full rounded-[1.5rem] border p-4 text-left transition ${
-                        isActive
-                          ? "border-slate-900 bg-slate-900 text-white shadow-[0_18px_40px_rgba(0,0,0,0.18)]"
-                          : "border-white/70 bg-white/55 text-slate-900 hover:border-slate-400 hover:bg-white/75"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-lg font-semibold">{client.name}</p>
-                          <p
-                            className={`mt-1 text-sm ${
-                              isActive ? "text-slate-300" : "text-slate-500"
-                            }`}
-                          >
-                            {client.injury || "No injury listed"}
-                          </p>
-                        </div>
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            isActive ? "bg-white/18 text-white" : "bg-slate-200 text-slate-800"
-                          }`}
-                        >
-                          {averageScore ? `${averageScore}/5` : "No score"}
-                        </span>
+            <div className="space-y-2">
+              {visibleClients.length ? visibleClients.map((client) => {
+                const avg = getClientAverageScore(client);
+                const isActive = client.id === selectedClient?.id;
+                return (
+                  <button key={client.id} type="button" onClick={() => setSelectedClientId(client.id)}
+                    className={`w-full rounded-2xl border p-4 text-left transition ${
+                      isActive
+                        ? "border-[#d2a86c] bg-[#fdf3e3] shadow-[0_4px_20px_rgba(210,168,108,0.25)]"
+                        : "border-stone-200 bg-white/90 hover:border-[#d2a86c]/60 hover:bg-[#fdf8ef]"
+                    }`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[#10233f] truncate">{client.name}</p>
+                        <p className="mt-0.5 text-xs text-[#4a5c73] truncate">{client.injury || "No injury listed"}</p>
                       </div>
-                      <div
-                        className={`mt-3 flex items-center justify-between text-sm ${
-                          isActive ? "text-slate-300" : "text-slate-500"
-                        }`}
-                      >
-                        <span>
-                          {getCompletedTests(client)}/{getTotalTests(client)} tests complete
-                        </span>
-                        <span>{client.screeningDate || "No date"}</span>
-                      </div>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="rounded-[1.5rem] border border-dashed border-slate-400/50 bg-white/50 p-5 text-sm text-slate-600">
-                  No clients match that search yet.
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${scoreColor(avg)}`}>
+                        {avg ? `${avg}/5` : "—"}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs text-[#6b7b91]">
+                      <span>{getCompletedTests(client)}/{getTotalTests(client)} tests</span>
+                      <span>{client.screeningDate || "No date"}</span>
+                    </div>
+                  </button>
+                );
+              }) : (
+                <div className="rounded-2xl border border-dashed border-stone-300 bg-white/60 p-6 text-center text-sm text-[#6b7b91]">
+                  No clients match that search.
                 </div>
               )}
             </div>
           </aside>
 
-          <section className="rounded-[2rem] border border-white/70 bg-white/58 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.1)] backdrop-blur-xl sm:p-6">
+          {/* Client record */}
+          <section className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-6">
             {selectedClient ? (
-              <div className="space-y-8">
-                <div className="flex flex-col gap-4 border-b border-slate-900/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-6">
+
+                {/* Record header */}
+                <div className="flex flex-col gap-4 border-b border-stone-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
-                      Client Record
-                    </p>
-                    <h2 className="mt-2 text-3xl font-semibold text-slate-950">
-                      {selectedClient.name}
-                    </h2>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Last updated{" "}
-                      {new Date(selectedClient.updatedAt).toLocaleString("en-AU", {
-                        dateStyle: "medium",
-                        timeStyle: "short"
-                      })}
+                    <p className="text-xs uppercase tracking-widest text-[#9a6820]">Client Record</p>
+                    <h2 className="mt-1 text-2xl font-bold text-[#10233f]">{selectedClient.name}</h2>
+                    <p className="mt-1 text-xs text-[#6b7b91]">
+                      Last updated {new Date(selectedClient.updatedAt).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })}
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handlePrint(selectedClient)}
-                      className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,0,0,0.22)] transition hover:bg-slate-800"
-                    >
+                  <div className="flex flex-wrap gap-2 print:hidden">
+                    <button type="button" onClick={() => handlePrint(selectedClient)}
+                      className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7a5218]">
                       Print / Save PDF
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClient(selectedClient.id)}
-                      className="rounded-full border border-slate-400/40 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
-                    >
-                      Delete client
-                    </button>
+                    {deleteConfirm === selectedClient.id ? (
+                      <>
+                        <button type="button" onClick={() => handleDeleteClient(selectedClient.id)}
+                          className="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
+                          Confirm delete
+                        </button>
+                        <button type="button" onClick={() => setDeleteConfirm(null)}
+                          className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-stone-300">
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button type="button" onClick={() => setDeleteConfirm(selectedClient.id)}
+                        className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-rose-300 hover:text-rose-600">
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {showPrintHint ? (
-                  <div className="rounded-[1.35rem] border border-slate-400/40 bg-slate-100 px-4 py-3 text-sm text-slate-800">
-                    Please allow pop-ups for this site so the print/PDF view can open.
+                {showPrintHint && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Allow pop-ups for this site so the print/PDF view can open.
                   </div>
-                ) : null}
+                )}
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <Field label="Name">
-                    <input
-                      value={selectedClient.name}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          name: event.target.value
-                        }))
-                      }
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label="Injury">
-                    <input
-                      value={selectedClient.injury}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          injury: event.target.value
-                        }))
-                      }
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label="Date">
-                    <input
-                      type="date" lang="en-AU"
-                      value={selectedClient.screeningDate}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          screeningDate: event.target.value
-                        }))
-                      }
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label="Contact">
-                    <input
-                      value={selectedClient.contact}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          contact: event.target.value
-                        }))
-                      }
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label="Health">
-                    <input
-                      value={selectedClient.health}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          health: event.target.value
-                        }))
-                      }
-                      className={inputClassName}
-                    />
-                  </Field>
-                  <Field label="Conducted by">
-                    <input
-                      value={selectedClient.conductedBy}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          conductedBy: event.target.value
-                        }))
-                      }
-                      className={inputClassName}
-                    />
+                {/* Client details grid */}
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {[
+                    { label: "Name", field: "name" as const },
+                    { label: "Injury / notes", field: "injury" as const },
+                    { label: "Contact", field: "contact" as const },
+                    { label: "Health clearance", field: "health" as const },
+                    { label: "Conducted by", field: "conductedBy" as const },
+                  ].map(({ label, field }) => (
+                    <Field key={field} label={label}>
+                      <input value={selectedClient[field]}
+                        onChange={(e) => updateClient(selectedClient.id, (c) => ({ ...c, [field]: e.target.value }))}
+                        className={inputCls} />
+                    </Field>
+                  ))}
+                  <Field label="Screening date">
+                    <input type="date" lang="en-AU" value={selectedClient.screeningDate}
+                      onChange={(e) => updateClient(selectedClient.id, (c) => ({ ...c, screeningDate: e.target.value }))}
+                      className={inputCls} />
                   </Field>
                   <Field label="Warm up notes" className="md:col-span-2 xl:col-span-3">
-                    <textarea
-                      rows={2}
-                      value={selectedClient.warmupNotes}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          warmupNotes: event.target.value
-                        }))
-                      }
-                      className={`${inputClassName} resize-none`}
-                    />
+                    <textarea rows={2} value={selectedClient.warmupNotes}
+                      onChange={(e) => updateClient(selectedClient.id, (c) => ({ ...c, warmupNotes: e.target.value }))}
+                      className={`${inputCls} resize-none`} />
                   </Field>
                   <Field label="Overall notes" className="md:col-span-2 xl:col-span-3">
-                    <textarea
-                      rows={3}
-                      value={selectedClient.overallNotes}
-                      onChange={(event) =>
-                        updateClient(selectedClient.id, (client) => ({
-                          ...client,
-                          overallNotes: event.target.value
-                        }))
-                      }
-                      className={`${inputClassName} resize-none`}
-                    />
+                    <textarea rows={3} value={selectedClient.overallNotes}
+                      onChange={(e) => updateClient(selectedClient.id, (c) => ({ ...c, overallNotes: e.target.value }))}
+                      className={`${inputCls} resize-none`} />
                   </Field>
                 </div>
 
-                <div className="space-y-6">
-                  {selectedClient.sections.map((section, sectionIndex) => (
-                    <div
-                      key={section.title}
-                      className="rounded-[1.75rem] border border-white/70 bg-white/65 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:p-5"
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-xl font-semibold text-slate-950">{section.title}</h3>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Update observations, notes, dates, and movement score.
-                          </p>
+                {/* Movement sections */}
+                <div className="space-y-4">
+                  {selectedClient.sections.map((section, si) => {
+                    const done = section.tests.filter((t) => t.completed).length;
+                    const total = section.tests.length;
+                    return (
+                      <div key={section.title} className="rounded-2xl border border-stone-200 bg-stone-50 p-4 sm:p-5">
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                          <div>
+                            <h3 className="font-bold text-[#10233f]">{section.title}</h3>
+                            <p className="text-xs text-[#6b7b91] mt-0.5">Score each movement and add observations</p>
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-xs font-bold ${done === total ? "bg-emerald-100 text-emerald-700" : "bg-stone-200 text-stone-600"}`}>
+                            {done}/{total} done
+                          </span>
                         </div>
-                        <div className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                          {section.tests.filter((test) => test.completed).length}/
-                          {section.tests.length} done
-                        </div>
-                      </div>
 
-                      <div className="mt-4 space-y-4">
-                        {section.tests.map((test, testIndex) => (
-                          <article
-                            key={`${section.title}-${test.name}`}
-                            className="rounded-[1.25rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(242,242,242,0.96)_100%)] p-4"
-                          >
-                            <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                              <div className="space-y-4">
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                  <div>
-                                    <h4 className="text-lg font-semibold text-slate-950">
-                                      {test.name}
-                                    </h4>
-                                    <p className="mt-1 text-sm text-slate-500">
-                                      Mark this test complete and record the result.
-                                    </p>
-                                  </div>
-                                  <label className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/90 px-3 py-2 text-sm font-medium text-slate-700">
-                                    <input
-                                      type="checkbox"
-                                      checked={test.completed}
-                                      onChange={(event) =>
-                                        updateTest(
-                                          selectedClient.id,
-                                          sectionIndex,
-                                          testIndex,
-                                          (currentTest) => ({
-                                            ...currentTest,
-                                            completed: event.target.checked
-                                          })
-                                        )
-                                      }
-                                      className="h-4 w-4 accent-slate-900"
-                                    />
-                                    Completed
-                                  </label>
+                        <div className="space-y-3">
+                          {section.tests.map((test, ti) => (
+                            <div key={`${section.title}-${test.name}`}
+                              className={`rounded-xl border p-4 transition ${test.completed ? "border-[#e8d5b0] bg-white" : "border-stone-200 bg-white/60"}`}>
+                              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                <div className="flex items-center gap-3">
+                                  <input type="checkbox" checked={test.completed}
+                                    onChange={(e) => updateTest(selectedClient.id, si, ti, (t) => ({ ...t, completed: e.target.checked }))}
+                                    className="h-4 w-4 cursor-pointer accent-[#9a6820]" />
+                                  <span className="font-semibold text-sm text-[#10233f]">{test.name}</span>
                                 </div>
-
-                                <Field label="Observations">
-                                  <textarea
-                                    rows={2}
-                                    value={test.observations}
-                                    onChange={(event) =>
-                                      updateTest(
-                                        selectedClient.id,
-                                        sectionIndex,
-                                        testIndex,
-                                        (currentTest) => ({
-                                          ...currentTest,
-                                          observations: event.target.value
-                                        })
-                                      )
-                                    }
-                                    className={`${inputClassName} resize-none`}
-                                  />
-                                </Field>
-
-                                <Field label="Notes / considerations">
-                                  <textarea
-                                    rows={2}
-                                    value={test.notes}
-                                    onChange={(event) =>
-                                      updateTest(
-                                        selectedClient.id,
-                                        sectionIndex,
-                                        testIndex,
-                                        (currentTest) => ({
-                                          ...currentTest,
-                                          notes: event.target.value
-                                        })
-                                      )
-                                    }
-                                    className={`${inputClassName} resize-none`}
-                                  />
-                                </Field>
+                                {test.score && (
+                                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${scoreColor(test.score)}`}>
+                                    {test.score}/5
+                                  </span>
+                                )}
                               </div>
 
-                              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                                <Field label="Score">
-                                  <select
-                                    value={test.score ?? ""}
-                                    onChange={(event) =>
-                                      updateTest(
-                                        selectedClient.id,
-                                        sectionIndex,
-                                        testIndex,
-                                        (currentTest) => ({
-                                          ...currentTest,
-                                          score: event.target.value
-                                            ? (Number(event.target.value) as (typeof scoreOptions)[number])
-                                            : null
-                                        })
-                                      )
-                                    }
-                                    className={inputClassName}
-                                  >
+                              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_160px_160px]">
+                                <div className="sm:col-span-2 xl:col-span-1">
+                                  <label className="block text-xs font-medium text-[#6b7b91] mb-1">Observations</label>
+                                  <textarea rows={2} value={test.observations} placeholder="What did you see?"
+                                    onChange={(e) => updateTest(selectedClient.id, si, ti, (t) => ({ ...t, observations: e.target.value }))}
+                                    className={`${inputCls} resize-none`} />
+                                </div>
+                                <div className="sm:col-span-2 xl:col-span-1">
+                                  <label className="block text-xs font-medium text-[#6b7b91] mb-1">Notes / considerations</label>
+                                  <textarea rows={2} value={test.notes} placeholder="Programming notes…"
+                                    onChange={(e) => updateTest(selectedClient.id, si, ti, (t) => ({ ...t, notes: e.target.value }))}
+                                    className={`${inputCls} resize-none`} />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-[#6b7b91] mb-1">Score</label>
+                                  <select value={test.score ?? ""}
+                                    onChange={(e) => updateTest(selectedClient.id, si, ti, (t) => ({
+                                      ...t, score: e.target.value ? Number(e.target.value) as typeof scoreOptions[number] : null
+                                    }))}
+                                    className={inputCls}>
                                     <option value="">Not scored</option>
-                                    {scoreOptions.map((score) => (
-                                      <option key={score} value={score}>
-                                        {score} / 5
-                                      </option>
+                                    {scoreOptions.map((s) => (
+                                      <option key={s} value={s}>{scoreLabel(s)}</option>
                                     ))}
                                   </select>
-                                </Field>
-
-                                <Field label="Assessed date">
-                                  <input
-                                    type="date" lang="en-AU"
-                                    value={test.assessedOn}
-                                    onChange={(event) =>
-                                      updateTest(
-                                        selectedClient.id,
-                                        sectionIndex,
-                                        testIndex,
-                                        (currentTest) => ({
-                                          ...currentTest,
-                                          assessedOn: event.target.value
-                                        })
-                                      )
-                                    }
-                                    className={inputClassName}
-                                  />
-                                </Field>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-[#6b7b91] mb-1">Assessed date</label>
+                                  <input type="date" lang="en-AU" value={test.assessedOn}
+                                    onChange={(e) => updateTest(selectedClient.id, si, ti, (t) => ({ ...t, assessedOn: e.target.value }))}
+                                    className={inputCls} />
+                                </div>
                               </div>
                             </div>
-                          </article>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
-              <div className="flex min-h-[420px] items-center justify-center rounded-[1.5rem] border border-dashed border-slate-400/50 bg-white/55 p-8 text-center text-slate-600">
+              <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-dashed border-stone-300 p-8 text-center text-sm text-[#6b7b91]">
                 Add your first client to start tracking movement screening results.
               </div>
             )}
           </section>
-        </section>
+        </div>
       </div>
     </main>
   );
 }
 
-function PillBackdrop() {
+function Field({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute -left-12 top-0 h-[92vh] w-28 rounded-full bg-[linear-gradient(180deg,rgba(245,245,245,0.9)_0%,rgba(120,120,120,0.9)_40%,rgba(230,230,230,0.95)_100%)] blur-[2px]" />
-      <div className="absolute left-[12%] top-0 h-[78vh] w-36 rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(90,90,90,0.95)_42%,rgba(238,238,238,0.96)_100%)] shadow-[0_0_35px_rgba(0,0,0,0.18)]" />
-      <div className="absolute left-[32%] top-0 h-[44vh] w-40 rounded-[999px] bg-[linear-gradient(180deg,rgba(60,60,60,0.98)_0%,rgba(150,150,150,0.82)_58%,rgba(235,235,235,0.9)_100%)] shadow-[0_0_45px_rgba(0,0,0,0.16)]" />
-      <div className="absolute left-[35%] top-[38vh] h-40 w-40 rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(210,210,210,0.96),rgba(150,150,150,0.92)_60%,rgba(245,245,245,0.98)_100%)] shadow-[0_0_50px_rgba(0,0,0,0.14)]" />
-      <div className="absolute left-[34%] top-[54vh] h-[44vh] w-40 rounded-[999px] bg-[linear-gradient(180deg,rgba(245,245,245,0.75)_0%,rgba(140,140,140,0.85)_70%,rgba(55,55,55,0.98)_100%)] shadow-[0_0_45px_rgba(0,0,0,0.14)]" />
-      <div className="absolute right-[16%] top-0 h-[88vh] w-36 rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(85,85,85,0.95)_40%,rgba(236,236,236,0.96)_100%)] shadow-[0_0_40px_rgba(0,0,0,0.16)]" />
-      <div className="absolute -right-10 top-0 h-[100vh] w-32 rounded-full bg-[linear-gradient(180deg,rgba(245,245,245,0.9)_0%,rgba(70,70,70,0.96)_38%,rgba(160,160,160,0.82)_66%,rgba(245,245,245,0.96)_100%)] shadow-[0_0_40px_rgba(0,0,0,0.14)]" />
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.5rem] border border-white/70 bg-white/58 p-4 backdrop-blur">
-      <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-3 text-3xl font-semibold text-slate-950">{value}</p>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  className,
-  children
-}: {
-  label: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className={className}>
-      <span className="mb-2 block text-sm font-medium text-slate-600">{label}</span>
+    <label className={`flex flex-col gap-1 ${className ?? ""}`}>
+      <span className="text-xs font-medium text-[#6b7b91]">{label}</span>
       {children}
     </label>
   );
 }
-
-function renderSection(section: MovementSection) {
-  return `
-    <section class="section">
-      <h2>${escapeHtml(section.title)}</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Test</th>
-            <th>Completed</th>
-            <th>Score</th>
-            <th>Observations</th>
-            <th>Notes</th>
-            <th>Assessed</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${section.tests
-            .map(
-              (test) => `
-                <tr>
-                  <td>${escapeHtml(test.name)}</td>
-                  <td>${test.completed ? "Yes" : "No"}</td>
-                  <td>${test.score ?? "-"}</td>
-                  <td>${escapeHtml(test.observations || "-")}</td>
-                  <td>${escapeHtml(test.notes || "-")}</td>
-                  <td>${escapeHtml(test.assessedOn || "-")}</td>
-                </tr>
-              `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    </section>
-  `;
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-const inputClassName =
-  "w-full rounded-2xl border border-slate-300 bg-white/88 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-300/40";

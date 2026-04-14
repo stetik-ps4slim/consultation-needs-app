@@ -9,7 +9,7 @@ export const warmupItems = [
 
 export const movementSections = [
   {
-    title: "Hip/Knee",
+    title: "Hip / Knee",
     tests: ["Bodyweight squat", "Leg press", "Other"]
   },
   {
@@ -18,37 +18,23 @@ export const movementSections = [
   },
   {
     title: "Hinge",
-    tests: ["Romanian deadlift", "Conventional deadlift", "Glute bridge", "Other"]
+    tests: ["Romanian deadlift", "Glute bridge", "Other"]
   },
   {
     title: "Pull",
-    tests: ["Bent over row", "Seated row", "Reverse fly", "Bicep curl", "Other"]
+    tests: ["Bent over row", "Reverse fly", "Other"]
   },
   {
     title: "Push",
-    tests: [
-      "Push up (incline/knees/full)",
-      "Chest press",
-      "Shoulder press",
-      "Shoulder fly",
-      "Other"
-    ]
+    tests: ["Push up (incline/knees/full)", "Chest press", "Shoulder press", "Other"]
   },
   {
     title: "Core",
-    tests: ["Bird dog (single/double)", "Plank", "Controlled crunch", "Toe taps", "Other"]
+    tests: ["Plank", "Controlled crunch", "Toe taps", "Other"]
   },
   {
-    title: "Flexibility/Mobility",
-    tests: [
-      "Seated toe reach",
-      "Lying leg raise",
-      "Shoulder wall test",
-      "Shoulder reach test",
-      "Rib flare/core control",
-      "Posture notes",
-      "Other"
-    ]
+    title: "Flexibility / Mobility",
+    tests: ["Seated toe reach", "Lying leg raise", "Posture notes", "Other"]
   }
 ] as const;
 
@@ -137,9 +123,7 @@ export function getClientAverageScore(client: ScreeningClient) {
     section.tests.flatMap((test) => (test.score ? [test.score] : []))
   );
 
-  if (!scores.length) {
-    return null;
-  }
+  if (!scores.length) return null;
 
   const total = scores.reduce((sum, score) => sum + score, 0);
   return Number((total / scores.length).toFixed(1));
@@ -158,22 +142,12 @@ export function getTotalTests(client: ScreeningClient) {
 
 export function sortClients(clients: ScreeningClient[], sortBy: ClientSort) {
   return [...clients].sort((left, right) => {
-    if (sortBy === "name-asc") {
-      return left.name.localeCompare(right.name);
-    }
-
-    if (sortBy === "name-desc") {
-      return right.name.localeCompare(left.name);
-    }
-
-    if (sortBy === "score-high") {
+    if (sortBy === "name-asc") return left.name.localeCompare(right.name);
+    if (sortBy === "name-desc") return right.name.localeCompare(left.name);
+    if (sortBy === "score-high")
       return (getClientAverageScore(right) ?? -1) - (getClientAverageScore(left) ?? -1);
-    }
-
-    if (sortBy === "score-low") {
+    if (sortBy === "score-low")
       return (getClientAverageScore(left) ?? 6) - (getClientAverageScore(right) ?? 6);
-    }
-
     return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
   });
 }
@@ -237,45 +211,15 @@ export function normalizeClientInsert(input: Partial<ScreeningClientInsert>) {
 export function normalizeClientUpdate(input: Record<string, unknown>): ScreeningClientUpdate {
   const normalized: ScreeningClientUpdate = {};
 
-  if ("name" in input) {
-    normalized.name = typeof input.name === "string" ? input.name.trim() : "";
-  }
-
-  if ("injury" in input) {
-    normalized.injury = typeof input.injury === "string" ? input.injury.trim() : "";
-  }
-
-  if ("screeningDate" in input) {
-    normalized.screeningDate =
-      typeof input.screeningDate === "string" ? input.screeningDate.trim() : "";
-  }
-
-  if ("contact" in input) {
-    normalized.contact = typeof input.contact === "string" ? input.contact.trim() : "";
-  }
-
-  if ("health" in input) {
-    normalized.health = typeof input.health === "string" ? input.health.trim() : "";
-  }
-
-  if ("conductedBy" in input) {
-    normalized.conductedBy =
-      typeof input.conductedBy === "string" ? input.conductedBy.trim() : "";
-  }
-
-  if ("warmupNotes" in input) {
-    normalized.warmupNotes =
-      typeof input.warmupNotes === "string" ? input.warmupNotes.trim() : "";
-  }
-
-  if ("overallNotes" in input) {
-    normalized.overallNotes =
-      typeof input.overallNotes === "string" ? input.overallNotes.trim() : "";
-  }
-
-  if ("sections" in input) {
-    normalized.sections = sanitizeSections(input.sections);
-  }
+  if ("name" in input) normalized.name = typeof input.name === "string" ? input.name.trim() : "";
+  if ("injury" in input) normalized.injury = typeof input.injury === "string" ? input.injury.trim() : "";
+  if ("screeningDate" in input) normalized.screeningDate = typeof input.screeningDate === "string" ? input.screeningDate.trim() : "";
+  if ("contact" in input) normalized.contact = typeof input.contact === "string" ? input.contact.trim() : "";
+  if ("health" in input) normalized.health = typeof input.health === "string" ? input.health.trim() : "";
+  if ("conductedBy" in input) normalized.conductedBy = typeof input.conductedBy === "string" ? input.conductedBy.trim() : "";
+  if ("warmupNotes" in input) normalized.warmupNotes = typeof input.warmupNotes === "string" ? input.warmupNotes.trim() : "";
+  if ("overallNotes" in input) normalized.overallNotes = typeof input.overallNotes === "string" ? input.overallNotes.trim() : "";
+  if ("sections" in input) normalized.sections = sanitizeSections(input.sections);
 
   return normalized;
 }
@@ -295,61 +239,19 @@ export const sampleClients: ScreeningClient[] = [
     createdAt: "2026-04-05T10:20:00.000Z",
     sections: [
       {
-        title: "Hip/Knee",
+        title: "Hip / Knee",
         tests: [
-          {
-            name: "Bodyweight squat",
-            score: 2,
-            completed: true,
-            observations: "Knees cave slightly and depth drops under control.",
-            notes: "Start with box squat and tempo work.",
-            assessedOn: "2026-04-05"
-          },
-          {
-            name: "Leg press",
-            score: 3,
-            completed: true,
-            observations: "Stronger pattern with stable foot pressure.",
-            notes: "",
-            assessedOn: "2026-04-05"
-          },
-          {
-            name: "Other",
-            score: null,
-            completed: false,
-            observations: "",
-            notes: "",
-            assessedOn: ""
-          }
+          { name: "Bodyweight squat", score: 2, completed: true, observations: "Knees cave slightly, depth drops under load.", notes: "Start with box squat and tempo work.", assessedOn: "2026-04-05" },
+          { name: "Leg press", score: 3, completed: true, observations: "Stronger pattern with stable foot pressure.", notes: "", assessedOn: "2026-04-05" },
+          { name: "Other", score: null, completed: false, observations: "", notes: "", assessedOn: "" }
         ]
       },
       {
         title: "Lunge",
         tests: [
-          {
-            name: "Static lunge (supported/free)",
-            score: 2,
-            completed: true,
-            observations: "Wobble on left side.",
-            notes: "Keep support nearby.",
-            assessedOn: "2026-04-05"
-          },
-          {
-            name: "Walking lunge",
-            score: null,
-            completed: false,
-            observations: "",
-            notes: "",
-            assessedOn: ""
-          },
-          {
-            name: "Other",
-            score: null,
-            completed: false,
-            observations: "",
-            notes: "",
-            assessedOn: ""
-          }
+          { name: "Static lunge (supported/free)", score: 2, completed: true, observations: "Wobble on left side.", notes: "Keep support nearby.", assessedOn: "2026-04-05" },
+          { name: "Walking lunge", score: null, completed: false, observations: "", notes: "", assessedOn: "" },
+          { name: "Other", score: null, completed: false, observations: "", notes: "", assessedOn: "" }
         ]
       },
       ...createDefaultSections().slice(2)
@@ -371,27 +273,11 @@ export const sampleClients: ScreeningClient[] = [
       ...section,
       tests: section.tests.map((test) => {
         if (test.name === "Romanian deadlift") {
-          return {
-            ...test,
-            score: 4,
-            completed: true,
-            observations: "Good hinge pattern with solid hamstring tension.",
-            notes: "",
-            assessedOn: "2026-04-08"
-          };
+          return { ...test, score: 4, completed: true, observations: "Good hinge pattern with solid hamstring tension.", notes: "", assessedOn: "2026-04-08" };
         }
-
-        if (test.name === "Shoulder wall test") {
-          return {
-            ...test,
-            score: 3,
-            completed: true,
-            observations: "Some rib flare under reach.",
-            notes: "Pair with breathing drill.",
-            assessedOn: "2026-04-08"
-          };
+        if (test.name === "Posture notes") {
+          return { ...test, score: 3, completed: true, observations: "Some forward head carriage and rounded shoulders at rest.", notes: "Pair with breathing and thoracic drill.", assessedOn: "2026-04-08" };
         }
-
         return test;
       })
     }))

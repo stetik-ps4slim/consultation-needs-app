@@ -1,7 +1,7 @@
 export const siteContent = {
   brand: {
-    name: "Upper Notch Coaching",
-    shortName: "Upper Notch",
+    name: "The Upper Notch",
+    shortName: "The Upper Notch",
     eyebrow: "Premium Personal Training",
     consultationLink: "https://calendly.com/theuppernotch",
     consultationLabel: "Book Consultation",

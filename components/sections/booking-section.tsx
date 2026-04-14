@@ -13,7 +13,7 @@ export function BookingSection() {
 
         <div className="panel overflow-hidden border-accent/25 shadow-glow">
           <iframe
-            title="Book a consultation with Upper Notch Coaching"
+            title="Book a consultation with The Upper Notch"
             src={`${siteContent.brand.consultationLink}?hide_gdpr_banner=1&primary_color=d2a86c`}
             className="h-[720px] w-full bg-black"
           />

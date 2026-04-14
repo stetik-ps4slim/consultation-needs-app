@@ -538,7 +538,7 @@ export function ConsultationRecordsDashboard() {
         <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8 print:shadow-none">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.34em] text-[#9a6820]">Upper Notch Coaching</p>
+              <p className="text-xs font-bold uppercase tracking-[0.34em] text-[#9a6820]">The Upper Notch</p>
               <h1 className="mt-4 max-w-3xl font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f] sm:text-7xl">
                 Client Hub
               </h1>
@@ -1045,7 +1045,7 @@ function PricingPresentationCard({
         <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">
           Follow-up reminder
           <input
-            type="datetime-local"
+            type="datetime-local" lang="en-AU"
             value={followUpAt}
             onChange={(event) => setFollowUpAt(event.target.value)}
             className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#9a6820]"

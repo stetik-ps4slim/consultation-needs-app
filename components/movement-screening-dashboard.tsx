@@ -648,7 +648,7 @@ export function MovementScreeningDashboard({
                   </Field>
                   <Field label="Date">
                     <input
-                      type="date"
+                      type="date" lang="en-AU"
                       value={selectedClient.screeningDate}
                       onChange={(event) =>
                         updateClient(selectedClient.id, (client) => ({
@@ -849,7 +849,7 @@ export function MovementScreeningDashboard({
 
                                 <Field label="Assessed date">
                                   <input
-                                    type="date"
+                                    type="date" lang="en-AU"
                                     value={test.assessedOn}
                                     onChange={(event) =>
                                       updateTest(

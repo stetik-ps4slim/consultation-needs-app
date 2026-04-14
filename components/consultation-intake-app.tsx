@@ -214,19 +214,22 @@ function InputField({
   value,
   onChange,
   placeholder,
-  type = "text"
+  type = "text",
+  lang
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  lang?: string;
 }) {
   return (
     <label className="flex flex-col gap-2 text-sm text-[#15314a]">
       <span className="font-medium">{label}</span>
       <input
         type={type}
+        lang={lang ?? (type === "date" || type === "datetime-local" ? "en-AU" : undefined)}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -470,7 +473,7 @@ export function ConsultationIntakeApp() {
       <div className="container-shell section-space relative z-10">
         <div className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] print:grid-cols-1">
           <div className="panel rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8">
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-[#9a6820]">Upper Notch Coaching</p>
+            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-[#9a6820]">The Upper Notch</p>
             <h1 className="max-w-3xl font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f] sm:text-5xl lg:text-6xl">
               Consultation Needs Analysis App
             </h1>

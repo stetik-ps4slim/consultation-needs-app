@@ -191,7 +191,7 @@ export function PricingPresentationApp() {
       <section className="mx-auto max-w-[1600px] rounded-[2rem] border border-white/10 bg-white p-5 shadow-[0_26px_100px_rgba(0,0,0,0.45)] sm:p-7 lg:p-9 print:shadow-none">
         <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.36em] text-[#9a6820]">Upper Notch Coaching</p>
+            <p className="text-sm font-black uppercase tracking-[0.36em] text-[#9a6820]">The Upper Notch</p>
             <h1 className="mt-3 text-3xl font-black uppercase tracking-[0.12em] text-[#101010] sm:text-6xl">Package Options</h1>
           </div>
           <p className="max-w-2xl text-xl font-bold leading-9 text-zinc-800">

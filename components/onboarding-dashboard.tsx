@@ -401,7 +401,7 @@ export function OnboardingDashboard() {
         <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.08)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">Upper Notch Coaching System</p>
+              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">The Upper Notch</p>
               <h1 className="mt-4 max-w-4xl font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f] sm:text-7xl">
                 Onboarding Pipeline
               </h1>

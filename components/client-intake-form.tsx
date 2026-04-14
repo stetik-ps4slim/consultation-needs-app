@@ -115,7 +115,15 @@ function InputField({ label, value, onChange, placeholder, type = "text", requir
 }) {
   return (
     <Field label={label} required={required}>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required} className={inputCls} />
+      <input
+        type={type}
+        lang={type === "date" || type === "datetime-local" ? "en-AU" : undefined}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        className={inputCls}
+      />
     </Field>
   );
 }
@@ -300,7 +308,7 @@ export function ClientIntakeForm() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 text-2xl">✓</div>
             <h1 className="mt-5 font-[Arial_Narrow] text-4xl uppercase tracking-[0.06em] text-[#10233f]">Form Submitted</h1>
             <p className="mt-4 text-sm leading-7 text-[#6b7b91]">{statusMessage}</p>
-            <p className="mt-6 text-xs text-stone-400">JS PT · Jazzay Sallah Personal Training</p>
+            <p className="mt-6 text-xs text-stone-400">The Upper Notch</p>
           </div>
         </div>
       </main>
@@ -313,7 +321,7 @@ export function ClientIntakeForm() {
       {/* Header */}
       <header className="border-b border-stone-200 bg-white/90 backdrop-blur">
         <div className="mx-auto max-w-3xl px-5 py-5 sm:px-6">
-          <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">JS PT · Jazzay Sallah Personal Training</p>
+          <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">The Upper Notch</p>
           <h1 className="mt-1 font-[Arial_Narrow] text-2xl uppercase tracking-[0.06em] text-[#10233f]">Initial Consultation Form</h1>
           <p className="mt-1 text-sm text-[#6b7b91]">Please complete this form before your consultation. Your answers help us prepare the best session possible.</p>
         </div>
@@ -480,7 +488,7 @@ export function ClientIntakeForm() {
             <div className="border-b border-stone-100 bg-[#9a6820]/5 px-6 py-5 sm:px-8">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-[#9a6820]">Section 06</p>
               <h2 className="mt-2 font-[Arial_Narrow] text-2xl uppercase tracking-[0.06em] text-[#10233f] sm:text-3xl">Initial Consultation Agreement</h2>
-              <p className="mt-1 text-sm text-[#6b7b91]">Jazzay Sallah Personal Training (JS PT) — Please read each clause carefully before signing.</p>
+              <p className="mt-1 text-sm text-[#6b7b91]">The Upper Notch — Please read each clause carefully before signing.</p>
             </div>
 
             {/* Clauses */}
@@ -557,7 +565,7 @@ export function ClientIntakeForm() {
           </button>
 
           <p className="pb-4 text-center text-xs text-stone-400">
-            Your form is autosaved in this browser as you fill it in. Submitting sends it directly to JS PT.
+            Your form is autosaved in this browser as you fill it in. Submitting sends it directly to The Upper Notch.
           </p>
         </div>
       </form>

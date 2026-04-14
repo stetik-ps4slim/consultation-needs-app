@@ -172,7 +172,7 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
         <div className="container-shell max-w-7xl py-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">Upper Notch Coaching</p>
+              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">The Upper Notch</p>
               <h1 className="mt-1 text-2xl font-black text-[#10233f]">Lead Tracker</h1>
               <p className="text-sm text-[#6b7b91]">Manage your pipeline and follow-ups</p>
             </div>
@@ -308,7 +308,7 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Next Follow-Up</label>
-                <input type="datetime-local" value={draft.next_follow_up_at} onChange={(e) => setDraft((p) => ({ ...p, next_follow_up_at: e.target.value }))} className={inputCls} />
+                <input type="datetime-local" lang="en-AU" value={draft.next_follow_up_at} onChange={(e) => setDraft((p) => ({ ...p, next_follow_up_at: e.target.value }))} className={inputCls} />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Notes</label>
@@ -464,7 +464,7 @@ function LeadCard({ lead, expanded, onToggle, onUpdate, onLogFollowUp, onAddCons
               {leadStatuses.map((s) => <option key={s} value={s}>{formatStatusLabel(s)}</option>)}
             </select>
             <input
-              type="datetime-local"
+              type="datetime-local" lang="en-AU"
               value={formatDateTimeLocal(lead.next_follow_up_at)}
               onChange={(e) => onUpdate(lead.id, { next_follow_up_at: e.target.value })}
               className={inputCls + " w-auto"}

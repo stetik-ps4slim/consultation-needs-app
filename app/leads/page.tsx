@@ -4,7 +4,7 @@ import { hasSupabaseConfig, sampleLeads, type Lead } from "@/lib/leads";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export const metadata: Metadata = {
-  title: "Lead Tracker | Upper Notch Coaching",
+  title: "Lead Tracker | The Upper Notch",
   description: "Track every enquiry from first message to signed client."
 };
 

@@ -334,6 +334,14 @@ export function ConsultationIntakeApp() {
   );
   const [isSavingOnline, setIsSavingOnline] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState<number | null>(null);
+  const [loadedClientName, setLoadedClientName] = useState<string | null>(null);
+
+  // Client search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [clientRecords, setClientRecords] = useState<ConsultationNeedsRecord[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [searchError, setSearchError] = useState("");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -424,6 +432,44 @@ export function ConsultationIntakeApp() {
     setOnlineStatus("Save online to create a new client record.");
   };
 
+  const openClientSearch = async () => {
+    setShowSearch(true);
+    setSearchQuery("");
+    setSearchError("");
+    setIsLoadingClients(true);
+    try {
+      const res = await fetch("/api/consultation-needs");
+      const data = (await res.json()) as { records?: ConsultationNeedsRecord[]; error?: string };
+      if (!res.ok) throw new Error(data.error || "Could not load records.");
+      setClientRecords(data.records ?? []);
+    } catch (err) {
+      setSearchError(err instanceof Error ? err.message : "Failed to load client records.");
+    } finally {
+      setIsLoadingClients(false);
+    }
+  };
+
+  const loadClientRecord = (record: ConsultationNeedsRecord) => {
+    const loaded: ConsultationNeedsForm = { ...createInitialState(), ...(record.form_data ?? {}) };
+    setForm(loaded);
+    setSavedRecordId(record.id);
+    setLoadedClientName(record.client_name || record.form_data?.fullName || `Record #${record.id}`);
+    setOnlineStatus(`Loaded ${record.client_name || "client"} — any changes will update their record.`);
+    setShowSearch(false);
+    setSearchQuery("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const filteredRecords = clientRecords.filter((r) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      !q ||
+      (r.client_name ?? "").toLowerCase().includes(q) ||
+      (r.client_email ?? "").toLowerCase().includes(q) ||
+      (r.client_phone ?? "").toLowerCase().includes(q)
+    );
+  });
+
   const saveOnline = async () => {
     setIsSavingOnline(true);
     setOnlineStatus(savedRecordId ? "Updating online record..." : "Saving online record...");
@@ -470,6 +516,83 @@ export function ConsultationIntakeApp() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f] print:bg-white print:text-black">
+
+      {/* Client search modal */}
+      {showSearch && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 pt-16 pb-8 backdrop-blur-sm print:hidden">
+          <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-[#10233f]">Load Client Consultation</h2>
+                <p className="text-sm text-[#4a5c73]">Search by name, email, or phone</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSearch(false)}
+                className="rounded-full p-2 text-slate-400 transition hover:bg-stone-100 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="px-6 py-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type a name, email or phone…"
+                autoFocus
+                className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-[#10233f] outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
+              />
+            </div>
+
+            <div className="max-h-80 overflow-y-auto px-6 pb-6">
+              {isLoadingClients && (
+                <p className="py-6 text-center text-sm text-slate-400">Loading records…</p>
+              )}
+              {searchError && (
+                <p className="py-4 text-center text-sm text-rose-600">{searchError}</p>
+              )}
+              {!isLoadingClients && !searchError && filteredRecords.length === 0 && (
+                <p className="py-6 text-center text-sm text-slate-400">
+                  {searchQuery ? "No clients match that search." : "No saved consultations found."}
+                </p>
+              )}
+              {!isLoadingClients && filteredRecords.map((record) => (
+                <button
+                  key={record.id}
+                  type="button"
+                  onClick={() => loadClientRecord(record)}
+                  className="mb-2 flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-3 text-left transition hover:border-[#9a6820]/60 hover:bg-[#fdf8ef]"
+                >
+                  <div>
+                    <p className="font-semibold text-[#10233f]">{record.client_name || "Unnamed"}</p>
+                    <p className="text-xs text-[#4a5c73]">
+                      {record.client_email || record.client_phone || ""}
+                      {record.consultation_date ? ` · ${record.consultation_date}` : ""}
+                    </p>
+                  </div>
+                  <span className="ml-4 shrink-0 rounded-full bg-[#9a6820] px-3 py-1 text-xs font-semibold text-white">Load</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loaded client banner */}
+      {loadedClientName && (
+        <div className="sticky top-0 z-40 flex items-center justify-between bg-[#15314a] px-6 py-3 text-sm text-white print:hidden">
+          <span>✏️ Editing consultation for <strong>{loadedClientName}</strong> — changes will update their record</span>
+          <button
+            type="button"
+            onClick={openClientSearch}
+            className="rounded-full border border-white/30 px-3 py-1 text-xs font-semibold transition hover:bg-white/10"
+          >
+            Switch Client
+          </button>
+        </div>
+      )}
       <div className="container-shell section-space relative z-10">
         <div className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] print:grid-cols-1">
           <div className="panel rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8">
@@ -521,6 +644,13 @@ export function ConsultationIntakeApp() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3 print:hidden">
+              <button
+                type="button"
+                onClick={openClientSearch}
+                className="rounded-full bg-[#15314a] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1e3f60]"
+              >
+                🔍 Load Client
+              </button>
               <a
                 href="/clients"
                 className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"

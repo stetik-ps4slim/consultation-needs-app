@@ -152,41 +152,53 @@ export function sortClients(clients: ScreeningClient[], sortBy: ClientSort) {
   });
 }
 
+/**
+ * Rebuild sections from the current movementSections definition,
+ * merging in any saved scores/observations/notes by matching on
+ * section title + test name. This means removed exercises never
+ * appear — even if old data in Supabase or localStorage still has them.
+ */
 export function sanitizeSections(input: unknown): MovementSection[] {
-  if (!Array.isArray(input) || !input.length) {
-    return createDefaultSections();
+  // Build a lookup of stored test data keyed by "Section Title|Test Name"
+  const stored = new Map<string, Partial<MovementTest>>();
+
+  if (Array.isArray(input)) {
+    for (const section of input) {
+      if (!isRecord(section)) continue;
+      const sectionTitle = typeof section.title === "string" ? section.title.trim() : "";
+      const tests = Array.isArray(section.tests) ? section.tests : [];
+      for (const test of tests) {
+        if (!isRecord(test)) continue;
+        const testName = typeof test.name === "string" ? test.name.trim() : "";
+        if (sectionTitle && testName) {
+          stored.set(`${sectionTitle}|${testName}`, {
+            score: parseScore(test.score),
+            completed: Boolean(test.completed),
+            observations: typeof test.observations === "string" ? test.observations.trim() : "",
+            notes: typeof test.notes === "string" ? test.notes.trim() : "",
+            assessedOn: typeof test.assessedOn === "string" ? test.assessedOn.trim() : ""
+          });
+        }
+      }
+    }
   }
 
-  return input.map((section, sectionIndex) => {
-    const defaultSection = createDefaultSections()[sectionIndex];
-    const sectionRecord = isRecord(section) ? section : {};
-    const tests = Array.isArray(sectionRecord.tests) ? sectionRecord.tests : [];
-
-    return {
-      title:
-        typeof sectionRecord.title === "string" && sectionRecord.title.trim()
-          ? sectionRecord.title.trim()
-          : defaultSection?.title ?? `Section ${sectionIndex + 1}`,
-      tests: tests.map((test, testIndex) => {
-        const defaultTest = defaultSection?.tests[testIndex];
-        const testRecord = isRecord(test) ? test : {};
-
-        return {
-          name:
-            typeof testRecord.name === "string" && testRecord.name.trim()
-              ? testRecord.name.trim()
-              : defaultTest?.name ?? `Test ${testIndex + 1}`,
-          score: parseScore(testRecord.score),
-          completed: Boolean(testRecord.completed),
-          observations:
-            typeof testRecord.observations === "string" ? testRecord.observations.trim() : "",
-          notes: typeof testRecord.notes === "string" ? testRecord.notes.trim() : "",
-          assessedOn:
-            typeof testRecord.assessedOn === "string" ? testRecord.assessedOn.trim() : ""
-        };
-      })
-    };
-  });
+  // Rebuild from the authoritative movementSections list, merging saved data by name
+  return createDefaultSections().map((defaultSection) => ({
+    title: defaultSection.title,
+    tests: defaultSection.tests.map((defaultTest) => {
+      const key = `${defaultSection.title}|${defaultTest.name}`;
+      const saved = stored.get(key);
+      return {
+        name: defaultTest.name,
+        score: saved?.score ?? null,
+        completed: saved?.completed ?? false,
+        observations: saved?.observations ?? "",
+        notes: saved?.notes ?? "",
+        assessedOn: saved?.assessedOn ?? ""
+      };
+    })
+  }));
 }
 
 export function normalizeClientInsert(input: Partial<ScreeningClientInsert>) {

@@ -7,7 +7,6 @@ import {
   getLeadStats,
   leadSources,
   leadStatuses,
-  sampleLeads,
   serviceOptions,
   type Lead,
   type LeadSource,
@@ -50,498 +49,459 @@ const emptyDraft: DraftLead = {
 };
 
 const statusTone: Record<LeadStatus, string> = {
-  new: "border-sky-400/30 bg-sky-400/10 text-sky-100",
-  contacted: "border-amber-400/30 bg-amber-400/10 text-amber-100",
-  "consult-booked": "border-violet-400/30 bg-violet-400/10 text-violet-100",
-  "proposal-sent": "border-orange-400/30 bg-orange-400/10 text-orange-100",
-  won: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
-  lost: "border-rose-400/30 bg-rose-400/10 text-rose-100"
+  new: "border-sky-300/50 bg-sky-50 text-sky-700",
+  contacted: "border-amber-300/50 bg-amber-50 text-amber-700",
+  "consult-booked": "border-violet-300/50 bg-violet-50 text-violet-700",
+  "proposal-sent": "border-orange-300/50 bg-orange-50 text-orange-700",
+  won: "border-emerald-300/50 bg-emerald-50 text-emerald-700",
+  lost: "border-rose-300/50 bg-rose-50 text-rose-700"
 };
 
-export function LeadTrackerDashboard({
-  initialLeads,
-  isFallback
-}: DashboardProps) {
+function isOverdue(dateStr: string | null) {
+  if (!dateStr) return false;
+  return new Date(dateStr).getTime() <= Date.now();
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "Not set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+function formatDateTimeLocal(value: string | null | undefined) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+const inputCls = "w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-[#10233f] outline-none transition placeholder:text-stone-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/15";
+
+export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProps) {
   const [leads, setLeads] = useState(initialLeads);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [sourceFilter, setSourceFilter] = useState<LeadSource | "all">("all");
+  const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState<DraftLead>(emptyDraft);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const filteredLeads = useMemo(() => {
-    return leads
-      .filter((lead) => {
-        const searchBlob =
-          `${lead.name} ${lead.email} ${lead.phone} ${lead.goal} ${lead.notes}`.toLowerCase();
-        const matchesQuery = !query || searchBlob.includes(query.toLowerCase());
-        const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
-        const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
+    return leads.filter((lead) => {
+      const blob = `${lead.name} ${lead.email} ${lead.phone} ${lead.goal} ${lead.notes}`.toLowerCase();
+      const matchesQuery = !query || blob.includes(query.toLowerCase());
+      const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
+      const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
+      return matchesQuery && matchesStatus && matchesSource;
+    });
+  }, [leads, query, statusFilter, sourceFilter]);
 
-        return matchesQuery && matchesStatus && matchesSource;
-      })
-      .sort((left, right) => {
-        const leftDue = left.next_follow_up_at
-          ? new Date(left.next_follow_up_at).getTime()
-          : Number.POSITIVE_INFINITY;
-        const rightDue = right.next_follow_up_at
-          ? new Date(right.next_follow_up_at).getTime()
-          : Number.POSITIVE_INFINITY;
+  const stats = useMemo(() => getLeadStats(filteredLeads), [filteredLeads]);
+  const dueCount = useMemo(
+    () => leads.filter((l) => isOverdue(l.next_follow_up_at) && !["won", "lost"].includes(l.status)).length,
+    [leads]
+  );
 
-        if (leftDue !== rightDue) {
-          return leftDue - rightDue;
-        }
-
-        if (left.priority !== right.priority) {
-          return right.priority - left.priority;
-        }
-
-        return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
-      });
-  }, [leads, query, sourceFilter, statusFilter]);
-
-  const stats = getLeadStats(filteredLeads);
-
-  async function createLead(event: React.FormEvent<HTMLFormElement>) {
+  async function createLead(event: React.FormEvent) {
     event.preventDefault();
     setError("");
-
-    if (isFallback) {
-      const newLead: Lead = {
-        id: Math.max(0, ...leads.map((lead) => lead.id)) + 1,
-        name: draft.name,
-        phone: draft.phone,
-        email: draft.email,
-        goal: draft.goal,
-        source: draft.source,
-        service_interest: draft.service_interest,
-        priority: Number(draft.priority) as 1 | 2 | 3,
-        budget: draft.budget,
-        notes: draft.notes,
-        follow_up_calls: Number(draft.follow_up_calls) || 0,
-        consultation_sessions_completed:
-          Number(draft.consultation_sessions_completed) || 0,
-        status: "new",
-        last_contacted_at: null,
-        next_follow_up_at: draft.next_follow_up_at
-          ? new Date(draft.next_follow_up_at).toISOString()
-          : null,
-        created_at: new Date().toISOString()
-      };
-
-      setLeads((current) => [newLead, ...current]);
-      setDraft(emptyDraft);
-      return;
-    }
-
     startTransition(async () => {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...draft,
-          priority: Number(draft.priority),
-          follow_up_calls: Number(draft.follow_up_calls) || 0,
-          consultation_sessions_completed:
-            Number(draft.consultation_sessions_completed) || 0
-        })
-      });
-
-      const payload = (await response.json()) as { error?: string; lead?: Lead };
-
-      if (!response.ok || !payload.lead) {
-        setError(payload.error ?? "Could not create lead.");
-        return;
+      try {
+        const response = await fetch("/api/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...draft,
+            priority: Number(draft.priority),
+            follow_up_calls: Number(draft.follow_up_calls),
+            consultation_sessions_completed: Number(draft.consultation_sessions_completed)
+          })
+        });
+        const payload = (await response.json()) as { lead?: Lead; error?: string };
+        if (!response.ok) throw new Error(payload.error || "Could not save lead.");
+        if (payload.lead) setLeads((prev) => [payload.lead as Lead, ...prev]);
+        setDraft(emptyDraft);
+        setShowForm(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
       }
-
-      const createdLead = payload.lead;
-      setLeads((current) => [createdLead, ...current]);
-      setDraft(emptyDraft);
     });
   }
 
-  async function updateLead(leadId: number, update: Partial<Lead>) {
-    const sanitizedUpdate = Object.fromEntries(
-      Object.entries(update).filter(([, value]) => value !== undefined)
-    ) as Partial<Lead>;
-
-    if (isFallback) {
-      setLeads((current) =>
-        current.map((lead) =>
-          lead.id === leadId ? { ...lead, ...sanitizedUpdate } : lead
-        )
-      );
-      return;
-    }
-
-    const previousLeads = leads;
-    setLeads((current) =>
-      current.map((lead) =>
-        lead.id === leadId ? { ...lead, ...sanitizedUpdate } : lead
-      )
-    );
-
-    const response = await fetch(`/api/leads/${leadId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sanitizedUpdate)
+  function updateLeadOptimistic(id: number, patch: Partial<Lead>) {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    startTransition(async () => {
+      await fetch(`/api/leads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch)
+      });
     });
+  }
 
-    if (!response.ok) {
-      setLeads(previousLeads);
-    }
+  function logFollowUp(lead: Lead) {
+    updateLeadOptimistic(lead.id, {
+      follow_up_calls: lead.follow_up_calls + 1,
+      last_contacted_at: new Date().toISOString(),
+      status: lead.status === "new" ? "contacted" : lead.status
+    });
+  }
+
+  function addConsultation(lead: Lead) {
+    updateLeadOptimistic(lead.id, {
+      consultation_sessions_completed: lead.consultation_sessions_completed + 1,
+      status: lead.status === "new" || lead.status === "contacted" ? "consult-booked" : lead.status
+    });
+  }
+
+  async function deleteLead(id: number) {
+    await fetch(`/api/leads/${id}`, { method: "DELETE" });
+    setLeads((prev) => prev.filter((l) => l.id !== id));
+    setDeleteConfirm(null);
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(120,119,198,0.18),transparent_25%),radial-gradient(circle_at_top_right,rgba(67,168,139,0.16),transparent_28%),linear-gradient(180deg,#07111a_0%,#0b1621_38%,#061017_100%)] text-slate-100">
-      <div className="container-shell max-w-7xl py-10 sm:py-12">
-        <section className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/5 p-7 shadow-glow backdrop-blur sm:p-10">
-          <div className="absolute inset-0 bg-grid bg-[size:32px_32px] opacity-20" />
-          <div className="relative grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
-            <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-100">
-                PT Lead Tracker
-              </div>
-              <div className="space-y-4">
-                <h1 className="max-w-4xl text-5xl font-semibold leading-tight text-white sm:text-6xl">
-                  Keep every enquiry moving from first message to signed client.
-                </h1>
-                <p className="max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-                  Built for a personal training business: see new leads, book consults,
-                  stay on top of follow-ups, and keep sales notes in one place.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Visible Leads" value={stats.total} hint="Current filtered view" />
-                <StatCard label="Active Pipeline" value={stats.pipelineValue} hint="Not won or lost" />
-                <StatCard label="Clients Won" value={stats.won} hint="Converted leads" />
-                <StatCard label="Due Follow-Ups" value={stats.followUps} hint="Needs action now" />
-              </div>
+    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
+      {/* Page header */}
+      <div className="border-b border-stone-200 bg-white/80 backdrop-blur">
+        <div className="container-shell max-w-7xl py-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">Upper Notch Coaching</p>
+              <h1 className="mt-1 text-2xl font-black text-[#10233f]">Lead Tracker</h1>
+              <p className="text-sm text-[#6b7b91]">Manage your pipeline and follow-ups</p>
             </div>
-
-            <div className="rounded-[2rem] border border-white/10 bg-slate-950/60 p-6 sm:p-7">
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
-                Workflow
-              </p>
-              <div className="mt-4 space-y-3">
-                {leadStatuses.map((status, index) => (
-                  <div key={status} className="flex items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/5 px-5 py-4">
-                    <div>
-                      <p className="text-base font-semibold text-white">{formatStatusLabel(status)}</p>
-                      <p className="text-sm text-slate-400">Stage {index + 1}</p>
-                    </div>
-                    <span className={`rounded-full border px-4 py-1.5 text-sm font-semibold ${statusTone[status]}`}>
-                      {leads.filter((lead) => lead.status === status).length}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {isFallback ? (
-                <p className="mt-5 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-5 py-4 text-base leading-7 text-amber-100">
-                  Running with sample data right now. Add your Supabase keys to make every lead save permanently.
-                </p>
-              ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              <a href="/" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">New Consultation</a>
+              <a href="/onboarding" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Onboarding</a>
+              <a href="/clients" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Client Hub</a>
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="rounded-full bg-[#9a6820] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-105"
+              >
+                + Add Lead
+              </button>
             </div>
           </div>
-        </section>
-
-        <section className="mt-10 grid gap-8 2xl:grid-cols-[1.08fr_0.92fr]">
-          <form onSubmit={createLead} className="rounded-[2.25rem] border border-white/10 bg-slate-950/55 p-7 backdrop-blur sm:p-8 2xl:sticky 2xl:top-8">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-200/80">
-                  Add Lead
-                </p>
-                <h2 className="mt-2 text-3xl font-semibold text-white">New enquiry capture</h2>
-                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-400">
-                  Capture the lead once, then manage calls, consults, and follow-ups from the board.
-                </p>
-              </div>
-              <span className="rounded-full border border-white/10 px-4 py-1.5 text-sm text-slate-400">
-                Quick intake
-              </span>
-            </div>
-
-            <div className="mt-7 grid gap-5 md:grid-cols-2">
-              <Field label="Full name">
-                <input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className={inputClassName} />
-              </Field>
-              <Field label="Phone">
-                <input required value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className={inputClassName} />
-              </Field>
-              <Field label="Email">
-                <input required type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className={inputClassName} />
-              </Field>
-              <Field label="Lead source">
-                <select value={draft.source} onChange={(event) => setDraft({ ...draft, source: event.target.value as LeadSource })} className={inputClassName}>
-                  {leadSources.map((source) => (
-                    <option key={source} value={source}>
-                      {formatSourceLabel(source)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Service">
-                <select value={draft.service_interest} onChange={(event) => setDraft({ ...draft, service_interest: event.target.value })} className={inputClassName}>
-                  {serviceOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Priority">
-                <select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as DraftLead["priority"] })} className={inputClassName}>
-                  <option value="1">Low</option>
-                  <option value="2">Medium</option>
-                  <option value="3">High</option>
-                </select>
-              </Field>
-              <Field label="Budget">
-                <input value={draft.budget} onChange={(event) => setDraft({ ...draft, budget: event.target.value })} placeholder="$60-$90/week" className={inputClassName} />
-              </Field>
-              <Field label="Follow-up calls">
-                <input value={draft.follow_up_calls} onChange={(event) => setDraft({ ...draft, follow_up_calls: event.target.value })} type="number" min="0" className={inputClassName} />
-              </Field>
-              <Field label="Consult sessions done">
-                <input value={draft.consultation_sessions_completed} onChange={(event) => setDraft({ ...draft, consultation_sessions_completed: event.target.value })} type="number" min="0" className={inputClassName} />
-              </Field>
-              <Field label="Next follow-up">
-                <input value={draft.next_follow_up_at} onChange={(event) => setDraft({ ...draft, next_follow_up_at: event.target.value })} type="datetime-local" className={inputClassName} />
-              </Field>
-              <Field label="Goal" className="md:col-span-2">
-                <textarea required value={draft.goal} onChange={(event) => setDraft({ ...draft, goal: event.target.value })} rows={3} className={`${inputClassName} resize-none`} />
-              </Field>
-              <Field label="Notes" className="md:col-span-2">
-                <textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={4} className={`${inputClassName} resize-none`} />
-              </Field>
-            </div>
-
-            {error ? <p className="mt-5 text-base text-rose-300">{error}</p> : null}
-
-            <button type="submit" disabled={isPending} className="mt-7 inline-flex items-center justify-center rounded-full bg-cyan-300 px-6 py-3.5 text-base font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60">
-              {isPending ? "Saving..." : "Add lead"}
-            </button>
-          </form>
-
-          <section className="rounded-[2.25rem] border border-white/10 bg-slate-950/55 p-7 backdrop-blur sm:p-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-200/80">
-                  Lead Board
-                </p>
-                <h2 className="mt-2 text-3xl font-semibold text-white">Your pipeline at a glance</h2>
-                <p className="mt-3 text-base leading-7 text-slate-400">
-                  Ordered by nearest follow-up date first, then by lead priority.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search name, goal, note..."
-                  className={inputClassName}
-                />
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as LeadStatus | "all")} className={inputClassName}>
-                  <option value="all">All stages</option>
-                  {leadStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {formatStatusLabel(status)}
-                    </option>
-                  ))}
-                </select>
-                <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as LeadSource | "all")} className={inputClassName}>
-                  <option value="all">All sources</option>
-                  {leadSources.map((source) => (
-                    <option key={source} value={source}>
-                      {formatSourceLabel(source)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-7 space-y-5">
-              {filteredLeads.length ? (
-                filteredLeads.map((lead) => (
-                  <article key={lead.id} className="rounded-[1.8rem] border border-white/10 bg-white/[0.045] p-6 sm:p-7">
-                    <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
-                      <div className="min-w-0 flex-1 space-y-4">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <h3 className="text-2xl font-semibold text-white sm:text-3xl">{lead.name}</h3>
-                          <span className={`rounded-full border px-4 py-1.5 text-sm font-semibold ${statusTone[lead.status]}`}>
-                            {formatStatusLabel(lead.status)}
-                          </span>
-                          <span className="rounded-full border border-white/10 px-4 py-1.5 text-sm text-slate-300">
-                            {lead.service_interest}
-                          </span>
-                        </div>
-                        <p className="max-w-3xl break-words text-base leading-8 text-slate-300 sm:text-lg">
-                          {lead.goal}
-                        </p>
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 text-base text-slate-400">
-                          <span>{lead.phone}</span>
-                          <span className="break-all">{lead.email}</span>
-                          <span>{formatSourceLabel(lead.source)}</span>
-                          <span>Priority {lead.priority}</span>
-                          {lead.budget ? <span>{lead.budget}</span> : null}
-                        </div>
-                        {lead.notes ? (
-                          <p className="rounded-2xl border border-white/8 bg-slate-900/70 px-5 py-4 text-base leading-8 text-slate-300">
-                            {lead.notes}
-                          </p>
-                        ) : null}
-                        <div className="grid gap-5 2xl:grid-cols-[1fr_1.15fr]">
-                          <div className="rounded-[1.7rem] border border-white/8 bg-slate-900/70 px-6 py-5 text-base text-slate-300">
-                            <p className="text-sm uppercase tracking-[0.18em] text-slate-500">
-                              Follow-Up Calls
-                            </p>
-                            <p className="mt-4 text-4xl font-semibold text-white">
-                              {lead.follow_up_calls}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateLead(lead.id, {
-                                  follow_up_calls: lead.follow_up_calls + 1,
-                                  last_contacted_at: new Date().toISOString()
-                                })
-                              }
-                              className="mt-4 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 text-base font-semibold text-cyan-100 transition hover:bg-cyan-300/20"
-                            >
-                              Log follow-up call
-                            </button>
-                          </div>
-                          <div className="rounded-[1.7rem] border border-white/8 bg-slate-900/70 px-6 py-5 text-base text-slate-300">
-                            <p className="text-sm uppercase tracking-[0.18em] text-slate-500">
-                              Consultation
-                            </p>
-                            <p className="mt-4 text-4xl font-semibold leading-tight text-white">
-                              {lead.consultation_sessions_completed} sessions completed
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateLead(lead.id, {
-                                  consultation_sessions_completed:
-                                    lead.consultation_sessions_completed + 1
-                                })
-                              }
-                              className="mt-4 rounded-full border border-violet-300/30 bg-violet-300/10 px-5 py-3 text-base font-semibold text-violet-100 transition hover:bg-violet-300/20"
-                            >
-                              Add consultation session
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-4 sm:grid-cols-2 2xl:w-[360px] 2xl:grid-cols-1">
-                        <label className="text-base text-slate-300">
-                          <span className="mb-2 block text-sm uppercase tracking-[0.18em] text-slate-500">
-                            Stage
-                          </span>
-                          <select
-                            value={lead.status}
-                            onChange={(event) =>
-                              updateLead(lead.id, { status: event.target.value as LeadStatus })
-                            }
-                            className={inputClassName}
-                          >
-                            {leadStatuses.map((status) => (
-                              <option key={status} value={status}>
-                                {formatStatusLabel(status)}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateLead(lead.id, {
-                              last_contacted_at: new Date().toISOString()
-                            })
-                          }
-                          className="rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-5 py-4 text-base font-semibold text-cyan-100 transition hover:bg-cyan-300/20"
-                        >
-                          Mark contacted now
-                        </button>
-
-                        <div className="rounded-2xl border border-white/8 bg-slate-900/70 px-5 py-4 text-base text-slate-300">
-                          <p className="text-sm uppercase tracking-[0.18em] text-slate-500">Last contacted</p>
-                          <p className="mt-2 break-words leading-7">{formatDate(lead.last_contacted_at)}</p>
-                        </div>
-
-                        <div className="rounded-2xl border border-white/8 bg-slate-900/70 px-5 py-4 text-base text-slate-300">
-                          <p className="text-sm uppercase tracking-[0.18em] text-slate-500">Next follow-up</p>
-                          <p className="mt-2 break-words leading-7">{formatDate(lead.next_follow_up_at)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <div className="rounded-[1.8rem] border border-dashed border-white/15 bg-white/[0.03] px-8 py-12 text-center text-lg text-slate-400">
-                  No leads match this filter yet.
-                </div>
-              )}
-            </div>
-          </section>
-        </section>
-
+          {isFallback && (
+            <p className="mt-3 inline-flex rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700">
+              Running on sample data — add your Supabase keys to save changes permanently.
+            </p>
+          )}
+        </div>
       </div>
+
+      <div className="container-shell max-w-7xl py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard label="Visible Leads" value={filteredLeads.length} />
+          <StatCard label="Active Pipeline" value={stats.pipelineValue} />
+          <StatCard label="Clients Won" value={stats.won} />
+          <StatCard label="Due Follow-Ups" value={dueCount} highlight={dueCount > 0} />
+        </div>
+
+        {/* Filters */}
+        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4">
+          <div className="flex min-w-48 flex-1 items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+            <svg className="h-4 w-4 shrink-0 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" /></svg>
+            <input
+              type="text"
+              placeholder="Search leads..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-[#10233f] outline-none placeholder:text-stone-400"
+            />
+          </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as LeadStatus | "all")} className={inputCls + " w-auto min-w-32"}>
+            <option value="all">All Status</option>
+            {leadStatuses.map((s) => <option key={s} value={s}>{formatStatusLabel(s)}</option>)}
+          </select>
+          <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as LeadSource | "all")} className={inputCls + " w-auto min-w-32"}>
+            <option value="all">All Sources</option>
+            {leadSources.map((s) => <option key={s} value={s}>{formatSourceLabel(s)}</option>)}
+          </select>
+        </div>
+
+        {/* Lead list */}
+        <div className="mt-5 space-y-3">
+          {filteredLeads.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-stone-300 bg-white/60 py-14 text-center">
+              <p className="text-base font-semibold text-[#6b7b91]">No leads match this filter yet.</p>
+              <p className="mt-1 text-sm text-stone-400">Add your first lead or adjust filters above.</p>
+            </div>
+          ) : (
+            filteredLeads.map((lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                expanded={expandedId === lead.id}
+                onToggle={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
+                onUpdate={updateLeadOptimistic}
+                onLogFollowUp={() => logFollowUp(lead)}
+                onAddConsultation={() => addConsultation(lead)}
+                onDeleteRequest={() => setDeleteConfirm(lead.id)}
+                deleteConfirm={deleteConfirm === lead.id}
+                onDeleteConfirm={() => deleteLead(lead.id)}
+                onDeleteCancel={() => setDeleteConfirm(null)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Add lead modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl overflow-y-auto rounded-2xl border border-stone-200 bg-white shadow-2xl" style={{ maxHeight: "90vh" }}>
+            <div className="flex items-center justify-between border-b border-stone-200 px-6 py-5">
+              <h2 className="text-lg font-black text-[#10233f]">Add New Lead</h2>
+              <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="text-stone-400 transition hover:text-[#10233f]">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={createLead} className="grid gap-4 p-6 sm:grid-cols-2">
+              {([
+                { key: "name", label: "Name *", placeholder: "Full name", required: true },
+                { key: "phone", label: "Phone", placeholder: "0400 000 000" },
+                { key: "email", label: "Email", placeholder: "email@example.com" },
+                { key: "goal", label: "Goal", placeholder: "What are they trying to achieve?" },
+                { key: "budget", label: "Budget", placeholder: "$200–$300/wk" },
+                { key: "service_interest", label: "Service Interest", placeholder: "e.g. Hybrid Coaching" }
+              ] as Array<{ key: keyof DraftLead; label: string; placeholder: string; required?: boolean }>).map(({ key, label, placeholder, required }) => (
+                <div key={key}>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">{label}</label>
+                  <input
+                    type="text"
+                    required={required}
+                    placeholder={placeholder}
+                    value={draft[key] as string}
+                    onChange={(e) => setDraft((p) => ({ ...p, [key]: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Source</label>
+                <select value={draft.source} onChange={(e) => setDraft((p) => ({ ...p, source: e.target.value as LeadSource }))} className={inputCls}>
+                  {leadSources.map((s) => <option key={s} value={s}>{formatSourceLabel(s)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Priority</label>
+                <select value={draft.priority} onChange={(e) => setDraft((p) => ({ ...p, priority: e.target.value as DraftLead["priority"] }))} className={inputCls}>
+                  <option value="3">High</option>
+                  <option value="2">Medium</option>
+                  <option value="1">Low</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Status</label>
+                <select value={draft.source} onChange={(e) => setDraft((p) => ({ ...p, source: e.target.value as LeadSource }))} className={inputCls}>
+                  {leadStatuses.map((s) => <option key={s} value={s}>{formatStatusLabel(s)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Next Follow-Up</label>
+                <input type="datetime-local" value={draft.next_follow_up_at} onChange={(e) => setDraft((p) => ({ ...p, next_follow_up_at: e.target.value }))} className={inputCls} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Notes</label>
+                <textarea rows={3} value={draft.notes} onChange={(e) => setDraft((p) => ({ ...p, notes: e.target.value }))} placeholder="Any additional notes..." className={inputCls + " resize-none"} />
+              </div>
+              {error && <p className="text-sm text-rose-600 sm:col-span-2">{error}</p>}
+              <div className="flex gap-3 sm:col-span-2">
+                <button type="submit" disabled={isPending} className="flex-1 rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-60">
+                  {isPending ? "Saving..." : "Add Lead"}
+                </button>
+                <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  hint
-}: {
-  label: string;
-  value: number;
-  hint: string;
-}) {
+// ─── STAT CARD ────────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (
-    <div className="rounded-[1.6rem] border border-white/10 bg-slate-950/60 p-5">
-      <p className="text-sm uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-3 text-4xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-base text-slate-400">{hint}</p>
+    <div className={`rounded-2xl border p-5 ${highlight ? "border-rose-300/50 bg-rose-50" : "border-stone-200 bg-white"}`}>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-stone-400">{label}</p>
+      <p className={`mt-3 font-[Arial_Narrow] text-5xl ${highlight ? "text-rose-600" : "text-[#10233f]"}`}>{value}</p>
     </div>
   );
 }
 
-function Field({
-  label,
-  className,
-  children
-}: {
-  label: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
+// ─── LEAD CARD ────────────────────────────────────────────────────────────────
+
+interface LeadCardProps {
+  lead: Lead;
+  expanded: boolean;
+  onToggle: () => void;
+  onUpdate: (id: number, patch: Partial<Lead>) => void;
+  onLogFollowUp: () => void;
+  onAddConsultation: () => void;
+  onDeleteRequest: () => void;
+  deleteConfirm: boolean;
+  onDeleteConfirm: () => void;
+  onDeleteCancel: () => void;
+}
+
+function LeadCard({ lead, expanded, onToggle, onUpdate, onLogFollowUp, onAddConsultation, onDeleteRequest, deleteConfirm, onDeleteConfirm, onDeleteCancel }: LeadCardProps) {
+  const overdue = isOverdue(lead.next_follow_up_at) && !["won", "lost"].includes(lead.status);
+  const priorityLabel = lead.priority === 3 ? "High" : lead.priority === 2 ? "Medium" : "Low";
+  const priorityColor = lead.priority === 3 ? "text-rose-500" : lead.priority === 2 ? "text-amber-500" : "text-stone-400";
+  const initial = lead.name.charAt(0).toUpperCase();
+
   return (
-    <label className={className}>
-      <span className="mb-2 block text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-        {label}
-      </span>
-      {children}
-    </label>
+    <div className={`rounded-2xl border bg-white transition-all ${overdue ? "border-rose-300" : "border-stone-200 hover:border-[#d2a86c]/60"}`}>
+      {/* Card header row */}
+      <div className="flex items-center gap-4 px-5 py-4">
+        {/* Avatar */}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d2a86c]/40 bg-[#9a6820]/10 text-sm font-black text-[#9a6820]">
+          {initial}
+        </div>
+
+        {/* Name + meta */}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-bold text-[#10233f]">{lead.name}</span>
+            <span className={`text-xs font-semibold uppercase ${priorityColor}`}>{priorityLabel}</span>
+            {overdue && (
+              <span className="rounded-full border border-rose-300/50 bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">
+                ⚠ Overdue
+              </span>
+            )}
+          </div>
+          <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-stone-400">
+            {lead.phone && <span>{lead.phone}</span>}
+            {lead.email && <span>{lead.email}</span>}
+            {lead.source && <span>via {formatSourceLabel(lead.source)}</span>}
+          </div>
+        </div>
+
+        {/* Status badge + toggle */}
+        <div className="flex shrink-0 items-center gap-3">
+          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusTone[lead.status]}`}>
+            {formatStatusLabel(lead.status)}
+          </span>
+          <button type="button" onClick={onToggle} className="text-stone-400 transition hover:text-[#10233f]" aria-label="Toggle details">
+            <svg className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded body */}
+      {expanded && (
+        <div className="border-t border-stone-100 px-5 py-5 space-y-5">
+          {/* Goal + details */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {lead.goal && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Goal</p>
+                <p className="mt-1 text-sm text-[#4a5c73]">{lead.goal}</p>
+              </div>
+            )}
+            {lead.service_interest && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Service Interest</p>
+                <p className="mt-1 text-sm text-[#4a5c73]">{lead.service_interest}</p>
+              </div>
+            )}
+            {lead.budget && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Budget</p>
+                <p className="mt-1 text-sm text-[#4a5c73]">{lead.budget}</p>
+              </div>
+            )}
+            {lead.notes && (
+              <div className="sm:col-span-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Notes</p>
+                <p className="mt-1 rounded-xl border border-stone-100 bg-stone-50 p-3 text-sm text-[#4a5c73]">{lead.notes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Activity stats */}
+          <div className="flex flex-wrap gap-6 border-y border-stone-100 py-4">
+            <div>
+              <p className="font-[Arial_Narrow] text-3xl text-[#10233f]">{lead.follow_up_calls}</p>
+              <p className="text-xs text-stone-400">Follow-up Calls</p>
+            </div>
+            <div>
+              <p className="font-[Arial_Narrow] text-3xl text-[#10233f]">{lead.consultation_sessions_completed}</p>
+              <p className="text-xs text-stone-400">Consultations</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#4a5c73]">{formatDateTime(lead.last_contacted_at)}</p>
+              <p className="text-xs text-stone-400">Last Contacted</p>
+            </div>
+            <div>
+              <p className={`text-sm font-semibold ${overdue ? "text-rose-500" : "text-[#4a5c73]"}`}>{formatDateTime(lead.next_follow_up_at)}</p>
+              <p className="text-xs text-stone-400">Next Follow-Up</p>
+            </div>
+          </div>
+
+          {/* Action row */}
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={lead.status}
+              onChange={(e) => onUpdate(lead.id, { status: e.target.value as LeadStatus })}
+              className={inputCls + " w-auto min-w-36"}
+            >
+              {leadStatuses.map((s) => <option key={s} value={s}>{formatStatusLabel(s)}</option>)}
+            </select>
+            <input
+              type="datetime-local"
+              value={formatDateTimeLocal(lead.next_follow_up_at)}
+              onChange={(e) => onUpdate(lead.id, { next_follow_up_at: e.target.value })}
+              className={inputCls + " w-auto"}
+              title="Set next follow-up"
+            />
+            <button type="button" onClick={onLogFollowUp} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              Log Call
+            </button>
+            <button type="button" onClick={onAddConsultation} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              Add Consult
+            </button>
+            {deleteConfirm ? (
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-xs text-rose-600">Confirm delete?</span>
+                <button type="button" onClick={onDeleteConfirm} className="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-600">Yes, Delete</button>
+                <button type="button" onClick={onDeleteCancel} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-stone-300">Cancel</button>
+              </div>
+            ) : (
+              <button type="button" onClick={onDeleteRequest} className="ml-auto rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-rose-500 transition hover:border-rose-300">
+                Delete
+              </button>
+            )}
+          </div>
+
+          {/* Editable notes */}
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Update Notes</label>
+            <textarea
+              rows={2}
+              defaultValue={lead.notes ?? ""}
+              onBlur={(e) => { if (e.target.value !== lead.notes) onUpdate(lead.id, { notes: e.target.value }); }}
+              placeholder="Add or update notes..."
+              className={inputCls + " resize-none"}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-
-function formatDate(value: string | null) {
-  if (!value) {
-    return "Not set";
-  }
-
-  return new Intl.DateTimeFormat("en-AU", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
-
-const inputClassName =
-  "w-full rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-4 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/15";

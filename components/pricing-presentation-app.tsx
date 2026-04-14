@@ -191,7 +191,7 @@ export function PricingPresentationApp() {
       <section className="mx-auto max-w-[1600px] rounded-[2rem] border border-white/10 bg-white p-5 shadow-[0_26px_100px_rgba(0,0,0,0.45)] sm:p-7 lg:p-9 print:shadow-none">
         <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.36em] text-[#c90068]">Upper Notch Coaching</p>
+            <p className="text-sm font-black uppercase tracking-[0.36em] text-[#9a6820]">Upper Notch Coaching</p>
             <h1 className="mt-3 text-3xl font-black uppercase tracking-[0.12em] text-[#101010] sm:text-6xl">Package Options</h1>
           </div>
           <p className="max-w-2xl text-xl font-bold leading-9 text-zinc-800">
@@ -200,7 +200,7 @@ export function PricingPresentationApp() {
         </div>
 
         <section className="mt-6 rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-5 sm:p-6 print:hidden">
-          <p className="text-sm font-black uppercase tracking-[0.28em] text-[#c90068]">Consultation Tailor</p>
+          <p className="text-sm font-black uppercase tracking-[0.28em] text-[#9a6820]">Consultation Tailor</p>
           <h2 className="mt-3 text-4xl font-black text-[#101010]">Personalise The Offer</h2>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -215,13 +215,13 @@ export function PricingPresentationApp() {
           <div className="mt-5 rounded-[1.5rem] border border-zinc-200 bg-white p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">Nutrition Add-On</p>
+                <p className="text-sm font-black uppercase tracking-[0.2em] text-[#9a6820]">Nutrition Add-On</p>
                 <p className="mt-2 text-lg font-semibold leading-8 text-zinc-700">Add nutrition coaching to the selected package total.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setNutritionAdded((current) => !current)}
-                className={`rounded-full px-5 py-3 text-base font-black transition ${nutritionAdded ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
+                className={`rounded-full px-5 py-3 text-base font-black transition ${nutritionAdded ? "bg-[#9a6820] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
               >
                 {nutritionAdded ? "Nutrition Added" : "Add Nutrition"}
               </button>
@@ -236,7 +236,7 @@ export function PricingPresentationApp() {
         <section className="mt-6">
           <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.28em] text-[#c90068]">Presentation For</p>
+              <p className="text-sm font-black uppercase tracking-[0.28em] text-[#9a6820]">Presentation For</p>
               <h2 className="mt-3 font-[Arial_Narrow] text-6xl uppercase tracking-[0.08em] text-[#101010] sm:text-7xl">{clientName || "Client"}</h2>
               <p className="mt-3 max-w-3xl text-xl font-bold leading-9 text-zinc-900">{clientGoal}</p>
             </div>
@@ -248,8 +248,8 @@ export function PricingPresentationApp() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-[#c90068]/25 bg-[#fff3fa] p-5">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">Why This Recommendation Fits</p>
+          <div className="mt-6 rounded-[1.5rem] border border-[#9a6820]/25 bg-[#fdf8ef] p-5">
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9a6820]">Why This Recommendation Fits</p>
             <p className="mt-3 whitespace-pre-wrap text-xl font-black leading-10 text-[#101010]">{recommendation}</p>
             <p className="mt-3 text-xl font-bold leading-9 text-zinc-900">{packageRecommendation}</p>
           </div>
@@ -263,16 +263,16 @@ export function PricingPresentationApp() {
               return (
                 <article
                   key={packageOption.id}
-                  className={`rounded-[1.75rem] border bg-white p-6 transition ${isSelected ? "border-[#c90068] shadow-[0_18px_45px_rgba(240,47,155,0.18)]" : "border-zinc-200"}`}
+                  className={`rounded-[1.75rem] border bg-white p-6 transition ${isSelected ? "border-[#9a6820] shadow-[0_18px_45px_rgba(154,104,32,0.18)]" : "border-zinc-200"}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">12 Week Minimum</p>
+                      <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9a6820]">12 Week Minimum</p>
                       {isEditing ? (
                         <input
                           value={packageOption.name}
                           onChange={(event) => updatePackage(packageOption.id, { name: event.target.value })}
-                          className="mt-2 w-full rounded-xl border border-zinc-200 px-3 py-2 text-lg font-black text-[#101010] outline-none focus:border-[#c90068]"
+                          className="mt-2 w-full rounded-xl border border-zinc-200 px-3 py-2 text-lg font-black text-[#101010] outline-none focus:border-[#9a6820]"
                         />
                       ) : (
                         <h3 className="mt-2 text-4xl font-black uppercase tracking-[0.08em] text-[#101010]">{packageOption.name}</h3>
@@ -303,21 +303,21 @@ export function PricingPresentationApp() {
                         <p className="font-[Arial_Narrow] text-7xl text-[#101010]">{dollars(packageOption.weeklyPrice)}</p>
                         <p className="text-xl font-black text-zinc-800">per week</p>
                         <p className="mt-3 text-xl font-bold text-zinc-900">{dollars(packageOption.upfrontPrice)} upfront</p>
-                        <p className="text-xl font-black text-[#c90068]">Save {dollars(packageOption.savings)}</p>
+                        <p className="text-xl font-black text-[#9a6820]">Save {dollars(packageOption.savings)}</p>
                       </div>
 
                       <div className="mt-5 flex flex-wrap gap-2 print:hidden">
                         <button
                           type="button"
                           onClick={() => setSelectedPackageId(packageOption.id)}
-                          className={`rounded-full px-5 py-3 text-lg font-black transition ${isSelected ? "bg-[#c90068] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
+                          className={`rounded-full px-5 py-3 text-lg font-black transition ${isSelected ? "bg-[#9a6820] text-white" : "bg-[#101010] text-white hover:bg-zinc-800"}`}
                         >
                           {isSelected ? "Selected" : "Select"}
                         </button>
                         <button
                           type="button"
                           onClick={() => setOpenPackageId(isOpen ? "" : packageOption.id)}
-                          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-[#101010] transition hover:border-[#c90068]/60"
+                          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-[#101010] transition hover:border-[#9a6820]/60"
                         >
                           {isOpen ? "Hide included" : "Show included"}
                         </button>
@@ -332,15 +332,15 @@ export function PricingPresentationApp() {
           </div>
 
           {nutritionAdded ? (
-            <div className="mt-6 rounded-[1.5rem] border border-[#c90068]/30 bg-white p-5">
-              <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">Nutrition Added To Package</p>
+            <div className="mt-6 rounded-[1.5rem] border border-[#9a6820]/30 bg-white p-5">
+              <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9a6820]">Nutrition Added To Package</p>
               <p className="mt-3 text-xl font-bold leading-9 text-zinc-900">{nutritionDescription}</p>
               <p className="mt-4 text-lg font-black text-[#101010]">+ {dollars(nutritionWeeklyPrice)}/week, included in total above</p>
             </div>
           ) : null}
 
           <div className="mt-6 rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#c90068]">Consultation Notes</p>
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9a6820]">Consultation Notes</p>
             <p className="mt-3 whitespace-pre-wrap text-xl font-bold leading-9 text-zinc-900">{clientNeeds}</p>
           </div>
 
@@ -351,10 +351,10 @@ export function PricingPresentationApp() {
           ) : null}
 
           <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-zinc-200 pt-6 print:hidden">
-            <a href="/onboarding" className="rounded-full border border-zinc-200 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:border-[#c90068]/60">
+            <a href="/onboarding" className="rounded-full border border-zinc-200 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:border-[#9a6820]/60">
               Onboarding
             </a>
-            <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:border-[#c90068]/60">
+            <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:border-[#9a6820]/60">
               Client Hub
             </a>
             <button
@@ -368,7 +368,7 @@ export function PricingPresentationApp() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="rounded-full bg-[#c90068] px-6 py-4 text-lg font-black text-white transition hover:brightness-105"
+              className="rounded-full bg-[#9a6820] px-6 py-4 text-lg font-black text-white transition hover:brightness-105"
             >
               Print / Save PDF
             </button>
@@ -391,7 +391,7 @@ function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
         </ul>
       </div>
       <div>
-        <p className="rounded-full bg-[#c90068] px-4 py-2 text-xl font-black uppercase tracking-[0.2em] text-white">What Is Included</p>
+        <p className="rounded-full bg-[#9a6820] px-4 py-2 text-xl font-black uppercase tracking-[0.2em] text-white">What Is Included</p>
         <ul className="mt-3 space-y-3">
           {packageOption.inclusions.map((item) => (
             <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">{item}</li>
@@ -404,12 +404,12 @@ function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
 
 function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">
+    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#9a6820]">
       {label}
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#9a6820] focus:ring-4 focus:ring-[#9a6820]/15"
       />
     </label>
   );
@@ -417,13 +417,13 @@ function TextInput({ label, value, onChange }: { label: string; value: string; o
 
 function NumberInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
-    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">
+    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#9a6820]">
       {label}
       <input
         type="number"
         value={value}
         onChange={(event) => onChange(numberFromInput(event.target.value))}
-        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
+        className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case tracking-normal text-[#101010] outline-none transition focus:border-[#9a6820] focus:ring-4 focus:ring-[#9a6820]/15"
       />
     </label>
   );
@@ -441,13 +441,13 @@ function TextArea({
   rows?: number;
 }) {
   return (
-    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#c90068]">
+    <label className="text-sm font-black uppercase tracking-[0.2em] text-[#9a6820]">
       {label}
       <textarea
         value={value}
         rows={rows}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full resize-y rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case leading-8 tracking-normal text-[#101010] outline-none transition focus:border-[#c90068] focus:ring-4 focus:ring-[#c90068]/15"
+        className="mt-2 w-full resize-y rounded-2xl border border-zinc-300 bg-white px-5 py-4 text-lg font-bold normal-case leading-8 tracking-normal text-[#101010] outline-none transition focus:border-[#9a6820] focus:ring-4 focus:ring-[#9a6820]/15"
       />
     </label>
   );

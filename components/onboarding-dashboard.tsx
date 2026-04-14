@@ -396,12 +396,12 @@ export function OnboardingDashboard() {
   const incompleteProfiles = profiles.filter((profile) => getChecklist(profile).some((item) => !item.done)).length;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.8),transparent_30%),linear-gradient(135deg,#2cc5e8_0%,#93d5d2_30%,#c9a4ea_58%,#627bde_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
+    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-[1500px]">
-        <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_90px_rgba(39,71,132,0.24)] backdrop-blur-xl sm:p-8">
+        <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.08)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#f02f9b]">Upper Notch Coaching System</p>
+              <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">Upper Notch Coaching System</p>
               <h1 className="mt-4 max-w-4xl font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f] sm:text-7xl">
                 Onboarding Pipeline
               </h1>
@@ -410,17 +410,23 @@ export function OnboardingDashboard() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <a href="/" className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60">
+              <a href="/" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 New Consultation
               </a>
-              <a href="/clients" className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60">
+              <a href="/clients" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Client Hub
+              </a>
+              <a href="/pricing-presentation" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                Pricing
+              </a>
+              <a href="/leads" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                Lead Tracker
               </a>
               <button
                 type="button"
                 onClick={loadOnboardingData}
                 disabled={isLoading}
-                className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isLoading ? "Refreshing..." : "Refresh"}
               </button>
@@ -436,29 +442,29 @@ export function OnboardingDashboard() {
         </section>
 
         <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_420px]">
-          <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(39,71,132,0.18)] backdrop-blur-xl sm:p-6">
+          <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h2 className="text-xl font-black text-[#10233f]">Pipeline Board</h2>
                 <p className="mt-2 text-sm leading-6 text-[#4a5c73]">{status}</p>
               </div>
-              <label className="w-full max-w-md text-xs font-bold uppercase tracking-[0.2em] text-[#f02f9b]" htmlFor="onboarding-search">
+              <label className="w-full max-w-md text-xs font-bold uppercase tracking-[0.2em] text-[#9a6820]" htmlFor="onboarding-search">
                 Search
                 <input
                   id="onboarding-search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Name, phone, goal, status, note..."
-                  className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none transition placeholder:text-[#8a98aa] focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+                  className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none transition placeholder:text-[#8a98aa] focus:border-[#9a6820] focus:ring-4 focus:ring-[#9a6820]/15"
                 />
               </label>
             </div>
 
             <div className="mt-6 grid gap-4 xl:grid-cols-7">
               {profilesByStage.map((stage) => (
-                <section key={stage.id} className="min-h-[220px] rounded-[1.5rem] border border-sky-100 bg-sky-50/70 p-3">
+                <section key={stage.id} className="min-h-[220px] rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-3">
                   <div className="rounded-2xl bg-white p-3 shadow-sm">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f02f9b]">{stage.title}</p>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#9a6820]">{stage.title}</p>
                     <p className="mt-2 text-xs leading-5 text-[#6b7b91]">{stage.description}</p>
                     <p className="mt-3 font-[Arial_Narrow] text-4xl text-[#10233f]">{stage.profiles.length}</p>
                   </div>
@@ -471,16 +477,16 @@ export function OnboardingDashboard() {
                         onClick={() => setSelectedKey(profile.key)}
                         className={`w-full rounded-2xl border bg-white p-3 text-left text-sm transition ${
                           selectedProfile?.key === profile.key
-                            ? "border-[#f02f9b] shadow-[0_12px_30px_rgba(240,47,155,0.16)]"
-                            : "border-white hover:border-[#f02f9b]/50"
+                            ? "border-[#9a6820] shadow-[0_12px_30px_rgba(154,104,32,0.16)]"
+                            : "border-white hover:border-[#9a6820]/50"
                         }`}
                       >
                         <span className="block font-black text-[#10233f]">{profile.name}</span>
                         <span className="mt-1 line-clamp-2 block text-xs leading-5 text-[#4a5c73]">{profile.goal || "No goal recorded"}</span>
                         <span className="mt-3 flex flex-wrap gap-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-[#15314a]">
-                          <span className="rounded-full bg-sky-100 px-2 py-1">L {profile.leads.length}</span>
-                          <span className="rounded-full bg-sky-100 px-2 py-1">C {profile.consultations.length}</span>
-                          <span className="rounded-full bg-sky-100 px-2 py-1">S {profile.screenings.length}</span>
+                          <span className="rounded-full bg-stone-100 px-2 py-1">L {profile.leads.length}</span>
+                          <span className="rounded-full bg-stone-100 px-2 py-1">C {profile.consultations.length}</span>
+                          <span className="rounded-full bg-stone-100 px-2 py-1">S {profile.screenings.length}</span>
                         </span>
                       </button>
                     ))}
@@ -490,7 +496,7 @@ export function OnboardingDashboard() {
             </div>
           </div>
 
-          <aside className="rounded-[2rem] border border-white/70 bg-white/92 p-5 shadow-[0_20px_80px_rgba(39,71,132,0.18)] backdrop-blur-xl sm:p-6">
+          <aside className="rounded-[2rem] border border-white/70 bg-white/92 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:p-6">
             {selectedProfile ? <ProfilePanel profile={selectedProfile} /> : <EmptyProfilePanel />}
           </aside>
         </section>
@@ -501,8 +507,8 @@ export function OnboardingDashboard() {
 
 function MetricCard({ label, value, helper }: { label: string; value: number; helper: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-[0_16px_55px_rgba(39,71,132,0.18)] backdrop-blur-xl">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f02f9b]">{label}</p>
+    <div className="rounded-[1.5rem] border border-white/70 bg-white/90 p-5 shadow-[0_16px_55px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#9a6820]">{label}</p>
       <p className="mt-3 font-[Arial_Narrow] text-5xl text-[#10233f]">{value}</p>
       <p className="mt-2 text-sm text-[#4a5c73]">{helper}</p>
     </div>
@@ -521,28 +527,28 @@ function ProfilePanel({ profile }: { profile: OnboardingProfile }) {
 
   return (
     <div>
-      <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f02f9b]">Selected Profile</p>
+      <p className="text-xs font-black uppercase tracking-[0.28em] text-[#9a6820]">Selected Profile</p>
       <h2 className="mt-3 font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f]">{profile.name}</h2>
       <p className="mt-3 text-sm leading-7 text-[#4a5c73]">{profile.goal || "No main goal recorded."}</p>
 
-      <div className="mt-5 rounded-2xl border border-sky-100 bg-white p-4 text-sm leading-7 text-[#4a5c73]">
+      <div className="mt-5 rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-7 text-[#4a5c73]">
         <p><span className="font-bold text-[#10233f]">Stage:</span> {stage.title}</p>
         <p><span className="font-bold text-[#10233f]">Phone:</span> {displayValue(profile.phone)}</p>
         <p><span className="font-bold text-[#10233f]">Email:</span> {displayValue(profile.email)}</p>
         <p><span className="font-bold text-[#10233f]">Updated:</span> {formatDate(profile.updatedAt)}</p>
       </div>
 
-      <div className="mt-5 rounded-2xl border border-[#f02f9b]/25 bg-[#f02f9b]/10 p-4">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#f02f9b]">Next Best Action</p>
+      <div className="mt-5 rounded-2xl border border-[#9a6820]/25 bg-[#9a6820]/10 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#9a6820]">Next Best Action</p>
         <p className="mt-2 text-sm leading-6 text-[#15314a]">{getNextAction(profile)}</p>
       </div>
 
-      <section className="mt-5 rounded-2xl border border-sky-100 bg-white p-4">
+      <section className="mt-5 rounded-2xl border border-stone-200 bg-white p-4">
         <h3 className="font-black text-[#10233f]">Onboarding Checklist</h3>
         <div className="mt-4 space-y-3">
           {checklist.map((item) => (
             <div key={item.label} className="flex items-center gap-3 text-sm text-[#4a5c73]">
-              <span className={`h-3 w-3 rounded-full ${item.done ? "bg-[#f02f9b]" : "bg-sky-200"}`} />
+              <span className={`h-3 w-3 rounded-full ${item.done ? "bg-[#9a6820]" : "bg-stone-300"}`} />
               <span className={item.done ? "font-semibold text-[#10233f]" : ""}>{item.label}</span>
             </div>
           ))}
@@ -590,7 +596,7 @@ function ProfilePanel({ profile }: { profile: OnboardingProfile }) {
 
 function MiniRecordCard({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-sky-100 bg-white p-4 text-sm leading-7 text-[#4a5c73]">
+    <div className="rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-7 text-[#4a5c73]">
       <h3 className="font-black text-[#10233f]">{title}</h3>
       {empty ? <p className="mt-2">Not saved yet.</p> : <div className="mt-2">{children}</div>}
     </div>
@@ -599,7 +605,7 @@ function MiniRecordCard({ title, empty, children }: { title: string; empty: bool
 
 function EmptyProfilePanel() {
   return (
-    <div className="rounded-2xl border border-dashed border-sky-200 bg-white p-6 text-center text-sm leading-7 text-[#4a5c73]">
+    <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-6 text-center text-sm leading-7 text-[#4a5c73]">
       <h2 className="font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f]">No Profile Selected</h2>
       <p className="mt-3">Add a lead, consultation, or movement screening to start building the onboarding pipeline.</p>
     </div>

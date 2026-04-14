@@ -197,10 +197,10 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="panel relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(39,71,132,0.22)] backdrop-blur-xl sm:p-8 print:break-inside-avoid print:shadow-none">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f02f9b] to-transparent opacity-70" />
-      <div className="mb-6 flex flex-col gap-2 border-b border-sky-100 pb-5">
-        <p className="text-xs uppercase tracking-[0.28em] text-[#f02f9b]">Assessment Section</p>
+    <section id={id} className="panel relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8 print:break-inside-avoid print:shadow-none">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#9a6820] to-transparent opacity-70" />
+      <div className="mb-6 flex flex-col gap-2 border-b border-stone-200 pb-5">
+        <p className="text-xs uppercase tracking-[0.28em] text-[#9a6820]">Assessment Section</p>
         <h2 className="font-[Arial_Narrow] text-2xl uppercase tracking-[0.08em] text-[#10233f] sm:text-3xl">{title}</h2>
         <p className="max-w-3xl text-sm leading-6 text-[#4a5c73]">{blurb}</p>
       </div>
@@ -230,7 +230,7 @@ function InputField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#f02f9b] focus:ring-2 focus:ring-[#f02f9b]/20"
+        className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
       />
     </label>
   );
@@ -257,7 +257,7 @@ function TextareaField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#f02f9b] focus:ring-2 focus:ring-[#f02f9b]/20"
+        className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
       />
     </label>
   );
@@ -273,7 +273,7 @@ function ToggleField({
   onChange: (value: YesNo) => void;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-sm">
       <span className="text-sm font-medium text-[#15314a]">{label}</span>
       <div className="flex gap-2">
         {["Yes", "No"].map((option) => {
@@ -285,8 +285,8 @@ function ToggleField({
               onClick={() => onChange(option as YesNo)}
               className={`rounded-full px-4 py-2 text-sm transition ${
                 active
-                  ? "bg-[#f02f9b] text-white"
-                  : "border border-sky-100 bg-white text-[#15314a] hover:border-[#f02f9b]/60"
+                  ? "bg-[#9a6820] text-white"
+                  : "border border-stone-200 bg-white text-[#15314a] hover:border-[#9a6820]/60"
               }`}
             >
               {option}
@@ -313,8 +313,8 @@ function ChoiceCard({
       onClick={onClick}
       className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
         active
-          ? "border-[#f02f9b] bg-[#f02f9b] text-white"
-          : "border-sky-100 bg-white text-[#15314a] hover:border-[#f02f9b]/60"
+          ? "border-[#9a6820] bg-[#9a6820] text-white"
+          : "border-stone-200 bg-white text-[#15314a] hover:border-[#9a6820]/60"
       }`}
     >
       {label}
@@ -466,11 +466,11 @@ export function ConsultationIntakeApp() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(120deg,_#31c7f4_0%,_#84a0ee_50%,_#f09bd5_100%)] text-[#10233f] print:bg-white print:text-black">
+    <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f] print:bg-white print:text-black">
       <div className="container-shell section-space relative z-10">
         <div className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] print:grid-cols-1">
-          <div className="panel rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(39,71,132,0.22)] backdrop-blur-xl sm:p-8">
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-[#f02f9b]">Upper Notch Coaching</p>
+          <div className="panel rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8">
+            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-[#9a6820]">Upper Notch Coaching</p>
             <h1 className="max-w-3xl font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f] sm:text-5xl lg:text-6xl">
               Consultation Needs Analysis App
             </h1>
@@ -478,26 +478,26 @@ export function ConsultationIntakeApp() {
               A clean client intake experience for capturing goals, weekly realities, training history, and pre-exercise screening in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 text-sm text-[#15314a]">
-              <span className="rounded-full border border-[#f02f9b]/30 bg-[#f02f9b]/10 text-[#10233f] px-4 py-2">Live consultation ready</span>
-              <span className="rounded-full border border-sky-100 bg-white text-[#10233f] px-4 py-2">Print or PDF friendly</span>
-              <span className="rounded-full border border-sky-100 bg-white text-[#10233f] px-4 py-2">Save online ready</span>
+              <span className="rounded-full border border-[#9a6820]/30 bg-[#9a6820]/10 text-[#10233f] px-4 py-2">Live consultation ready</span>
+              <span className="rounded-full border border-stone-200 bg-white text-[#10233f] px-4 py-2">Print or PDF friendly</span>
+              <span className="rounded-full border border-stone-200 bg-white text-[#10233f] px-4 py-2">Save online ready</span>
             </div>
           </div>
 
-          <aside className="panel flex flex-col justify-between rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(39,71,132,0.22)] backdrop-blur-xl sm:p-8">
+          <aside className="panel flex flex-col justify-between rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8">
             <div>
-              <p className="text-xs uppercase tracking-[0.32em] text-[#f02f9b]">Session Snapshot</p>
+              <p className="text-xs uppercase tracking-[0.32em] text-[#9a6820]">Session Snapshot</p>
               <div className="mt-4 flex items-end gap-3">
                 <span className="font-[Arial_Narrow] text-5xl text-[#10233f]">{progress}%</span>
                 <span className="pb-2 text-sm text-[#4a5c73]">complete</span>
               </div>
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-sky-100">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#00afe8] via-[#6c7cf3] to-[#f02f9b]" style={{ width: `${progress}%` }} />
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-stone-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#d2a86c] to-[#9a6820]" style={{ width: `${progress}%` }} />
               </div>
               <p className="mt-4 text-sm leading-6 text-[#4a5c73]">{localStatus}</p>
               <p className="mt-2 text-sm leading-6 text-[#15314a]">{onlineStatus}</p>
               {savedRecordId ? (
-                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[#f02f9b]">Connected record #{savedRecordId}</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[#9a6820]">Connected record #{savedRecordId}</p>
               ) : null}
             </div>
 
@@ -506,10 +506,10 @@ export function ConsultationIntakeApp() {
                 <a
                   key={section.id}
                   href={`#${section.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm text-[#15314a] transition hover:border-[#f02f9b]/60"
+                  className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#15314a] transition hover:border-[#9a6820]/60"
                 >
                   <span>
-                    <span className="mr-3 text-[#f02f9b]">0{index + 1}</span>
+                    <span className="mr-3 text-[#9a6820]">0{index + 1}</span>
                     {section.title}
                   </span>
                   <span className="text-[#6b7b91]">Jump</span>
@@ -520,29 +520,41 @@ export function ConsultationIntakeApp() {
             <div className="mt-8 flex flex-wrap gap-3 print:hidden">
               <a
                 href="/clients"
-                className="rounded-full border border-sky-100 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60"
+                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Client Records
+              </a>
+              <a
+                href="/onboarding"
+                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+              >
+                Onboarding
+              </a>
+              <a
+                href="/leads"
+                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+              >
+                Lead Tracker
               </a>
               <button
                 type="button"
                 onClick={saveOnline}
                 disabled={isSavingOnline}
-                className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSavingOnline ? "Saving..." : savedRecordId ? "Update Online" : "Save Online"}
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="rounded-full border border-sky-100 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60"
+                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Print / Save PDF
               </button>
               <button
                 type="button"
                 onClick={handleReset}
-                className="rounded-full border border-sky-100 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60"
+                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Clear Form
               </button>
@@ -612,8 +624,8 @@ export function ConsultationIntakeApp() {
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <TextareaField label="What's been stopping you?" value={form.whatsStoppingYou} onChange={(value) => updateField("whatsStoppingYou", value)} />
-              <div className="rounded-[1.75rem] border border-sky-100 bg-white/95 p-5 text-[#10233f] shadow-sm">
-                <p className="text-xs uppercase tracking-[0.25em] text-[#f02f9b]">Coaching Lens</p>
+              <div className="rounded-[1.75rem] border border-stone-200 bg-white/95 p-5 text-[#10233f] shadow-sm">
+                <p className="text-xs uppercase tracking-[0.25em] text-[#9a6820]">Coaching Lens</p>
                 <p className="mt-3 text-sm leading-7 text-[#4a5c73]">
                   Use this section to listen for mismatch between the stated goal, current routine, and real barriers. Those gaps usually shape the best first-phase plan.
                 </p>
@@ -625,7 +637,7 @@ export function ConsultationIntakeApp() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <InputField label="Days per week available" value={form.daysAvailable} onChange={(value) => updateField("daysAvailable", value)} />
               <InputField label="Preferred training time" value={form.preferredTrainingTime} onChange={(value) => updateField("preferredTrainingTime", value as "" | "AM" | "PM")} placeholder="AM or PM" />
-              <div className="rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-sm">
+              <div className="rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-sm">
                 <span className="text-sm font-medium text-[#15314a]">Preferred time quick select</span>
                 <div className="mt-3 flex gap-2">
                   {(["AM", "PM"] as const).map((slot) => (
@@ -635,8 +647,8 @@ export function ConsultationIntakeApp() {
                       onClick={() => updateField("preferredTrainingTime", slot)}
                       className={`rounded-full px-4 py-2 text-sm transition ${
                         form.preferredTrainingTime === slot
-                          ? "bg-[#f02f9b] text-white"
-                          : "border border-sky-100 bg-white text-[#15314a] hover:border-[#f02f9b]/60"
+                          ? "bg-[#9a6820] text-white"
+                          : "border border-stone-200 bg-white text-[#15314a] hover:border-[#9a6820]/60"
                       }`}
                     >
                       {slot}
@@ -646,29 +658,29 @@ export function ConsultationIntakeApp() {
               </div>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-sky-100 bg-white/95 shadow-sm">
-              <div className="grid grid-cols-[0.7fr_1.2fr_0.9fr_1fr] border-b border-sky-100 bg-sky-50 text-xs uppercase tracking-[0.18em] text-[#4a5c73]">
+            <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white/95 shadow-sm">
+              <div className="grid grid-cols-[0.7fr_1.2fr_0.9fr_1fr] border-b border-stone-200 bg-stone-50 text-xs uppercase tracking-[0.18em] text-[#4a5c73]">
                 <div className="px-4 py-3">Day</div>
                 <div className="px-4 py-3">Commitments</div>
                 <div className="px-4 py-3">Training Time</div>
                 <div className="px-4 py-3">Notes</div>
               </div>
               {days.map((day) => (
-                <div key={day} className="grid grid-cols-1 border-b border-sky-100 last:border-b-0 md:grid-cols-[0.7fr_1.2fr_0.9fr_1fr]">
-                  <div className="flex items-center px-4 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#f02f9b]">{day}</div>
+                <div key={day} className="grid grid-cols-1 border-b border-stone-200 last:border-b-0 md:grid-cols-[0.7fr_1.2fr_0.9fr_1fr]">
+                  <div className="flex items-center px-4 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#9a6820]">{day}</div>
                   <div className="px-4 py-3">
                     <textarea
                       rows={2}
                       value={form.weeklySchedule[day].commitments}
                       onChange={(event) => updateSchedule(day, "commitments", event.target.value)}
-                      className="w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none focus:border-[#f02f9b] focus:ring-2 focus:ring-[#f02f9b]/20"
+                      className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
                     />
                   </div>
                   <div className="px-4 py-3">
                     <input
                       value={form.weeklySchedule[day].trainingTime}
                       onChange={(event) => updateSchedule(day, "trainingTime", event.target.value)}
-                      className="w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none focus:border-[#f02f9b] focus:ring-2 focus:ring-[#f02f9b]/20"
+                      className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
                     />
                   </div>
                   <div className="px-4 py-3">
@@ -676,7 +688,7 @@ export function ConsultationIntakeApp() {
                       rows={2}
                       value={form.weeklySchedule[day].notes}
                       onChange={(event) => updateSchedule(day, "notes", event.target.value)}
-                      className="w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none focus:border-[#f02f9b] focus:ring-2 focus:ring-[#f02f9b]/20"
+                      className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
                     />
                   </div>
                 </div>
@@ -706,8 +718,8 @@ export function ConsultationIntakeApp() {
           </SectionCard>
 
           <SectionCard id="screening" title="Health Screening" blurb="Pre-exercise screening and health context help us coach responsibly and flag when medical clearance is needed.">
-            <div className="rounded-[1.75rem] border border-sky-100 bg-white/95 p-5 text-[#10233f] shadow-sm">
-              <p className="text-xs uppercase tracking-[0.28em] text-[#f02f9b]">Medical Clearance Status</p>
+            <div className="rounded-[1.75rem] border border-stone-200 bg-white/95 p-5 text-[#10233f] shadow-sm">
+              <p className="text-xs uppercase tracking-[0.28em] text-[#9a6820]">Medical Clearance Status</p>
               <p className={`mt-3 text-lg font-semibold ${clearanceRequired ? "text-[#b91c1c]" : "text-[#166534]"}`}>
                 {clearanceRequired ? "Medical clearance required before exercise." : "No stage 1 clearance flags selected."}
               </p>
@@ -766,7 +778,7 @@ export function ConsultationIntakeApp() {
               <InputField label="Signature" value={form.signature} onChange={(value) => updateField("signature", value)} placeholder="Typed signature" />
               <InputField label="Date" type="date" value={form.signOffDate} onChange={(value) => updateField("signOffDate", value)} />
             </div>
-            <div className="mt-6 rounded-[1.75rem] border border-sky-100 bg-white/95 p-5 text-sm leading-7 text-[#4a5c73] shadow-sm">
+            <div className="mt-6 rounded-[1.75rem] border border-stone-200 bg-white/95 p-5 text-sm leading-7 text-[#4a5c73] shadow-sm">
               This form stores a local draft in the browser and can now save online as a reusable client record. That gives us the base to connect future forms for the same client in one place.
             </div>
           </SectionCard>

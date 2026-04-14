@@ -533,12 +533,12 @@ export function ConsultationRecordsDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#2cc5e8_0%,#93d5d2_32%,#c9a4ea_58%,#627bde_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
+    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
-        <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_rgba(39,71,132,0.22)] backdrop-blur-xl sm:p-8 print:shadow-none">
+        <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8 print:shadow-none">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.34em] text-[#f02f9b]">Upper Notch Coaching</p>
+              <p className="text-xs font-bold uppercase tracking-[0.34em] text-[#9a6820]">Upper Notch Coaching</p>
               <h1 className="mt-4 max-w-3xl font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f] sm:text-7xl">
                 Client Hub
               </h1>
@@ -549,15 +549,27 @@ export function ConsultationRecordsDashboard() {
             <div className="flex flex-wrap gap-3 print:hidden">
               <a
                 href="/"
-                className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60"
+                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 New Form
+              </a>
+              <a
+                href="/onboarding"
+                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+              >
+                Onboarding
+              </a>
+              <a
+                href="/leads"
+                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+              >
+                Lead Tracker
               </a>
               <button
                 type="button"
                 onClick={loadRecords}
                 disabled={isLoading}
-                className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isLoading ? "Refreshing..." : "Refresh"}
               </button>
@@ -565,7 +577,7 @@ export function ConsultationRecordsDashboard() {
                 <button
                   type="button"
                   onClick={showAllRecords}
-                  className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60"
+                  className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
                 >
                   Show all records
                 </button>
@@ -575,8 +587,8 @@ export function ConsultationRecordsDashboard() {
         </header>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
-          <aside className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(39,71,132,0.18)] backdrop-blur-xl print:hidden">
-            <label className="text-xs font-bold uppercase tracking-[0.24em] text-[#f02f9b]" htmlFor="client-search">
+          <aside className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-xl print:hidden">
+            <label className="text-xs font-bold uppercase tracking-[0.24em] text-[#9a6820]" htmlFor="client-search">
               Search All Client Data
             </label>
             <input
@@ -584,7 +596,7 @@ export function ConsultationRecordsDashboard() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Type a name, phone, email, goal, note, or injury"
-              className="mt-3 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm text-[#10233f] outline-none transition placeholder:text-[#8a98aa] focus:border-[#f02f9b] focus:ring-4 focus:ring-[#f02f9b]/15"
+              className="mt-3 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] outline-none transition placeholder:text-[#8a98aa] focus:border-[#9a6820] focus:ring-4 focus:ring-[#9a6820]/15"
             />
             <p className="mt-3 text-sm text-[#4a5c73]">{status}</p>
 
@@ -600,17 +612,17 @@ export function ConsultationRecordsDashboard() {
                     onClick={() => setSelectedKey(bundle.key)}
                     className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
                       isSelected
-                        ? "border-[#f02f9b] bg-[#f02f9b]/10 shadow-[0_12px_35px_rgba(240,47,155,0.18)]"
-                        : "border-sky-100 bg-white hover:border-[#f02f9b]/60"
+                        ? "border-[#9a6820] bg-[#9a6820]/10 shadow-[0_12px_35px_rgba(154,104,32,0.18)]"
+                        : "border-stone-200 bg-white hover:border-[#9a6820]/60"
                     }`}
                   >
                     <span className="block text-base font-bold text-[#10233f]">{bundle.displayName}</span>
                     <span className="mt-1 block text-sm text-[#4a5c73]">{bundle.goal || "No goal recorded"}</span>
                     <span className="mt-3 flex flex-wrap gap-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[#15314a]">
-                      <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.leads.length} lead{bundle.leads.length === 1 ? "" : "s"}</span>
-                      <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.consultations.length} consult{bundle.consultations.length === 1 ? "" : "s"}</span>
-                      <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.screenings.length} screen{bundle.screenings.length === 1 ? "" : "s"}</span>
-                      <span className="rounded-full bg-sky-100 px-2 py-1">{bundle.pricingPresentations.length} price{bundle.pricingPresentations.length === 1 ? "" : "s"}</span>
+                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.leads.length} lead{bundle.leads.length === 1 ? "" : "s"}</span>
+                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.consultations.length} consult{bundle.consultations.length === 1 ? "" : "s"}</span>
+                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.screenings.length} screen{bundle.screenings.length === 1 ? "" : "s"}</span>
+                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.pricingPresentations.length} price{bundle.pricingPresentations.length === 1 ? "" : "s"}</span>
                     </span>
                     <span className="mt-2 block text-xs uppercase tracking-[0.18em] text-[#6b7b91]">
                       {recordCount} total record{recordCount === 1 ? "" : "s"} · {formatDate(bundle.updatedAt)}
@@ -621,39 +633,39 @@ export function ConsultationRecordsDashboard() {
             </div>
 
             {!filteredBundles.length ? (
-              <div className="mt-6 rounded-2xl border border-dashed border-sky-200 bg-white/75 p-5 text-sm leading-6 text-[#4a5c73]">
+              <div className="mt-6 rounded-2xl border border-dashed border-stone-300 bg-white/75 p-5 text-sm leading-6 text-[#4a5c73]">
                 No matching client data yet. If you just saved a form, press Refresh or try searching a different name.
               </div>
             ) : null}
           </aside>
 
-          <section className="rounded-[2rem] border border-white/70 bg-white/92 p-5 shadow-[0_20px_80px_rgba(39,71,132,0.18)] backdrop-blur-xl sm:p-8 print:shadow-none">
+          <section className="rounded-[2rem] border border-white/70 bg-white/92 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:p-8 print:shadow-none">
             {selectedBundle ? (
               <div>
-                <div className="flex flex-col gap-4 border-b border-sky-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-col gap-4 border-b border-stone-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#f02f9b]">Selected Client</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#9a6820]">Selected Client</p>
                     <h2 className="mt-3 font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f] sm:text-6xl">
                       {selectedBundle.displayName}
                     </h2>
                     <p className="mt-3 max-w-3xl text-sm leading-7 text-[#4a5c73]">{selectedBundle.goal || "No main goal recorded."}</p>
-                    <span className="mt-4 inline-flex rounded-full bg-[#f02f9b]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">{formatClientStatus(selectedBundle)}</span>
+                    <span className="mt-4 inline-flex rounded-full bg-[#9a6820]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">{formatClientStatus(selectedBundle)}</span>
                   </div>
-                  <div className="rounded-2xl border border-sky-100 bg-white p-4 text-sm text-[#4a5c73]">
+                  <div className="rounded-2xl border border-stone-200 bg-white p-4 text-sm text-[#4a5c73]">
                     <p><span className="font-semibold text-[#10233f]">Phone:</span> {displayValue(selectedBundle.phone)}</p>
                     <p className="mt-2"><span className="font-semibold text-[#10233f]">Email:</span> {displayValue(selectedBundle.email)}</p>
                     <p className="mt-2"><span className="font-semibold text-[#10233f]">Latest update:</span> {formatDate(selectedBundle.updatedAt)}</p>
                     <button
                       type="button"
                       onClick={() => window.print()}
-                      className="mt-4 w-full rounded-full bg-[#f02f9b] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 print:hidden"
+                      className="mt-4 w-full rounded-full bg-[#9a6820] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 print:hidden"
                     >
                       Export / Print Summary
                     </button>
                     <button
                       type="button"
                       onClick={clearSelectedFromPage}
-                      className="mt-3 w-full rounded-full border border-sky-100 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60 print:hidden"
+                      className="mt-3 w-full rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60 print:hidden"
                     >
                       Clear from page
                     </button>
@@ -681,7 +693,7 @@ export function ConsultationRecordsDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-[1.5rem] border border-dashed border-sky-200 bg-white p-8 text-center text-[#4a5c73]">
+              <div className="rounded-[1.5rem] border border-dashed border-stone-300 bg-white p-8 text-center text-[#4a5c73]">
                 <h2 className="font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f]">No Client Selected</h2>
                 <p className="mt-3 text-sm leading-7">Save a lead, consultation form, screening, or pricing presentation first, then come back here and search for the client.</p>
               </div>
@@ -695,8 +707,8 @@ export function ConsultationRecordsDashboard() {
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f02f9b]">{label}</p>
+    <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9a6820]">{label}</p>
       <p className="mt-3 font-[Arial_Narrow] text-5xl text-[#10233f]">{value}</p>
     </div>
   );
@@ -704,7 +716,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 
 function EmptyDataCard({ label }: { label: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-dashed border-sky-200 bg-white/75 p-5 text-sm leading-6 text-[#4a5c73]">
+    <div className="rounded-[1.5rem] border border-dashed border-stone-300 bg-white/75 p-5 text-sm leading-6 text-[#4a5c73]">
       No {label} saved for this client yet.
     </div>
   );
@@ -712,18 +724,18 @@ function EmptyDataCard({ label }: { label: string }) {
 
 function LeadsSection({ leads }: { leads: Lead[] }) {
   return (
-    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+    <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Lead Tracker Data</h3>
       {!leads.length ? <EmptyDataCard label="lead tracker data" /> : null}
       <div className="mt-4 space-y-4">
         {leads.map((lead) => (
-          <article key={lead.id} className="rounded-2xl border border-sky-100 bg-white p-4">
+          <article key={lead.id} className="rounded-2xl border border-stone-200 bg-white p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-lg font-bold text-[#10233f]">{lead.goal}</p>
                 <p className="mt-1 text-sm text-[#4a5c73]">{lead.service_interest} · {lead.source} · priority {lead.priority}</p>
               </div>
-              <span className="rounded-full bg-[#f02f9b]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#f02f9b]">{lead.status}</span>
+              <span className="rounded-full bg-[#9a6820]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#9a6820]">{lead.status}</span>
             </div>
             <div className="mt-4 grid gap-3 text-sm text-[#4a5c73] md:grid-cols-2">
               <p><span className="font-semibold text-[#10233f]">Budget:</span> {displayValue(lead.budget)}</p>
@@ -743,28 +755,28 @@ function LeadsSection({ leads }: { leads: Lead[] }) {
 
 function ConsultationsSection({ records }: { records: ConsultationNeedsRecord[] }) {
   return (
-    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+    <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Consultation Needs Analysis</h3>
       {!records.length ? <EmptyDataCard label="consultation forms" /> : null}
       <div className="mt-4 space-y-6">
         {records.map((record) => (
-          <article key={record.id} className="rounded-2xl border border-sky-100 bg-white p-4">
+          <article key={record.id} className="rounded-2xl border border-stone-200 bg-white p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-lg font-bold text-[#10233f]">{record.goal || "No goal recorded"}</p>
                 <p className="mt-1 text-sm text-[#4a5c73]">Consultation date: {formatDate(record.consultation_date)}</p>
               </div>
-              <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">Record #{record.id}</span>
+              <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">Record #{record.id}</span>
             </div>
             <WeeklySchedule form={record.form_data} />
             <div className="mt-6 grid gap-6 xl:grid-cols-2">
               {detailGroups.map((group) => (
-                <section key={`${record.id}-${group.title}`} className="rounded-[1.25rem] border border-sky-100 bg-white p-4">
+                <section key={`${record.id}-${group.title}`} className="rounded-[1.25rem] border border-stone-200 bg-white p-4">
                   <h4 className="font-bold text-[#10233f]">{group.title}</h4>
                   <dl className="mt-4 space-y-4">
                     {group.items.map((item) => (
                       <div key={`${record.id}-${group.title}-${item.key}`}>
-                        <dt className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">{item.label}</dt>
+                        <dt className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">{item.label}</dt>
                         <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.form_data[item.key])}</dd>
                       </div>
                     ))}
@@ -781,16 +793,16 @@ function ConsultationsSection({ records }: { records: ConsultationNeedsRecord[] 
 
 function WeeklySchedule({ form }: { form: ConsultationNeedsForm }) {
   return (
-    <div className="mt-6 rounded-[1.25rem] border border-sky-100 bg-white p-4">
+    <div className="mt-6 rounded-[1.25rem] border border-stone-200 bg-white p-4">
       <h4 className="font-bold text-[#10233f]">Weekly Schedule</h4>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[680px] border-collapse text-left text-sm">
-          <thead className="text-xs uppercase tracking-[0.18em] text-[#f02f9b]">
+          <thead className="text-xs uppercase tracking-[0.18em] text-[#9a6820]">
             <tr>
-              <th className="border-b border-sky-100 px-3 py-3">Day</th>
-              <th className="border-b border-sky-100 px-3 py-3">Commitments</th>
-              <th className="border-b border-sky-100 px-3 py-3">Training Time</th>
-              <th className="border-b border-sky-100 px-3 py-3">Notes</th>
+              <th className="border-b border-stone-200 px-3 py-3">Day</th>
+              <th className="border-b border-stone-200 px-3 py-3">Commitments</th>
+              <th className="border-b border-stone-200 px-3 py-3">Training Time</th>
+              <th className="border-b border-stone-200 px-3 py-3">Notes</th>
             </tr>
           </thead>
           <tbody>
@@ -799,10 +811,10 @@ function WeeklySchedule({ form }: { form: ConsultationNeedsForm }) {
 
               return (
                 <tr key={day} className="align-top text-[#4a5c73]">
-                  <td className="border-b border-sky-50 px-3 py-3 font-semibold text-[#10233f]">{day}</td>
-                  <td className="border-b border-sky-50 px-3 py-3">{displayValue(entry?.commitments)}</td>
-                  <td className="border-b border-sky-50 px-3 py-3">{displayValue(entry?.trainingTime)}</td>
-                  <td className="border-b border-sky-50 px-3 py-3">{displayValue(entry?.notes)}</td>
+                  <td className="border-b border-stone-100 px-3 py-3 font-semibold text-[#10233f]">{day}</td>
+                  <td className="border-b border-stone-100 px-3 py-3">{displayValue(entry?.commitments)}</td>
+                  <td className="border-b border-stone-100 px-3 py-3">{displayValue(entry?.trainingTime)}</td>
+                  <td className="border-b border-stone-100 px-3 py-3">{displayValue(entry?.notes)}</td>
                 </tr>
               );
             })}
@@ -819,7 +831,7 @@ function WeeklySchedule({ form }: { form: ConsultationNeedsForm }) {
 
 function ScreeningsSection({ screenings }: { screenings: ScreeningClient[] }) {
   return (
-    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+    <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Movement Screening Data</h3>
       {!screenings.length ? <EmptyDataCard label="movement screenings" /> : null}
       <div className="mt-4 space-y-4">
@@ -829,13 +841,13 @@ function ScreeningsSection({ screenings }: { screenings: ScreeningClient[] }) {
           const total = getTotalTests(screening);
 
           return (
-            <article key={screening.id} className="rounded-2xl border border-sky-100 bg-white p-4">
+            <article key={screening.id} className="rounded-2xl border border-stone-200 bg-white p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-lg font-bold text-[#10233f]">{screening.injury || "Movement screening"}</p>
                   <p className="mt-1 text-sm text-[#4a5c73]">Screening date: {formatDate(screening.screeningDate)} · Conducted by {displayValue(screening.conductedBy)}</p>
                 </div>
-                <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">
+                <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">
                   Avg {average ?? "N/A"} · {completed}/{total} done
                 </span>
               </div>
@@ -847,11 +859,11 @@ function ScreeningsSection({ screenings }: { screenings: ScreeningClient[] }) {
               </div>
               <div className="mt-5 space-y-4">
                 {screening.sections.map((section) => (
-                  <div key={`${screening.id}-${section.title}`} className="rounded-[1.25rem] border border-sky-100 p-4">
+                  <div key={`${screening.id}-${section.title}`} className="rounded-[1.25rem] border border-stone-200 p-4">
                     <h4 className="font-bold text-[#10233f]">{section.title}</h4>
                     <div className="mt-3 grid gap-3 md:grid-cols-2">
                       {section.tests.map((test) => (
-                        <div key={`${screening.id}-${section.title}-${test.name}`} className="rounded-2xl bg-sky-50/70 p-3 text-sm text-[#4a5c73]">
+                        <div key={`${screening.id}-${section.title}-${test.name}`} className="rounded-2xl bg-stone-50/70 p-3 text-sm text-[#4a5c73]">
                           <p className="font-semibold text-[#10233f]">{test.name}</p>
                           <p className="mt-1">Score: {test.score ?? "N/A"} · {test.completed ? "Completed" : "Not completed"}</p>
                           <p className="mt-1 whitespace-pre-wrap">Observations: {displayValue(test.observations)}</p>
@@ -876,7 +888,7 @@ function ClientSnapshot({ bundle }: { bundle: ClientBundle }) {
   const latestScreening = bundle.screenings[0];
 
   return (
-    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+    <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Client Snapshot</h3>
       <div className="mt-4 grid gap-3 text-sm leading-6 text-[#4a5c73]">
         <p><span className="font-semibold text-[#10233f]">Status:</span> {formatClientStatus(bundle)}</p>
@@ -907,11 +919,11 @@ function OnboardingChecklist({ bundle }: { bundle: ClientBundle }) {
   ];
 
   return (
-    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+    <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Onboarding Checklist</h3>
       <div className="mt-4 grid gap-3">
         {items.map((item) => (
-          <div key={item.label} className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${item.done ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-sky-100 bg-sky-50/60 text-[#4a5c73]"}`}>
+          <div key={item.label} className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${item.done ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-stone-200 bg-stone-50/60 text-[#4a5c73]"}`}>
             {item.done ? "Done" : "Next"}: {item.label}
           </div>
         ))}
@@ -928,7 +940,7 @@ function PricingPresentationsSection({
   onUpdate: (recordId: number, updates: PricingPresentationUpdate) => Promise<void>;
 }) {
   return (
-    <section className="rounded-[1.5rem] border border-sky-100 bg-white p-5">
+    <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Pricing Presentations</h3>
       {!records.length ? <EmptyDataCard label="pricing presentations" /> : null}
       <div className="mt-4 space-y-4">
@@ -987,13 +999,13 @@ function PricingPresentationCard({
   }
 
   return (
-    <article className="rounded-2xl border border-sky-100 bg-white p-4">
+    <article className="rounded-2xl border border-stone-200 bg-white p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-lg font-bold text-[#10233f]">{record.selected_package_name || "Pricing presentation"}</p>
           <p className="mt-1 text-sm text-[#4a5c73]">Saved: {formatDate(record.updated_at)}</p>
         </div>
-        <span className="rounded-full bg-[#f02f9b]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#f02f9b]">
+        <span className="rounded-full bg-[#9a6820]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#9a6820]">
           {formatPricingDecisionStatus(record.decision_status || "presented")}
         </span>
       </div>
@@ -1005,24 +1017,24 @@ function PricingPresentationCard({
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2 print:hidden">
-        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">
           Client status
           <select
             value={decisionStatus}
             onChange={(event) => setDecisionStatus(event.target.value as PricingDecisionStatus)}
-            className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+            className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#9a6820]"
           >
             {pricingDecisionStatuses.map((status) => (
               <option key={status} value={status}>{formatPricingDecisionStatus(status)}</option>
             ))}
           </select>
         </label>
-        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">
           Package accepted
           <select
             value={acceptedPackageName}
             onChange={(event) => setAcceptedPackageName(event.target.value)}
-            className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+            className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#9a6820]"
           >
             <option value="">Not recorded yet</option>
             {packageNames.map((packageName) => (
@@ -1030,22 +1042,22 @@ function PricingPresentationCard({
             ))}
           </select>
         </label>
-        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">
           Follow-up reminder
           <input
             type="datetime-local"
             value={followUpAt}
             onChange={(event) => setFollowUpAt(event.target.value)}
-            className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+            className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm normal-case tracking-normal text-[#10233f] outline-none focus:border-[#9a6820]"
           />
         </label>
-        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#f02f9b]">
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">
           Follow-up note
           <textarea
             value={followUpNote}
             rows={3}
             onChange={(event) => setFollowUpNote(event.target.value)}
-            className="mt-2 w-full resize-y rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm normal-case leading-6 tracking-normal text-[#10233f] outline-none focus:border-[#f02f9b]"
+            className="mt-2 w-full resize-y rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm normal-case leading-6 tracking-normal text-[#10233f] outline-none focus:border-[#9a6820]"
           />
         </label>
       </div>
@@ -1055,7 +1067,7 @@ function PricingPresentationCard({
           type="button"
           onClick={markSignedUp}
           disabled={isSaving}
-          className="rounded-full bg-[#f02f9b] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+          className="rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
         >
           Mark as Signed Up
         </button>
@@ -1063,7 +1075,7 @@ function PricingPresentationCard({
           type="button"
           onClick={() => void saveUpdates()}
           disabled={isSaving}
-          className="rounded-full border border-sky-100 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#f02f9b]/60 disabled:cursor-not-allowed disabled:opacity-70"
+          className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isSaving ? "Saving..." : "Save Follow-Up"}
         </button>
@@ -1071,20 +1083,20 @@ function PricingPresentationCard({
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[1.25rem] border border-sky-100 p-4">
+        <div className="rounded-[1.25rem] border border-stone-200 p-4">
           <h4 className="font-bold text-[#10233f]">Recommendation</h4>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.recommendation)}</p>
         </div>
-        <div className="rounded-[1.25rem] border border-sky-100 p-4">
+        <div className="rounded-[1.25rem] border border-stone-200 p-4">
           <h4 className="font-bold text-[#10233f]">Consultation Needs</h4>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.presentation_data.clientNeeds)}</p>
         </div>
       </div>
-      <div className="mt-5 rounded-[1.25rem] border border-sky-100 p-4">
+      <div className="mt-5 rounded-[1.25rem] border border-stone-200 p-4">
         <h4 className="font-bold text-[#10233f]">What Was Included</h4>
         <ul className="mt-3 grid gap-2 text-sm text-[#4a5c73] md:grid-cols-2">
           {record.presentation_data.selectedPackage.inclusions.map((item) => (
-            <li key={`${record.id}-${item}`} className="rounded-2xl bg-sky-50/70 px-3 py-2">{item}</li>
+            <li key={`${record.id}-${item}`} className="rounded-2xl bg-stone-50/70 px-3 py-2">{item}</li>
           ))}
         </ul>
       </div>

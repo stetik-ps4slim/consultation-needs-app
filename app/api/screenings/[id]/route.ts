@@ -20,7 +20,7 @@ export async function PATCH(
     const { id } = await context.params;
     const clientId = Number(id);
 
-    if (!Number.isInteger(clientId)) {
+    if (!Number.isInteger(clientId) || clientId <= 0) {
       return NextResponse.json({ error: "Invalid client id." }, { status: 400 });
     }
 
@@ -65,9 +65,7 @@ export async function PATCH(
         createdAt: data.created_at
       }
     });
-  } catch (error) {
-    console.error("Screening update failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while updating the client screening." },
       { status: 500 }
@@ -90,7 +88,7 @@ export async function DELETE(
     const { id } = await context.params;
     const clientId = Number(id);
 
-    if (!Number.isInteger(clientId)) {
+    if (!Number.isInteger(clientId) || clientId <= 0) {
       return NextResponse.json({ error: "Invalid client id." }, { status: 400 });
     }
 
@@ -105,9 +103,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Screening delete failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while deleting the client screening." },
       { status: 500 }

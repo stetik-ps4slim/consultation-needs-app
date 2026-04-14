@@ -23,7 +23,7 @@ export async function PATCH(
     const { id } = await context.params;
     const recordId = Number(id);
 
-    if (!Number.isInteger(recordId)) {
+    if (!Number.isInteger(recordId) || recordId <= 0) {
       return NextResponse.json({ error: "Invalid consultation form id." }, { status: 400 });
     }
 
@@ -60,9 +60,7 @@ export async function PATCH(
       message: "Consultation form updated successfully.",
       record: data
     });
-  } catch (error) {
-    console.error("Consultation needs update failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while updating the consultation form." },
       { status: 500 }

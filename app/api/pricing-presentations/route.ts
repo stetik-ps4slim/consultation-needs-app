@@ -28,9 +28,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ pricingPresentations: data ?? [] });
-  } catch (error) {
-    console.error("Pricing presentations fetch failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while loading pricing presentations." },
       { status: 500 }
@@ -79,9 +77,7 @@ export async function POST(request: Request) {
       message: "Pricing presentation saved successfully.",
       pricingPresentation: data
     });
-  } catch (error) {
-    console.error("Pricing presentation create failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while saving the pricing presentation." },
       { status: 500 }

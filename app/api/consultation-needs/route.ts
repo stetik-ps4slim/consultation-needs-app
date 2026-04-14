@@ -28,9 +28,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ records: data ?? [] });
-  } catch (error) {
-    console.error("Consultation needs fetch failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while loading consultation forms." },
       { status: 500 }
@@ -79,9 +77,7 @@ export async function POST(request: Request) {
       message: "Consultation form saved successfully.",
       record: data
     });
-  } catch (error) {
-    console.error("Consultation needs create failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while saving the consultation form." },
       { status: 500 }

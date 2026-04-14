@@ -24,9 +24,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ leads: data ?? [] });
-  } catch (error) {
-    console.error("Lead fetch failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while loading leads." },
       { status: 500 }
@@ -74,8 +72,6 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error("Supabase insert failed", error);
-
       return NextResponse.json(
         { error: "We could not save your details right now. Please try again." },
         { status: 500 }
@@ -86,9 +82,7 @@ export async function POST(request: Request) {
       message: "Lead saved successfully.",
       lead: data
     });
-  } catch (error) {
-    console.error("Lead submission failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while sending your request." },
       { status: 500 }

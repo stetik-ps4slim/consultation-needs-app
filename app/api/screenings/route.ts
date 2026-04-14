@@ -41,9 +41,7 @@ export async function GET() {
     }));
 
     return NextResponse.json({ clients });
-  } catch (error) {
-    console.error("Screening fetch failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while loading client screenings." },
       { status: 500 }
@@ -107,9 +105,7 @@ export async function POST(request: Request) {
         createdAt: data.created_at
       }
     });
-  } catch (error) {
-    console.error("Screening create failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while saving the client screening." },
       { status: 500 }

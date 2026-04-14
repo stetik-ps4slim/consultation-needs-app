@@ -17,7 +17,7 @@ export async function PATCH(
     const { id } = await context.params;
     const recordId = Number(id);
 
-    if (!Number.isInteger(recordId)) {
+    if (!Number.isInteger(recordId) || recordId <= 0) {
       return NextResponse.json({ error: "Invalid pricing presentation id." }, { status: 400 });
     }
 
@@ -35,9 +35,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ pricingPresentation: data });
-  } catch (error) {
-    console.error("Pricing presentation update failed", error);
-
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong while updating the pricing presentation." },
       { status: 500 }

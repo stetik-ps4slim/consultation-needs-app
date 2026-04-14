@@ -91,6 +91,7 @@ export function MovementScreeningDashboard({ initialClients, isPersistent }: Das
   const [dirtyClientIds, setDirtyClientIds] = useState<number[]>([]);
   const [showPrintHint, setShowPrintHint] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const hydratedRef = useRef(false);
   const deferredQuery = useDeferredValue(query);
 
@@ -257,6 +258,45 @@ export function MovementScreeningDashboard({ initialClients, isPersistent }: Das
       setStatusMessage("Cloud delete failed. Refresh before continuing.");
     } finally {
       setIsSyncing(false);
+    }
+  }
+
+  async function handleSaveClient(client: ScreeningClient) {
+    setSaveStatus("saving");
+
+    if (!isPersistent) {
+      // localStorage auto-saves on every change — just confirm it
+      window.localStorage.setItem(storageKey, JSON.stringify(clients));
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/screenings/${client.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: client.name, injury: client.injury,
+          screeningDate: client.screeningDate, contact: client.contact,
+          health: client.health, conductedBy: client.conductedBy,
+          warmupNotes: client.warmupNotes, overallNotes: client.overallNotes,
+          sections: client.sections
+        })
+      });
+      if (!res.ok) throw new Error("Save failed");
+      const payload = (await res.json()) as { client?: ScreeningClient };
+      if (payload.client) {
+        setClients((cur) => cur.map((c) => c.id === payload.client?.id ? payload.client! : c));
+      }
+      setDirtyClientIds((cur) => cur.filter((id) => id !== client.id));
+      setStatusMessage("Saved.");
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch {
+      setStatusMessage("Save failed — try again.");
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     }
   }
 
@@ -444,9 +484,20 @@ export function MovementScreeningDashboard({ initialClients, isPersistent }: Das
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 print:hidden">
+                    <button type="button" onClick={() => handleSaveClient(selectedClient)}
+                      disabled={saveStatus === "saving"}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60 ${
+                        saveStatus === "saved"
+                          ? "bg-emerald-600 hover:bg-emerald-700"
+                          : saveStatus === "error"
+                          ? "bg-rose-600 hover:bg-rose-700"
+                          : "bg-[#15314a] hover:bg-[#1e3f60]"
+                      }`}>
+                      {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "✓ Saved" : saveStatus === "error" ? "Save failed" : "Save"}
+                    </button>
                     <button type="button" onClick={() => handlePrint(selectedClient)}
-                      className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7a5218]">
-                      Print / Save PDF
+                      className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                      Print / PDF
                     </button>
                     {deleteConfirm === selectedClient.id ? (
                       <>

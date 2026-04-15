@@ -396,36 +396,36 @@ export function OnboardingDashboard() {
   const incompleteProfiles = profiles.filter((profile) => getChecklist(profile).some((item) => !item.done)).length;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
+    <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-[1500px]">
         <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.08)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.36em] text-[#9a6820]">The Upper Notch</p>
-              <h1 className="mt-4 max-w-4xl font-[Arial_Narrow] text-5xl uppercase tracking-[0.08em] text-[#10233f] sm:text-7xl">
+              <h1 className="mt-4 max-w-4xl font-[Arial_Narrow] text-3xl uppercase tracking-[0.08em] text-[#10233f] sm:text-5xl xl:text-7xl">
                 Onboarding Pipeline
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-[#4a5c73] sm:text-base">
                 One connected coach view for leads, consultations, movement screenings, next actions, and sign-up readiness.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <a href="/" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <a href="/" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 New Consultation
               </a>
-              <a href="/clients" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              <a href="/clients" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Client Hub
               </a>
-              <a href="/pricing-presentation" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              <a href="/pricing-presentation" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Pricing
               </a>
-              <a href="/leads" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              <a href="/leads" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Lead Tracker
               </a>
-              <a href="/screening" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              <a href="/screening" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Movement Screening
               </a>
-              <a href="/revenue" className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              <a href="/revenue" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Revenue Tracker
               </a>
               <button

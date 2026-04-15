@@ -351,24 +351,26 @@ export function MovementScreeningDashboard({ initialClients, isPersistent }: Das
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
+    <main className="min-h-dvh overflow-x-hidden bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
 
         {/* Nav */}
-        <nav className="flex flex-wrap items-center gap-2 print:hidden">
-          <span className="rounded-full bg-[#fdf3e3] px-4 py-1.5 text-xs font-semibold tracking-widest text-[#9a6820] uppercase">The Upper Notch</span>
-          {[
-            { href: "/", label: "New Consultation" },
-            { href: "/clients", label: "Client Hub" },
-            { href: "/onboarding", label: "Onboarding" },
-            { href: "/leads", label: "Lead Tracker" },
-            { href: "/revenue", label: "Revenue Tracker" }
-          ].map((link) => (
-            <a key={link.href} href={link.href}
-              className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
-              {link.label}
-            </a>
-          ))}
+        <nav className="print:hidden">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <span className="shrink-0 rounded-full bg-[#fdf3e3] px-4 py-1.5 text-xs font-semibold tracking-widest text-[#9a6820] uppercase">The Upper Notch</span>
+            {[
+              { href: "/", label: "New Consultation" },
+              { href: "/clients", label: "Client Hub" },
+              { href: "/onboarding", label: "Onboarding" },
+              { href: "/leads", label: "Lead Tracker" },
+              { href: "/revenue", label: "Revenue Tracker" }
+            ].map((link) => (
+              <a key={link.href} href={link.href}
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                {link.label}
+              </a>
+            ))}
+          </div>
         </nav>
 
         {/* Header */}

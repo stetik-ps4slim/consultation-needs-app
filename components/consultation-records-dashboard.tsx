@@ -533,7 +533,7 @@ export function ConsultationRecordsDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
+    <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] px-4 py-8 text-[#10233f] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
         <header className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8 print:shadow-none">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -546,34 +546,34 @@ export function ConsultationRecordsDashboard() {
                 Search one client and see their leads, consultation needs analysis, movement screening, and pricing presentation records together.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3 print:hidden">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 print:hidden">
               <a
                 href="/"
-                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 New Form
               </a>
               <a
                 href="/onboarding"
-                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Onboarding
               </a>
               <a
                 href="/leads"
-                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Lead Tracker
               </a>
               <a
                 href="/screening"
-                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Movement Screening
               </a>
               <a
                 href="/revenue"
-                className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Revenue Tracker
               </a>

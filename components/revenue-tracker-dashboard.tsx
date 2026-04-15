@@ -289,30 +289,32 @@ export function RevenueTrackerDashboard() {
   const activeScriptData = LEAD_SCRIPTS.find((s) => s.id === activeScript)!;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
+    <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
 
         {/* Nav */}
-        <nav className="flex flex-wrap items-center gap-2 print:hidden">
-          <span className="rounded-full bg-[#fdf3e3] px-4 py-1.5 text-xs font-semibold tracking-widest text-[#9a6820] uppercase">The Upper Notch</span>
-          {[
-            { href: "/", label: "New Consultation" },
-            { href: "/clients", label: "Client Hub" },
-            { href: "/leads", label: "Lead Tracker" },
-            { href: "/onboarding", label: "Onboarding" },
-            { href: "/screening", label: "Movement Screening" }
-          ].map((l) => (
-            <a key={l.href} href={l.href}
-              className="rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
-              {l.label}
-            </a>
-          ))}
+        <nav className="print:hidden">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <span className="shrink-0 rounded-full bg-[#fdf3e3] px-4 py-1.5 text-xs font-semibold tracking-widest text-[#9a6820] uppercase">The Upper Notch</span>
+            {[
+              { href: "/", label: "New Consultation" },
+              { href: "/clients", label: "Client Hub" },
+              { href: "/leads", label: "Lead Tracker" },
+              { href: "/onboarding", label: "Onboarding" },
+              { href: "/screening", label: "Movement Screening" }
+            ].map((l) => (
+              <a key={l.href} href={l.href}
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                {l.label}
+              </a>
+            ))}
+          </div>
         </nav>
 
         {/* Header */}
         <div className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.07)] sm:p-8">
           <p className="text-xs uppercase tracking-[0.32em] text-[#9a6820]">Daily Operations</p>
-          <h1 className="mt-1 text-3xl font-bold text-[#10233f] sm:text-4xl">Revenue Tracker</h1>
+          <h1 className="mt-1 text-2xl font-bold text-[#10233f] sm:text-3xl">Revenue Tracker</h1>
           <p className="mt-1 text-sm text-[#4a5c73]">
             {new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>

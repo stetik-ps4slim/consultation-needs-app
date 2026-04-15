@@ -302,7 +302,7 @@ export function ClientIntakeForm() {
   // ── Success screen ────────────────────────────────────────────────────────
   if (submitStatus === "success") {
     return (
-      <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)]">
+      <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)]">
         <div className="flex min-h-screen flex-col items-center justify-center px-5 text-center">
           <div className="w-full max-w-lg rounded-2xl border border-stone-200 bg-white p-10 shadow-sm">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 text-2xl">✓</div>
@@ -317,7 +317,7 @@ export function ClientIntakeForm() {
 
   // ── Form ─────────────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)]">
+    <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)]">
       {/* Header */}
       <header className="border-b border-stone-200 bg-white/90 backdrop-blur">
         <div className="mx-auto max-w-3xl px-5 py-5 sm:px-6">

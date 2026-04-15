@@ -515,7 +515,7 @@ export function ConsultationIntakeApp() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f] print:bg-white print:text-black">
+    <main className="min-h-dvh overflow-x-hidden bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f] print:bg-white print:text-black">
 
       {/* Client search modal */}
       {showSearch && (
@@ -594,10 +594,10 @@ export function ConsultationIntakeApp() {
         </div>
       )}
       <div className="container-shell section-space relative z-10">
-        <div className="mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] print:grid-cols-1">
+        <div className="mb-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr] print:grid-cols-1">
           <div className="panel rounded-[2rem] border border-white/70 bg-white/90 p-6 text-[#10233f] shadow-[0_20px_80px_rgba(0,0,0,0.07)] backdrop-blur-xl sm:p-8">
             <p className="mb-3 text-xs uppercase tracking-[0.35em] text-[#9a6820]">The Upper Notch</p>
-            <h1 className="max-w-3xl font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f] sm:text-5xl lg:text-6xl">
+            <h1 className="max-w-3xl font-[Arial_Narrow] text-2xl uppercase tracking-[0.08em] text-[#10233f] sm:text-4xl lg:text-5xl">
               Consultation Needs Analysis App
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-[#4a5c73] sm:text-lg">
@@ -643,41 +643,41 @@ export function ConsultationIntakeApp() {
               ))}
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-3 print:hidden">
+            <div className="mt-8 flex gap-2 overflow-x-auto pb-1 print:hidden lg:flex-wrap lg:overflow-x-visible">
               <button
                 type="button"
                 onClick={openClientSearch}
-                className="rounded-full bg-[#15314a] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1e3f60]"
+                className="shrink-0 rounded-full bg-[#15314a] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1e3f60]"
               >
                 🔍 Load Client
               </button>
               <a
                 href="/clients"
-                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Client Records
               </a>
               <a
                 href="/onboarding"
-                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Onboarding
               </a>
               <a
                 href="/leads"
-                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Lead Tracker
               </a>
               <a
                 href="/screening"
-                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Movement Screening
               </a>
               <a
                 href="/revenue"
-                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Revenue Tracker
               </a>
@@ -685,21 +685,21 @@ export function ConsultationIntakeApp() {
                 type="button"
                 onClick={saveOnline}
                 disabled={isSavingOnline}
-                className="rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                className="shrink-0 rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSavingOnline ? "Saving..." : savedRecordId ? "Update Online" : "Save Online"}
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Print / Save PDF
               </button>
               <button
                 type="button"
                 onClick={handleReset}
-                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 Clear Form
               </button>

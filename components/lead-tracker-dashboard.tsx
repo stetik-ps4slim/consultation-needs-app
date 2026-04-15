@@ -166,7 +166,7 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
+    <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
       {/* Page header */}
       <div className="border-b border-stone-200 bg-white/80 backdrop-blur">
         <div className="container-shell max-w-7xl py-5">
@@ -176,12 +176,12 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
               <h1 className="mt-1 text-2xl font-black text-[#10233f]">Lead Tracker</h1>
               <p className="text-sm text-[#6b7b91]">Manage your pipeline and follow-ups</p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <a href="/" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">New Consultation</a>
-              <a href="/onboarding" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Onboarding</a>
-              <a href="/clients" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Client Hub</a>
-              <a href="/screening" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Movement Screening</a>
-              <a href="/revenue" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Revenue Tracker</a>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <a href="/" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">New Consultation</a>
+              <a href="/onboarding" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Onboarding</a>
+              <a href="/clients" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Client Hub</a>
+              <a href="/screening" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Movement Screening</a>
+              <a href="/revenue" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Revenue Tracker</a>
               <button
                 type="button"
                 onClick={() => setShowForm(true)}

@@ -137,9 +137,35 @@ const OBJECTION_STEPS: ScriptStep[] = [
   { type: "ANCHOR BACK", lines: ["Then go back into their goal and what they said they want to fix."] }
 ];
 
+// ─── Active client type (mirrors active-clients-dashboard) ───────────────────
+
+type PackageKey = "Foundation" | "Transformation" | "Elite" | "Custom";
+
+type ActiveClient = {
+  id: number;
+  name: string;
+  package: PackageKey;
+  weeklyRate: number;
+  startDate: string;
+  contact: string;
+  notes: string;
+  status: "active" | "lost";
+  lostDate: string;
+  lostReason: string;
+  createdAt: string;
+};
+
+const PKG_BADGE: Record<PackageKey, string> = {
+  Foundation:     "bg-sky-100 text-sky-700 border-sky-200",
+  Transformation: "bg-amber-100 text-amber-700 border-amber-200",
+  Elite:          "bg-emerald-100 text-emerald-700 border-emerald-200",
+  Custom:         "bg-stone-100 text-stone-600 border-stone-200"
+};
+
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
-const KEY_GOAL = "tun-monthly-goal";
+const KEY_GOAL    = "tun-monthly-goal";
+const KEY_CLIENTS = "tun-active-clients";
 const dayKey = (d: string) => `tun-daydata-${d}`;
 
 function todayStr() {
@@ -346,6 +372,9 @@ export function RevenueTrackerDashboard() {
   // Month's saved data (all days)
   const [monthData, setMonthData] = useState<Record<string, DayData>>({});
 
+  // Active clients (from active-clients page)
+  const [activeClients, setActiveClients] = useState<ActiveClient[]>([]);
+
   // Selected calendar day (for viewing past days)
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
@@ -353,6 +382,15 @@ export function RevenueTrackerDashboard() {
   useEffect(() => {
     const g = localStorage.getItem(KEY_GOAL);
     if (g) { setMonthlyGoal(Number(g)); setGoalInput(g); }
+
+    // Load active clients
+    try {
+      const raw = localStorage.getItem(KEY_CLIENTS);
+      if (raw) {
+        const all = JSON.parse(raw) as ActiveClient[];
+        setActiveClients(all.filter((c) => c.status === "active"));
+      }
+    } catch { /* ignore */ }
 
     // Load today
     const raw = localStorage.getItem(dayKey(today));
@@ -382,18 +420,25 @@ export function RevenueTrackerDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
-  // Monthly revenue: sum sessions across all saved days + today's live sessions
+  // Monthly revenue: active client recurring + paid sessions this month
   const savedSessions = useMemo(
     () => Object.entries(monthData).reduce((s, [date, d]) => date !== today ? s + (d.sessionsBooked ?? 0) : s, 0),
     [monthData, today]
   );
-  const totalSessions  = savedSessions + dayData.sessionsBooked;
-  const monthlyRevenue = totalSessions * SESSION_PRICE;
-  const gap            = Math.max(0, monthlyGoal - monthlyRevenue);
-  const progress       = Math.min(100, monthlyGoal > 0 ? (monthlyRevenue / monthlyGoal) * 100 : 0);
+  const totalSessions       = savedSessions + dayData.sessionsBooked;
+  const sessionRevenue      = totalSessions * SESSION_PRICE;
+  const recurringWeekly     = activeClients.reduce((s, c) => s + c.weeklyRate, 0);
+  const recurringMonthly    = recurringWeekly * 4.33;
+  const monthlyRevenue      = recurringMonthly + sessionRevenue;
+  const gap                 = Math.max(0, monthlyGoal - monthlyRevenue);
+  const progress            = Math.min(100, monthlyGoal > 0 ? (monthlyRevenue / monthlyGoal) * 100 : 0);
+  const sessionsNeeded      = Math.ceil(Math.max(0, gap) / SESSION_PRICE);
 
-  // Sessions remaining for goal
-  const sessionsNeeded = Math.ceil(gap / SESSION_PRICE);
+  // Won clients this month (from daily scorecards)
+  const wonThisMonth = useMemo(
+    () => Object.values(monthData).reduce((s, d) => s + (d.clientsSigned ?? 0), 0) + dayData.clientsSigned,
+    [monthData, dayData.clientsSigned]
+  );
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -469,13 +514,21 @@ export function RevenueTrackerDashboard() {
               </p>
             </div>
             {/* Quick revenue stats */}
-            <div className="flex gap-4 text-right">
+            <div className="flex flex-wrap gap-4 text-right">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Active Clients</p>
+                <p className="text-2xl font-black text-[#10233f]">{activeClients.length}</p>
+              </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Sessions</p>
                 <p className="text-2xl font-black text-[#10233f]">{totalSessions}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Month Revenue</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Won This Month</p>
+                <p className="text-2xl font-black text-emerald-600">{wonThisMonth}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Total Revenue</p>
                 <p className="text-2xl font-black text-[#9a6820]">{fmtAUD(monthlyRevenue)}</p>
               </div>
             </div>
@@ -536,9 +589,24 @@ export function RevenueTrackerDashboard() {
               </div>
             </div>
 
-            <p className="text-xs text-[#6b7b91]">
-              <strong className="text-[#10233f]">{totalSessions} paid sessions</strong> this month · {sessionsNeeded > 0 ? `${sessionsNeeded} more to goal` : "goal reached"}
-            </p>
+            {/* Revenue breakdown */}
+            <div className="mt-3 space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-[#6b7b91]">Recurring clients ({activeClients.length})</span>
+                <span className="font-semibold text-[#10233f]">{fmtAUD(recurringMonthly)}/mo</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-[#6b7b91]">Paid sessions ({totalSessions} × ${SESSION_PRICE})</span>
+                <span className="font-semibold text-[#10233f]">{fmtAUD(sessionRevenue)}</span>
+              </div>
+              <div className="flex justify-between text-xs border-t border-stone-100 pt-1.5 mt-1.5">
+                <span className="font-bold text-[#10233f]">Total this month</span>
+                <span className="font-black text-[#9a6820]">{fmtAUD(monthlyRevenue)}</span>
+              </div>
+              {sessionsNeeded > 0 && (
+                <p className="text-xs text-[#6b7b91] pt-0.5">{sessionsNeeded} more sessions or add a client to hit goal</p>
+              )}
+            </div>
           </div>
 
           {/* Fastest path */}
@@ -574,6 +642,62 @@ export function RevenueTrackerDashboard() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── Active Clients ───────────────────────────────────────── */}
+        <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.07)] sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#9a6820]">Active Clients</p>
+              <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">
+                {activeClients.length} client{activeClients.length !== 1 ? "s" : ""} · {fmtAUD(recurringWeekly)}/wk recurring
+              </h2>
+            </div>
+            <div className="flex items-center gap-3">
+              {wonThisMonth > 0 && (
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  🏆 {wonThisMonth} won this month
+                </span>
+              )}
+              <a href="/active-clients"
+                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                Manage →
+              </a>
+            </div>
+          </div>
+
+          {activeClients.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 py-8 text-center">
+              <p className="text-sm text-[#6b7b91] mb-3">No active clients yet. Add clients to see their revenue here.</p>
+              <a href="/active-clients"
+                className="inline-block rounded-full bg-[#15314a] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">
+                + Add Client
+              </a>
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {activeClients.map((client) => (
+                <div key={client.id}
+                  className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-semibold text-sm text-[#10233f] truncate">{client.name}</p>
+                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${PKG_BADGE[client.package]}`}>
+                        {client.package}
+                      </span>
+                    </div>
+                    {client.contact && (
+                      <p className="text-xs text-[#6b7b91] truncate">{client.contact}</p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <p className="text-sm font-black text-[#9a6820]">{fmtAUD(client.weeklyRate)}/wk</p>
+                    <p className="text-[10px] text-[#6b7b91]">{fmtAUD(client.weeklyRate * 4.33)}/mo</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Monthly Calendar ─────────────────────────────────────── */}

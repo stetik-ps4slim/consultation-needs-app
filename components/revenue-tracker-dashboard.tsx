@@ -42,10 +42,11 @@ function emptyDay(): DayData {
 // ─── Scripts ──────────────────────────────────────────────────────────────────
 
 type ScriptStep = { type: string; lines: string[]; isPause?: boolean };
-type LeadScript = { label: string; heat: string; heatColor: string; steps: ScriptStep[] };
+type LeadScript = { id: string; label: string; heat: string; heatColor: string; steps: ScriptStep[] };
 
 const LEAD_SCRIPTS: LeadScript[] = [
   {
+    id: "direct",
     label: "Direct Enquiry",
     heat: "Hottest",
     heatColor: "bg-rose-100 text-rose-700 border-rose-200",
@@ -65,6 +66,7 @@ const LEAD_SCRIPTS: LeadScript[] = [
     ]
   },
   {
+    id: "reception",
     label: "Reception Enquiry",
     heat: "Hot",
     heatColor: "bg-orange-100 text-orange-700 border-orange-200",
@@ -81,6 +83,7 @@ const LEAD_SCRIPTS: LeadScript[] = [
     ]
   },
   {
+    id: "fitness-packs",
     label: "Fitness Packs",
     heat: "Warm Hot",
     heatColor: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -97,6 +100,7 @@ const LEAD_SCRIPTS: LeadScript[] = [
     ]
   },
   {
+    id: "new-joiners",
     label: "New Joiners",
     heat: "Warm",
     heatColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -113,6 +117,7 @@ const LEAD_SCRIPTS: LeadScript[] = [
     ]
   },
   {
+    id: "mia",
     label: "Call Lists, MIAs, Birthdays",
     heat: "Coldest",
     heatColor: "bg-slate-100 text-slate-600 border-slate-200",
@@ -210,33 +215,25 @@ function StepBadge({ type }: { type: string }) {
   );
 }
 
-// ─── Script card ─────────────────────────────────────────────────────────────
+// ─── Script steps renderer ────────────────────────────────────────────────────
 
-function ScriptCard({ script }: { script: LeadScript }) {
+function ScriptSteps({ steps }: { steps: ScriptStep[] }) {
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
-      <div className="border-b border-stone-100 px-4 py-3 flex flex-wrap items-center gap-2">
-        <h3 className="font-bold text-sm text-[#10233f]">{script.label}</h3>
-        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${script.heatColor}`}>
-          {script.heat}
-        </span>
-      </div>
-      <div className="px-4 py-3 space-y-2">
-        {script.steps.map((step, i) => (
-          <div key={i} className={step.isPause && step.lines.every(l => !l) ? "py-0.5" : ""}>
-            {!(step.isPause && step.lines.every(l => !l)) && (
-              <div className="flex flex-col gap-1">
-                <StepBadge type={step.type} />
-                {step.lines.filter(l => l).map((line, j) => (
-                  <p key={j} className={`text-xs leading-5 ${step.isPause ? "italic text-[#6b7b91]" : "text-[#10233f]"}`}>
-                    {line}
-                  </p>
-                ))}
-              </div>
-            )}
+    <div className="space-y-3">
+      {steps.map((step, i) => {
+        const isEmpty = step.isPause && step.lines.every(l => !l);
+        if (isEmpty) return <div key={i} className="h-1" />;
+        return (
+          <div key={i} className="flex flex-col gap-1.5">
+            <StepBadge type={step.type} />
+            {step.lines.filter(l => l).map((line, j) => (
+              <p key={j} className={`text-sm leading-6 ${step.isPause ? "italic text-[#6b7b91]" : "text-[#10233f]"}`}>
+                {line}
+              </p>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }
@@ -377,6 +374,9 @@ export function RevenueTrackerDashboard() {
 
   // Selected calendar day (for viewing past days)
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  // Active script tab (scripts + objection)
+  const [activeScript, setActiveScript] = useState<string>("direct");
 
   // Hydrate
   useEffect(() => {
@@ -846,34 +846,45 @@ export function RevenueTrackerDashboard() {
           </div>
         </div>
 
-        {/* ── Scripts — all visible ────────────────────────────────── */}
+        {/* ── Scripts ─────────────────────────────────────────────── */}
         <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.07)] sm:p-6">
           <p className="text-xs uppercase tracking-widest text-[#9a6820] mb-1">Call Scripts</p>
           <h2 className="text-lg font-bold text-[#10233f] mb-4">Scripts by Lead Type</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {LEAD_SCRIPTS.map((s) => (
-              <ScriptCard key={s.label} script={s} />
-            ))}
 
-            {/* Objection handling — in grid as 6th card */}
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 overflow-hidden">
-              <div className="border-b border-rose-100 px-4 py-3 flex items-center gap-2">
-                <h3 className="font-bold text-sm text-rose-800">Objection Handling</h3>
-                <span className="rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-rose-700">
-                  If They Say It's Too Expensive
-                </span>
-              </div>
-              <div className="px-4 py-3 space-y-2">
-                {OBJECTION_STEPS.map((step, i) => (
-                  <div key={i} className="flex flex-col gap-1">
-                    <StepBadge type={step.type} />
-                    {step.lines.filter(l => l).map((line, j) => (
-                      <p key={j} className={`text-xs leading-5 ${step.isPause ? "italic text-[#6b7b91]" : "text-rose-900"}`}>{line}</p>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Tab buttons */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-5">
+            {LEAD_SCRIPTS.map((s) => (
+              <button key={s.id} onClick={() => setActiveScript(s.id)}
+                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  activeScript === s.id
+                    ? "border-[#15314a] bg-[#15314a] text-white"
+                    : "border-stone-200 bg-white text-[#15314a] hover:border-[#15314a]/40"
+                }`}>
+                {s.label}
+              </button>
+            ))}
+            <button onClick={() => setActiveScript("objection")}
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                activeScript === "objection"
+                  ? "border-rose-600 bg-rose-600 text-white"
+                  : "border-stone-200 bg-white text-[#15314a] hover:border-rose-300"
+              }`}>
+              Objections
+            </button>
+          </div>
+
+          {/* Active script body */}
+          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-5">
+            {activeScript === "objection" ? (
+              <>
+                <p className="font-semibold text-[#10233f] mb-4">If They Say It's Too Expensive</p>
+                <ScriptSteps steps={OBJECTION_STEPS} />
+              </>
+            ) : (() => {
+              const s = LEAD_SCRIPTS.find((s) => s.id === activeScript);
+              if (!s) return null;
+              return <ScriptSteps steps={s.steps} />;
+            })()}
           </div>
         </div>
 

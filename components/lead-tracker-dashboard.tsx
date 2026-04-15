@@ -182,6 +182,7 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
               <a href="/clients" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Client Hub</a>
               <a href="/screening" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Movement Screening</a>
               <a href="/revenue" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Revenue Tracker</a>
+              <a href="/active-clients" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Active Clients</a>
               <button
                 type="button"
                 onClick={() => setShowForm(true)}

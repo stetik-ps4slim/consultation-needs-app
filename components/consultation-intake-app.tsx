@@ -675,6 +675,12 @@ export function ConsultationIntakeApp() {
               >
                 Movement Screening
               </a>
+              <a
+                href="/revenue"
+                className="rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
+              >
+                Revenue Tracker
+              </a>
               <button
                 type="button"
                 onClick={saveOnline}

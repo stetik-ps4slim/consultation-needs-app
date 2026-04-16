@@ -16,6 +16,9 @@ const CHECKLIST_ITEMS = [
 
 const EXPENSE_CATEGORIES = ["Rent / Facility", "Software / Apps", "Marketing", "Equipment", "Education", "Insurance", "Other"];
 
+const WEEK_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+type WeekDay = typeof WEEK_DAYS[number];
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DayData = {
@@ -69,6 +72,10 @@ type ClientForm = {
 };
 
 type ExpenseForm = { name: string; amount: string; category: string };
+
+type ScheduleBlock = { id: number; start: string; end: string; activity: string };
+type DaySchedule   = { blocks: ScheduleBlock[] };
+type WeekSchedule  = Record<WeekDay, DaySchedule>;
 
 // ─── Package config ───────────────────────────────────────────────────────────
 
@@ -192,7 +199,33 @@ const OBJECTION_STEPS: ScriptStep[] = [
 const KEY_GOAL     = "tun-monthly-goal";
 const KEY_CLIENTS  = "tun-active-clients";
 const KEY_EXPENSES = "tun-expenses";
+const KEY_SCHEDULE = "tun-weekly-schedule";
 const dayKey = (d: string) => `tun-daydata-${d}`;
+
+const DEFAULT_SCHEDULE: WeekSchedule = {
+  monday:    { blocks: [
+    { id: 1, start: "6:00am",  end: "8:00am",  activity: "Floor walk" },
+    { id: 2, start: "8:00am",  end: "9:30am",  activity: "Train" },
+    { id: 3, start: "9:30am",  end: "10:30am", activity: "Break" },
+    { id: 4, start: "10:30am", end: "12:30pm", activity: "Calls" },
+    { id: 5, start: "12:30pm", end: "1:30pm",  activity: "Lunch" },
+    { id: 6, start: "1:30pm",  end: "2:30pm",  activity: "Follow up calls" },
+    { id: 7, start: "2:30pm",  end: "3:00pm",  activity: "B2B" },
+  ]},
+  tuesday:   { blocks: [
+    { id: 1, start: "11:00am", end: "12:30pm", activity: "Train" },
+    { id: 2, start: "12:30pm", end: "1:30pm",  activity: "Lunch" },
+    { id: 3, start: "1:30pm",  end: "3:30pm",  activity: "Calls" },
+    { id: 4, start: "3:30pm",  end: "4:30pm",  activity: "Break" },
+    { id: 5, start: "4:30pm",  end: "6:00pm",  activity: "Walk Floor" },
+    { id: 6, start: "6:00pm",  end: "7:00pm",  activity: "Follow up call" },
+  ]},
+  wednesday: { blocks: [] },
+  thursday:  { blocks: [] },
+  friday:    { blocks: [] },
+  saturday:  { blocks: [] },
+  sunday:    { blocks: [] },
+};
 
 function todayStr() {
   const n = new Date();
@@ -374,6 +407,14 @@ export function RevenueTrackerDashboard() {
   // ── Scripts ──────────────────────────────────────────────────────────────
   const [activeScript, setActiveScript] = useState("direct");
 
+  // ── Daily schedule ────────────────────────────────────────────────────────
+  const todayDayName = new Date(today + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as WeekDay;
+  const [schedule,       setSchedule]       = useState<WeekSchedule>(DEFAULT_SCHEDULE);
+  const [scheduleDay,    setScheduleDay]    = useState<WeekDay>(todayDayName);
+  const [showBlockForm,  setShowBlockForm]  = useState(false);
+  const [editBlockId,    setEditBlockId]    = useState<number | null>(null);
+  const [blockForm,      setBlockForm]      = useState({ start: "", end: "", activity: "" });
+
   // ── Track date/month changes (e.g. tab revisited after midnight) ──────────
   useEffect(() => {
     const check = () => setToday(todayStr());
@@ -416,6 +457,15 @@ export function RevenueTrackerDashboard() {
       const e = localStorage.getItem(KEY_EXPENSES);
       if (e) setExpenses(JSON.parse(e));
     } catch { /* skip */ }
+
+    // Schedule
+    try {
+      const sc = localStorage.getItem(KEY_SCHEDULE);
+      if (sc) setSchedule(JSON.parse(sc));
+    } catch { /* skip */ }
+
+    // Sync schedule day tab to today
+    setScheduleDay(new Date(today + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as WeekDay);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
@@ -542,6 +592,38 @@ export function RevenueTrackerDashboard() {
   function deleteExpense(id: number) {
     saveExpenses(prev => prev.filter(ex => ex.id !== id));
     setDeleteExpenseId(null);
+  }
+
+  // ── Schedule handlers ─────────────────────────────────────────────────────
+  const saveSchedule = useCallback((updater: (prev: WeekSchedule) => WeekSchedule) => {
+    setSchedule(prev => {
+      const next = updater(prev);
+      localStorage.setItem(KEY_SCHEDULE, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  function openAddBlock() {
+    setEditBlockId(null); setBlockForm({ start: "", end: "", activity: "" }); setShowBlockForm(true);
+  }
+  function openEditBlock(b: ScheduleBlock) {
+    setEditBlockId(b.id); setBlockForm({ start: b.start, end: b.end, activity: b.activity }); setShowBlockForm(true);
+  }
+  function submitBlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!blockForm.activity.trim()) return;
+    const day = scheduleDay;
+    if (editBlockId !== null) {
+      const bid = editBlockId;
+      saveSchedule(prev => ({ ...prev, [day]: { blocks: prev[day].blocks.map(b => b.id === bid ? { ...b, ...blockForm } : b) } }));
+    } else {
+      saveSchedule(prev => ({ ...prev, [day]: { blocks: [...prev[day].blocks, { id: Date.now(), ...blockForm }] } }));
+    }
+    setShowBlockForm(false); setEditBlockId(null);
+  }
+  function deleteBlock(id: number) {
+    const day = scheduleDay;
+    saveSchedule(prev => ({ ...prev, [day]: { blocks: prev[day].blocks.filter(b => b.id !== id) } }));
   }
 
   const displayedClients = clientTab === "active" ? activeClients : lostClients;
@@ -781,6 +863,62 @@ export function RevenueTrackerDashboard() {
           )}
         </div>
 
+        {/* ── Daily Planning Schedule ──────────────────────────────── */}
+        <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.07)] sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#9a6820]">Weekly Planner</p>
+              <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">Daily Schedule</h2>
+            </div>
+            <button onClick={openAddBlock}
+              className="rounded-full bg-[#15314a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">
+              + Add Block
+            </button>
+          </div>
+
+          {/* Day tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-5">
+            {WEEK_DAYS.map(d => (
+              <button key={d} onClick={() => setScheduleDay(d)}
+                className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold capitalize transition ${
+                  scheduleDay === d
+                    ? "border-[#15314a] bg-[#15314a] text-white"
+                    : d === todayDayName
+                    ? "border-[#9a6820] bg-[#fdf3e3] text-[#9a6820]"
+                    : "border-stone-200 bg-white text-[#15314a] hover:border-[#15314a]/40"
+                }`}>
+                {d.slice(0, 3).charAt(0).toUpperCase() + d.slice(1, 3)}
+                {d === todayDayName && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#9a6820] align-middle" />}
+              </button>
+            ))}
+          </div>
+
+          {/* Blocks */}
+          {schedule[scheduleDay].blocks.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-stone-200 px-6 py-8 text-center">
+              <p className="text-sm text-[#6b7b91]">No blocks planned for {scheduleDay.charAt(0).toUpperCase() + scheduleDay.slice(1)} yet.</p>
+              <button onClick={openAddBlock} className="mt-3 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] hover:border-[#9a6820]/60 transition">+ Add first block</button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {schedule[scheduleDay].blocks.map(block => (
+                <div key={block.id} className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 hover:border-[#9a6820]/30 transition group">
+                  <div className="shrink-0 text-right min-w-[90px]">
+                    <p className="text-xs font-semibold text-[#9a6820]">{block.start}</p>
+                    <p className="text-[10px] text-[#6b7b91]">→ {block.end}</p>
+                  </div>
+                  <div className="h-8 w-px bg-stone-200 shrink-0" />
+                  <p className="flex-1 text-sm font-semibold text-[#10233f]">{block.activity}</p>
+                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
+                    <button onClick={() => openEditBlock(block)} className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-[#15314a] hover:border-[#9a6820]/60 transition">Edit</button>
+                    <button onClick={() => deleteBlock(block.id)} className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-rose-500 hover:border-rose-300 transition">✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* ── Today: Checklist + Scorecard ─────────────────────────── */}
         <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
           {/* Checklist */}
@@ -986,6 +1124,61 @@ export function RevenueTrackerDashboard() {
               <button onClick={() => deleteExpense(deleteExpenseId)} className="rounded-full bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 transition">Remove</button>
               <button onClick={() => setDeleteExpenseId(null)} className="rounded-full border border-stone-200 px-6 py-2.5 text-sm font-semibold text-[#15314a] hover:border-stone-300 transition">Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Schedule Block Add/Edit Modal ────────────────────────── */}
+      {showBlockForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5">
+              <h2 className="text-lg font-bold text-[#10233f]">
+                {editBlockId ? "Edit Block" : "Add Block"} — <span className="capitalize">{scheduleDay}</span>
+              </h2>
+              <button onClick={() => { setShowBlockForm(false); setEditBlockId(null); }} className="rounded-full p-2 text-slate-400 hover:bg-stone-100">✕</button>
+            </div>
+            <form onSubmit={submitBlock} className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Start time</label>
+                  <input
+                    value={blockForm.start}
+                    onChange={e => setBlockForm(f => ({ ...f, start: e.target.value }))}
+                    placeholder="e.g. 9:00am"
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">End time</label>
+                  <input
+                    value={blockForm.end}
+                    onChange={e => setBlockForm(f => ({ ...f, end: e.target.value }))}
+                    placeholder="e.g. 10:30am"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Activity *</label>
+                <input
+                  required
+                  value={blockForm.activity}
+                  onChange={e => setBlockForm(f => ({ ...f, activity: e.target.value }))}
+                  placeholder="e.g. Calls, Lunch, Floor walk…"
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="submit" className="flex-1 rounded-full bg-[#15314a] py-3 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">
+                  {editBlockId ? "Save Changes" : "Add Block"}
+                </button>
+                <button type="button" onClick={() => { setShowBlockForm(false); setEditBlockId(null); }}
+                  className="rounded-full border border-stone-200 px-5 py-3 text-sm font-semibold text-[#6b7b91] hover:border-stone-300">
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -334,10 +334,9 @@ const inputCls = "w-full rounded-2xl border border-stone-200 bg-white px-4 py-2.
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function RevenueTrackerDashboard() {
-  const today     = todayStr();
-  const nowDate   = new Date();
-  const curYear   = nowDate.getFullYear();
-  const curMonth  = nowDate.getMonth() + 1;
+  const [today, setToday] = useState(todayStr);
+  const curYear   = Number(today.slice(0, 4));
+  const curMonth  = Number(today.slice(5, 7));
   const daysInMo  = new Date(curYear, curMonth, 0).getDate();
 
   // ── Goal ─────────────────────────────────────────────────────────────────
@@ -373,6 +372,13 @@ export function RevenueTrackerDashboard() {
 
   // ── Scripts ──────────────────────────────────────────────────────────────
   const [activeScript, setActiveScript] = useState("direct");
+
+  // ── Track date/month changes (e.g. tab revisited after midnight) ──────────
+  useEffect(() => {
+    const check = () => setToday(todayStr());
+    document.addEventListener("visibilitychange", check);
+    return () => document.removeEventListener("visibilitychange", check);
+  }, []);
 
   // ── Hydrate ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -457,9 +463,16 @@ export function RevenueTrackerDashboard() {
   }
 
   // ── Client handlers ───────────────────────────────────────────────────────
-  function persistClients(list: Client[]) {
-    setClients(list); localStorage.setItem(KEY_CLIENTS, JSON.stringify(list));
-  }
+  // Use functional setClients so localStorage write always uses the latest list,
+  // avoiding any stale-closure bug where clients captured in a handler are outdated.
+  const saveClients = useCallback((updater: (prev: Client[]) => Client[]) => {
+    setClients(prev => {
+      const next = updater(prev);
+      localStorage.setItem(KEY_CLIENTS, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   function openAddClient() {
     setEditClientId(null); setClientForm(blankClientForm()); setShowClientForm(true);
   }
@@ -475,30 +488,41 @@ export function RevenueTrackerDashboard() {
   function submitClient(e: React.FormEvent) {
     e.preventDefault();
     const rate = Math.max(0, Number(clientForm.weeklyRate) || 0);
-    if (editClientId !== null) {
-      persistClients(clients.map(c => c.id === editClientId ? { ...c, name: clientForm.name, package: clientForm.package, weeklyRate: rate, startDate: clientForm.startDate, contact: clientForm.contact, notes: clientForm.notes } : c));
+    const eid = editClientId;
+    if (eid !== null) {
+      saveClients(prev => prev.map(c => c.id === eid
+        ? { ...c, name: clientForm.name, package: clientForm.package, weeklyRate: rate, startDate: clientForm.startDate, contact: clientForm.contact, notes: clientForm.notes }
+        : c));
     } else {
-      persistClients([...clients, { id: Date.now(), name: clientForm.name, package: clientForm.package, weeklyRate: rate, startDate: clientForm.startDate, contact: clientForm.contact, notes: clientForm.notes, status: "active", lostDate: "", lostReason: "", createdAt: new Date().toISOString() }]);
+      const newClient: Client = { id: Date.now(), name: clientForm.name, package: clientForm.package, weeklyRate: rate, startDate: clientForm.startDate, contact: clientForm.contact, notes: clientForm.notes, status: "active", lostDate: "", lostReason: "", createdAt: new Date().toISOString() };
+      saveClients(prev => [...prev, newClient]);
     }
     setShowClientForm(false);
   }
   function markLost() {
     if (lossModalId === null) return;
-    persistClients(clients.map(c => c.id === lossModalId ? { ...c, status: "lost" as const, lostDate: lossDate, lostReason: lossReason } : c));
+    const id = lossModalId, date = lossDate, reason = lossReason;
+    saveClients(prev => prev.map(c => c.id === id ? { ...c, status: "lost" as const, lostDate: date, lostReason: reason } : c));
     setLossModalId(null); setLossReason(""); setLossDate(todayISO()); setClientTab("lost");
   }
   function winBack(id: number) {
-    persistClients(clients.map(c => c.id === id ? { ...c, status: "active" as const, lostDate: "", lostReason: "" } : c));
+    saveClients(prev => prev.map(c => c.id === id ? { ...c, status: "active" as const, lostDate: "", lostReason: "" } : c));
     setClientTab("active");
   }
   function deleteClient(id: number) {
-    persistClients(clients.filter(c => c.id !== id)); setDeleteClientId(null);
+    saveClients(prev => prev.filter(c => c.id !== id));
+    setDeleteClientId(null);
   }
 
   // ── Expense handlers ──────────────────────────────────────────────────────
-  function persistExpenses(list: Expense[]) {
-    setExpenses(list); localStorage.setItem(KEY_EXPENSES, JSON.stringify(list));
-  }
+  const saveExpenses = useCallback((updater: (prev: Expense[]) => Expense[]) => {
+    setExpenses(prev => {
+      const next = updater(prev);
+      localStorage.setItem(KEY_EXPENSES, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   function openAddExpense() {
     setEditExpenseId(null); setExpenseForm(blankExpenseForm()); setShowExpenseForm(true);
   }
@@ -508,15 +532,17 @@ export function RevenueTrackerDashboard() {
   function submitExpense(e: React.FormEvent) {
     e.preventDefault();
     const amt = Math.max(0, Number(expenseForm.amount) || 0);
-    if (editExpenseId !== null) {
-      persistExpenses(expenses.map(ex => ex.id === editExpenseId ? { ...ex, name: expenseForm.name, amount: amt, category: expenseForm.category } : ex));
+    const eid = editExpenseId;
+    if (eid !== null) {
+      saveExpenses(prev => prev.map(ex => ex.id === eid ? { ...ex, name: expenseForm.name, amount: amt, category: expenseForm.category } : ex));
     } else {
-      persistExpenses([...expenses, { id: Date.now(), name: expenseForm.name, amount: amt, category: expenseForm.category }]);
+      saveExpenses(prev => [...prev, { id: Date.now(), name: expenseForm.name, amount: amt, category: expenseForm.category }]);
     }
     setShowExpenseForm(false);
   }
   function deleteExpense(id: number) {
-    persistExpenses(expenses.filter(ex => ex.id !== id)); setDeleteExpenseId(null);
+    saveExpenses(prev => prev.filter(ex => ex.id !== id));
+    setDeleteExpenseId(null);
   }
 
   const displayedClients = clientTab === "active" ? activeClients : lostClients;
@@ -548,7 +574,7 @@ export function RevenueTrackerDashboard() {
             <div>
               <p className="text-xs uppercase tracking-[0.32em] text-[#9a6820]">Daily Operations</p>
               <h1 className="mt-1 text-2xl font-bold text-[#10233f] sm:text-3xl">Revenue Tracker</h1>
-              <p className="mt-1 text-sm text-[#4a5c73]">{nowDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+              <p className="mt-1 text-sm text-[#4a5c73]">{new Date(today + "T12:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
             </div>
             <div className="flex flex-wrap gap-4 text-right">
               <div><p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Active Clients</p><p className="text-2xl font-black text-[#10233f]">{activeClients.length}</p></div>
@@ -736,7 +762,7 @@ export function RevenueTrackerDashboard() {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <p className="text-xs uppercase tracking-widest text-[#9a6820]">Monthly Calendar</p>
-              <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">{nowDate.toLocaleDateString("en-AU", { month: "long", year: "numeric" })}</h2>
+              <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">{new Date(today + "T12:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" })}</h2>
             </div>
             {selectedDay && <button onClick={() => setSelectedDay(null)} className="rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-[#6b7b91] hover:border-stone-300">Clear</button>}
           </div>
@@ -814,8 +840,7 @@ export function RevenueTrackerDashboard() {
 
         {/* ── Scripts ─────────────────────────────────────────────── */}
         <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.07)] sm:p-6">
-          <p className="text-xs uppercase tracking-widest text-[#9a6820] mb-1">Call Scripts</p>
-          <h2 className="text-lg font-bold text-[#10233f] mb-4">Scripts by Lead Type</h2>
+          <h2 className="text-lg text-[#10233f] mb-4">Scripts by Lead Type</h2>
           <div className="flex gap-2 overflow-x-auto pb-2 mb-5">
             {LEAD_SCRIPTS.map(s => (
               <button key={s.id} onClick={() => setActiveScript(s.id)}

@@ -681,12 +681,6 @@ export function ConsultationIntakeApp() {
               >
                 Revenue Tracker
               </a>
-              <a
-                href="/active-clients"
-                className="shrink-0 rounded-full border border-stone-200 bg-white/80 px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
-              >
-                Active Clients
-              </a>
               <button
                 type="button"
                 onClick={saveOnline}

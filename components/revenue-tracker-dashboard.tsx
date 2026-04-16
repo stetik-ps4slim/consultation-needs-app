@@ -435,7 +435,9 @@ export function RevenueTrackerDashboard() {
   const todayDayName: WeekDay = _DOW[new Date(today + "T12:00:00").getDay()];
   const [schedule,       setSchedule]       = useState<TwoWeekSchedule>(DEFAULT_SCHEDULE);
   const [scheduleWeek,   setScheduleWeek]   = useState<"week1" | "week2">("week1");
-  const [scheduleDay,    setScheduleDay]    = useState<WeekDay>(todayDayName);
+  // Default to today if it has blocks, otherwise Monday so content is always visible on load
+  const _initDay: WeekDay = DEFAULT_SCHEDULE.week1[todayDayName]?.blocks?.length > 0 ? todayDayName : "monday";
+  const [scheduleDay,    setScheduleDay]    = useState<WeekDay>(_initDay);
   const [showBlockForm,  setShowBlockForm]  = useState(false);
   const [editBlockId,    setEditBlockId]    = useState<number | null>(null);
   const [blockForm,      setBlockForm]      = useState({ start: "—", end: "—", activity: ACTIVITY_OPTIONS[0] });
@@ -498,9 +500,13 @@ export function RevenueTrackerDashboard() {
       }
     } catch { /* skip */ }
 
-    // Sync schedule day tab to today using reliable getDay() index
+    // After hydration, show today if it has blocks, otherwise keep showing Monday
     const _dow = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"] as const;
-    setScheduleDay(_dow[new Date(today + "T12:00:00").getDay()]);
+    const _todayName = _dow[new Date(today + "T12:00:00").getDay()];
+    setScheduleDay(prev => {
+      const todayBlocks = (JSON.parse(localStorage.getItem(KEY_SCHEDULE) ?? "{}"))?.week1?.[_todayName]?.blocks;
+      return Array.isArray(todayBlocks) && todayBlocks.length > 0 ? _todayName : prev;
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 

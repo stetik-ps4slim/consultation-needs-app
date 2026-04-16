@@ -430,7 +430,9 @@ export function RevenueTrackerDashboard() {
   const [activeScript, setActiveScript] = useState("direct");
 
   // ── Daily schedule ────────────────────────────────────────────────────────
-  const todayDayName = new Date(today + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as WeekDay;
+  // Use getDay() index — safer than toLocaleDateString across iOS/Android
+  const _DOW = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"] as const;
+  const todayDayName: WeekDay = _DOW[new Date(today + "T12:00:00").getDay()];
   const [schedule,       setSchedule]       = useState<TwoWeekSchedule>(DEFAULT_SCHEDULE);
   const [scheduleWeek,   setScheduleWeek]   = useState<"week1" | "week2">("week1");
   const [scheduleDay,    setScheduleDay]    = useState<WeekDay>(todayDayName);
@@ -481,14 +483,24 @@ export function RevenueTrackerDashboard() {
       if (e) setExpenses(JSON.parse(e));
     } catch { /* skip */ }
 
-    // Schedule
+    // Schedule — merge with DEFAULT_SCHEDULE so missing keys never crash
     try {
       const sc = localStorage.getItem(KEY_SCHEDULE);
-      if (sc) setSchedule(JSON.parse(sc));
+      if (sc) {
+        const parsed = JSON.parse(sc);
+        // Handle old single-week format (no week1/week2 keys)
+        const w1 = parsed.week1 ?? parsed;
+        const w2 = parsed.week2 ?? EMPTY_WEEK;
+        setSchedule({
+          week1: { ...EMPTY_WEEK, ...w1 },
+          week2: { ...EMPTY_WEEK, ...w2 },
+        });
+      }
     } catch { /* skip */ }
 
-    // Sync schedule day tab to today
-    setScheduleDay(new Date(today + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" }).toLowerCase() as WeekDay);
+    // Sync schedule day tab to today using reliable getDay() index
+    const _dow = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"] as const;
+    setScheduleDay(_dow[new Date(today + "T12:00:00").getDay()]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
@@ -676,7 +688,7 @@ export function RevenueTrackerDashboard() {
     });
   }
   function applyCopy() {
-    const sourceBlocks = schedule[scheduleWeek][scheduleDay].blocks;
+    const sourceBlocks = schedule[scheduleWeek]?.[scheduleDay]?.blocks ?? [];
     saveSchedule(prev => {
       let next = { ...prev };
       copyTargets.forEach(({ week, day }) => {
@@ -972,14 +984,14 @@ export function RevenueTrackerDashboard() {
           </div>
 
           {/* Blocks */}
-          {schedule[scheduleWeek][scheduleDay].blocks.length === 0 ? (
+          {(schedule[scheduleWeek]?.[scheduleDay]?.blocks ?? []).length === 0 ? (
             <div className="rounded-2xl border border-dashed border-stone-200 px-6 py-8 text-center">
               <p className="text-sm text-[#6b7b91]">No blocks planned for {scheduleDay.charAt(0).toUpperCase() + scheduleDay.slice(1)} — {scheduleWeek === "week1" ? "Week 1" : "Week 2"} yet.</p>
               <button onClick={openAddBlock} className="mt-3 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] hover:border-[#9a6820]/60 transition">+ Add first block</button>
             </div>
           ) : (
             <div className="space-y-2">
-              {schedule[scheduleWeek][scheduleDay].blocks.map(block => (
+              {(schedule[scheduleWeek]?.[scheduleDay]?.blocks ?? []).map(block => (
                 <div key={block.id} className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 transition hover:border-[#9a6820]/30">
                   <div className="shrink-0 text-right min-w-[80px]">
                     <p className="text-xs font-semibold text-[#9a6820]">{block.start}</p>

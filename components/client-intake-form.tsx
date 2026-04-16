@@ -299,17 +299,65 @@ export function ClientIntakeForm() {
     }
   }
 
-  // ── Success screen ────────────────────────────────────────────────────────
+  // ── Thank-you screen ──────────────────────────────────────────────────────
   if (submitStatus === "success") {
     return (
-      <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)]">
-        <div className="flex min-h-screen flex-col items-center justify-center px-5 text-center">
-          <div className="w-full max-w-lg rounded-2xl border border-stone-200 bg-white p-10 shadow-sm">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 text-2xl">✓</div>
-            <h1 className="mt-5 font-[Arial_Narrow] text-4xl uppercase tracking-[0.06em] text-[#10233f]">Form Submitted</h1>
-            <p className="mt-4 text-sm leading-7 text-[#6b7b91]">{statusMessage}</p>
-            <p className="mt-6 text-xs text-stone-400">The Upper Notch</p>
+      <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] px-5 py-12 sm:px-6">
+        <div className="mx-auto max-w-2xl space-y-6">
+
+          {/* Confirmation banner */}
+          <div className="rounded-3xl bg-[#15314a] px-8 py-10 text-center shadow-[0_24px_64px_rgba(21,49,74,0.18)]">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-2xl">✓</div>
+            <p className="text-xs font-bold uppercase tracking-[0.32em] text-[#d2a86c] mb-3">You&apos;re locked in</p>
+            <h1 className="font-[Arial_Narrow] text-3xl uppercase tracking-[0.06em] text-white sm:text-4xl">
+              Your spot is locked in
+            </h1>
+            <p className="mt-4 text-base leading-7 text-white/75">
+              Jazzay has everything he needs to prepare for your first session.
+            </p>
           </div>
+
+          {/* Intro line */}
+          <div className="rounded-3xl border border-white/70 bg-white/90 px-8 py-7 shadow-[0_20px_80px_rgba(0,0,0,0.06)]">
+            <p className="text-sm leading-7 text-[#4a5c73]">
+              Here&apos;s a quick rundown of what the next two complimentary sessions will look like so you can show up ready.
+            </p>
+          </div>
+
+          {/* Session 1 */}
+          <div className="rounded-3xl border border-white/70 bg-white/90 px-8 py-7 shadow-[0_20px_80px_rgba(0,0,0,0.06)]">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#9a6820]">Session 1</p>
+                <h2 className="mt-1 text-xl font-bold text-[#10233f]">Getting To Know You</h2>
+              </div>
+              <span className="shrink-0 rounded-full border border-stone-200 bg-stone-50 px-4 py-1.5 text-xs font-semibold text-[#6b7b91]">30–45 min · Complimentary</span>
+            </div>
+            <p className="text-sm leading-7 text-[#4a5c73]">
+              Your first session isn&apos;t a workout — it&apos;s a conversation. Jazzay will sit down with you and go through everything in detail: your goals, your training history, your schedule, and run through a movement screening to check for any injuries or limitations to work around. This is where the real coaching starts — nothing gets assumed, everything gets covered.
+            </p>
+          </div>
+
+          {/* Session 2 */}
+          <div className="rounded-3xl border border-white/70 bg-white/90 px-8 py-7 shadow-[0_20px_80px_rgba(0,0,0,0.06)]">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#9a6820]">Session 2</p>
+                <h2 className="mt-1 text-xl font-bold text-[#10233f]">Full PT Session &amp; Program Presentation</h2>
+              </div>
+              <span className="shrink-0 rounded-full border border-stone-200 bg-stone-50 px-4 py-1.5 text-xs font-semibold text-[#6b7b91]">Complimentary</span>
+            </div>
+            <p className="text-sm leading-7 text-[#4a5c73]">
+              Come ready to train. Session 2 is a full hands-on personal training session on the house, followed by Jazzay walking you through your custom program and nutrition starting point. You&apos;ll leave knowing exactly what your coaching looks like and ready to hit the ground running.
+            </p>
+          </div>
+
+          {/* Sign-off */}
+          <div className="rounded-3xl border border-[#e8d5b0] bg-[#fdf8f0] px-8 py-7 text-center shadow-[0_20px_80px_rgba(0,0,0,0.04)]">
+            <p className="text-base font-semibold text-[#10233f]">See you soon — let&apos;s get to work.</p>
+            <p className="mt-2 text-sm text-[#9a6820] font-medium">Jazzay · Upper Notch Coaching</p>
+          </div>
+
         </div>
       </main>
     );

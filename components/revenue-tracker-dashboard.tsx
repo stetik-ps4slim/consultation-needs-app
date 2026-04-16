@@ -617,6 +617,19 @@ export function RevenueTrackerDashboard() {
     setDeleteExpenseId(null);
   }
 
+  // ── Schedule helpers ──────────────────────────────────────────────────────
+  function timeToMins(t: string): number {
+    if (!t || t === "—") return -1;
+    const pm = t.endsWith("pm");
+    const [hStr, mStr] = t.replace(/[ap]m$/, "").split(":");
+    const h = parseInt(hStr, 10); const m = parseInt(mStr, 10);
+    const h24 = pm ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h);
+    return h24 * 60 + m;
+  }
+  function sortBlocks(blocks: ScheduleBlock[]): ScheduleBlock[] {
+    return [...blocks].sort((a, b) => timeToMins(a.start) - timeToMins(b.start));
+  }
+
   // ── Schedule handlers ─────────────────────────────────────────────────────
   const saveSchedule = useCallback((updater: (prev: TwoWeekSchedule) => TwoWeekSchedule) => {
     setSchedule(prev => {
@@ -641,15 +654,38 @@ export function RevenueTrackerDashboard() {
     const day = scheduleDay; const wk = scheduleWeek;
     if (editBlockId !== null) {
       const bid = editBlockId;
-      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: prev[wk][day].blocks.map(b => b.id === bid ? { ...b, ...blockForm } : b) } } }));
+      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: sortBlocks(prev[wk][day].blocks.map(b => b.id === bid ? { ...b, ...blockForm } : b)) } } }));
     } else {
-      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: [...prev[wk][day].blocks, { id: Date.now(), ...blockForm }] } } }));
+      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: sortBlocks([...prev[wk][day].blocks, { id: Date.now(), ...blockForm }]) } } }));
     }
     setShowBlockForm(false); setEditBlockId(null);
   }
   function deleteBlock(id: number) {
     const day = scheduleDay; const wk = scheduleWeek;
     saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: prev[wk][day].blocks.filter(b => b.id !== id) } } }));
+  }
+
+  // ── Copy-day handler ──────────────────────────────────────────────────────
+  const [showCopyModal,  setShowCopyModal]  = useState(false);
+  const [copyTargets,    setCopyTargets]    = useState<{ week: "week1" | "week2"; day: WeekDay }[]>([]);
+
+  function toggleCopyTarget(week: "week1" | "week2", day: WeekDay) {
+    setCopyTargets(prev => {
+      const exists = prev.some(t => t.week === week && t.day === day);
+      return exists ? prev.filter(t => !(t.week === week && t.day === day)) : [...prev, { week, day }];
+    });
+  }
+  function applyCopy() {
+    const sourceBlocks = schedule[scheduleWeek][scheduleDay].blocks;
+    saveSchedule(prev => {
+      let next = { ...prev };
+      copyTargets.forEach(({ week, day }) => {
+        const newBlocks = sortBlocks(sourceBlocks.map(b => ({ ...b, id: Date.now() + Math.random() })));
+        next = { ...next, [week]: { ...next[week], [day]: { blocks: newBlocks } } };
+      });
+      return next;
+    });
+    setShowCopyModal(false); setCopyTargets([]);
   }
 
   const displayedClients = clientTab === "active" ? activeClients : lostClients;
@@ -896,10 +932,16 @@ export function RevenueTrackerDashboard() {
               <p className="text-xs uppercase tracking-widest text-[#9a6820]">2-Week Planner</p>
               <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">Daily Schedule</h2>
             </div>
-            <button onClick={openAddBlock}
-              className="rounded-full bg-[#15314a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">
-              + Add Block
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => { setCopyTargets([]); setShowCopyModal(true); }}
+                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                Copy day →
+              </button>
+              <button onClick={openAddBlock}
+                className="rounded-full bg-[#15314a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">
+                + Add Block
+              </button>
+            </div>
           </div>
 
           {/* Week tabs */}
@@ -1159,6 +1201,51 @@ export function RevenueTrackerDashboard() {
             <div className="flex gap-2 justify-center">
               <button onClick={() => deleteExpense(deleteExpenseId)} className="rounded-full bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 transition">Remove</button>
               <button onClick={() => setDeleteExpenseId(null)} className="rounded-full border border-stone-200 px-6 py-2.5 text-sm font-semibold text-[#15314a] hover:border-stone-300 transition">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Copy Day Modal ───────────────────────────────────────── */}
+      {showCopyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-[#10233f]">Copy day to…</h2>
+                <p className="text-xs text-[#6b7b91] mt-0.5 capitalize">Copying: {scheduleWeek === "week1" ? "Week 1" : "Week 2"} — {scheduleDay}</p>
+              </div>
+              <button onClick={() => setShowCopyModal(false)} className="rounded-full p-2 text-slate-400 hover:bg-stone-100">✕</button>
+            </div>
+            <div className="px-6 py-5 space-y-5">
+              {(["week1", "week2"] as const).map(wk => (
+                <div key={wk}>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#9a6820] mb-2">{wk === "week1" ? "Week 1" : "Week 2"}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {WEEK_DAYS.map(d => {
+                      const isSource = wk === scheduleWeek && d === scheduleDay;
+                      const checked = copyTargets.some(t => t.week === wk && t.day === d);
+                      return (
+                        <button key={d} disabled={isSource} onClick={() => toggleCopyTarget(wk, d)}
+                          className={`rounded-xl border py-2 text-xs font-semibold capitalize transition ${
+                            isSource ? "border-stone-100 bg-stone-50 text-stone-300 cursor-not-allowed"
+                            : checked ? "border-[#15314a] bg-[#15314a] text-white"
+                            : "border-stone-200 bg-white text-[#15314a] hover:border-[#15314a]/40"
+                          }`}>
+                          {d.slice(0, 3)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-2 pt-1">
+                <button onClick={applyCopy} disabled={copyTargets.length === 0}
+                  className="flex-1 rounded-full bg-[#15314a] py-3 text-sm font-semibold text-white transition hover:bg-[#1e3f60] disabled:opacity-40">
+                  Copy to {copyTargets.length > 0 ? `${copyTargets.length} day${copyTargets.length > 1 ? "s" : ""}` : "…"}
+                </button>
+                <button onClick={() => setShowCopyModal(false)} className="rounded-full border border-stone-200 px-5 py-3 text-sm font-semibold text-[#6b7b91] hover:border-stone-300">Cancel</button>
+              </div>
             </div>
           </div>
         </div>

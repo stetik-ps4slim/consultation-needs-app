@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SESSION_PRICE = 100;
 
 const CHECKLIST_ITEMS = [
   { title: "Contact 30 leads",        detail: "Direct enquiries first, then Reception, Fitness Packs, New Joiners, and colder lists." },
@@ -26,7 +25,7 @@ type DayData = {
   consultsBooked: number;
   consultsCompleted: number;
   clientsSigned: number;
-  sessionsBooked: number;
+  sessionRevenue: number;
   checklist: boolean[];
   notes: string;
 };
@@ -35,7 +34,7 @@ function emptyDay(): DayData {
   return {
     leadsContacted: 0, replies: 0, callsBooked: 0,
     consultsBooked: 0, consultsCompleted: 0, clientsSigned: 0,
-    sessionsBooked: 0,
+    sessionRevenue: 0,
     checklist: Array(CHECKLIST_ITEMS.length).fill(false),
     notes: ""
   };
@@ -217,37 +216,16 @@ function durationLabel(days: number | null) {
   return `${(days / 365).toFixed(1)}yr`;
 }
 
-// ─── Step badge ───────────────────────────────────────────────────────────────
-
-const stepColor: Record<string, string> = {
-  "OPENER": "bg-[#15314a] text-white", "REASON": "bg-[#15314a] text-white",
-  "REASON FOR CALL": "bg-[#15314a] text-white", "SOFT HOOK": "bg-[#9a6820] text-white",
-  "QUALIFY": "bg-violet-700 text-white", "LIGHT QUALIFY": "bg-violet-700 text-white",
-  "COMMITMENT FILTER": "bg-rose-700 text-white", "AWARENESS SHIFT": "bg-sky-700 text-white",
-  "POSITION": "bg-emerald-700 text-white", "TRANSITION": "bg-teal-700 text-white",
-  "CLOSE": "bg-[#d2a86c] text-[#10233f]", "URGENCY": "bg-rose-600 text-white",
-  "OPTIONAL SEED": "bg-slate-500 text-white", "OFFER": "bg-indigo-700 text-white",
-  "RELATE": "bg-slate-600 text-white", "ANCHOR BACK": "bg-slate-600 text-white",
-  "REFRAME": "bg-emerald-700 text-white", "IF IT'S TOO EXPENSIVE": "bg-rose-800 text-white",
-  "PAUSE": "bg-stone-200 text-stone-500"
-};
-
-function StepBadge({ type }: { type: string }) {
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${stepColor[type] ?? "bg-stone-200 text-stone-700"}`}>
-      {type}
-    </span>
-  );
-}
-
 function ScriptSteps({ steps }: { steps: ScriptStep[] }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {steps.map((step, i) => {
-        if (step.isPause && step.lines.every(l => !l)) return <div key={i} className="h-1" />;
+        if (step.isPause && step.lines.every(l => !l)) return <div key={i} className="h-px bg-stone-200 my-1" />;
         return (
-          <div key={i} className="flex flex-col gap-1.5">
-            <StepBadge type={step.type} />
+          <div key={i} className="flex flex-col gap-1">
+            {!step.isPause && (
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b7b91]">{step.type}</p>
+            )}
             {step.lines.filter(l => l).map((line, j) => (
               <p key={j} className={`text-sm leading-6 ${step.isPause ? "italic text-[#6b7b91]" : "text-[#10233f]"}`}>{line}</p>
             ))}
@@ -260,18 +238,41 @@ function ScriptSteps({ steps }: { steps: ScriptStep[] }) {
 
 // ─── Counter ──────────────────────────────────────────────────────────────────
 
-function Counter({ label, value, onChange, accent = false, session = false }: {
-  label: string; value: number; onChange: (v: number) => void; accent?: boolean; session?: boolean;
+function Counter({ label, value, onChange, accent = false }: {
+  label: string; value: number; onChange: (v: number) => void; accent?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border p-3 flex flex-col gap-1.5 ${session ? "border-[#15314a] bg-[#10233f]" : accent ? "border-[#d2a86c] bg-[#fdf3e3]" : "border-stone-200 bg-white"}`}>
-      <p className={`text-[10px] font-bold uppercase tracking-widest leading-tight ${session ? "text-[#d2a86c]" : accent ? "text-[#9a6820]" : "text-[#6b7b91]"}`}>{label}</p>
+    <div className={`rounded-2xl border p-3 flex flex-col gap-1.5 ${accent ? "border-[#d2a86c] bg-[#fdf3e3]" : "border-stone-200 bg-white"}`}>
+      <p className={`text-[10px] font-bold uppercase tracking-widest leading-tight ${accent ? "text-[#9a6820]" : "text-[#6b7b91]"}`}>{label}</p>
       <div className="flex items-center gap-2 mt-0.5">
-        <button onClick={() => onChange(Math.max(0, value - 1))} className={`h-7 w-7 rounded-full font-bold text-base flex items-center justify-center transition ${session ? "border border-white/20 text-white hover:bg-white/10" : "border border-stone-200 bg-white text-[#15314a] hover:bg-stone-100"}`}>−</button>
-        <span className={`text-2xl font-black min-w-[2ch] text-center ${session ? "text-white" : accent ? "text-[#9a6820]" : "text-[#10233f]"}`}>{value}</span>
-        <button onClick={() => onChange(value + 1)} className={`h-7 w-7 rounded-full font-bold text-base flex items-center justify-center transition ${session ? "bg-[#d2a86c] text-[#10233f] hover:bg-[#c49050]" : accent ? "bg-[#9a6820] text-white hover:bg-[#7a5218]" : "bg-[#15314a] text-white hover:bg-[#1e3f60]"}`}>+</button>
+        <button onClick={() => onChange(Math.max(0, value - 1))} className="h-7 w-7 rounded-full font-bold text-base flex items-center justify-center transition border border-stone-200 bg-white text-[#15314a] hover:bg-stone-100">−</button>
+        <span className={`text-2xl font-black min-w-[2ch] text-center ${accent ? "text-[#9a6820]" : "text-[#10233f]"}`}>{value}</span>
+        <button onClick={() => onChange(value + 1)} className={`h-7 w-7 rounded-full font-bold text-base flex items-center justify-center transition ${accent ? "bg-[#9a6820] text-white hover:bg-[#7a5218]" : "bg-[#15314a] text-white hover:bg-[#1e3f60]"}`}>+</button>
       </div>
-      {session && <p className="text-[10px] text-[#d2a86c]/70">= {fmtAUD(value * SESSION_PRICE)}</p>}
+    </div>
+  );
+}
+
+// ─── Session Revenue Input ─────────────────────────────────────────────────────
+
+function SessionInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [raw, setRaw] = useState(value > 0 ? String(value) : "");
+  useEffect(() => { setRaw(value > 0 ? String(value) : ""); }, [value]);
+  return (
+    <div className="rounded-2xl border border-[#15314a] bg-[#10233f] p-3 flex flex-col gap-1.5">
+      <p className="text-[10px] font-bold uppercase tracking-widest leading-tight text-[#d2a86c]">Session Revenue Today</p>
+      <div className="flex items-center gap-1.5 mt-0.5">
+        <span className="text-xl font-black text-white">$</span>
+        <input
+          type="number" min="0" inputMode="numeric"
+          value={raw}
+          onChange={e => setRaw(e.target.value)}
+          onBlur={() => { const n = Math.max(0, Number(raw) || 0); onChange(n); setRaw(n > 0 ? String(n) : ""); }}
+          placeholder="0"
+          className="w-full bg-transparent text-2xl font-black text-white outline-none placeholder:text-white/30"
+        />
+      </div>
+      <p className="text-[10px] text-[#d2a86c]/70">Enter total $ earned from paid sessions today</p>
     </div>
   );
 }
@@ -302,7 +303,7 @@ function MonthCalendar({ year, month, today, monthData, onDayClick }: {
           const isToday = dateStr === today;
           const isPast = dateStr < today;
           const data = monthData[dateStr];
-          const sessions = data?.sessionsBooked ?? 0;
+          const sessions = data?.sessionRevenue ? 1 : 0;
           const contacts = data?.leadsContacted ?? 0;
           const consults = data?.consultsCompleted ?? 0;
           const hasData = contacts > 0 || consults > 0 || sessions > 0;
@@ -422,17 +423,15 @@ export function RevenueTrackerDashboard() {
   const activeClients   = clients.filter(c => c.status === "active");
   const lostClients     = clients.filter(c => c.status === "lost");
   const recurringWeekly = activeClients.reduce((s, c) => s + c.weeklyRate, 0);
-  const recurringMonthly = recurringWeekly * 4.33;
-  const savedSessions   = useMemo(() => Object.entries(monthData).reduce((s, [d, dd]) => d !== today ? s + (dd.sessionsBooked ?? 0) : s, 0), [monthData, today]);
-  const totalSessions   = savedSessions + dayData.sessionsBooked;
-  const sessionRevenue  = totalSessions * SESSION_PRICE;
-  const monthlyRevenue  = recurringMonthly + sessionRevenue;
-  const totalExpenses   = expenses.reduce((s, e) => s + e.amount, 0);
-  const netProfit       = monthlyRevenue - totalExpenses;
-  const gap             = Math.max(0, monthlyGoal - monthlyRevenue);
-  const progress        = Math.min(100, monthlyGoal > 0 ? (monthlyRevenue / monthlyGoal) * 100 : 0);
-  const sessionsNeeded  = Math.ceil(gap / SESSION_PRICE);
-  const wonThisMonth    = useMemo(() => Object.values(monthData).reduce((s, d) => s + (d.clientsSigned ?? 0), 0) + dayData.clientsSigned, [monthData, dayData.clientsSigned]);
+  const recurringMonthly   = recurringWeekly * 4.33;
+  const savedSessionRev    = useMemo(() => Object.entries(monthData).reduce((s, [d, dd]) => d !== today ? s + (dd.sessionRevenue ?? 0) : s, 0), [monthData, today]);
+  const totalSessionRev    = savedSessionRev + (dayData.sessionRevenue ?? 0);
+  const monthlyRevenue     = recurringMonthly + totalSessionRev;
+  const totalExpenses      = expenses.reduce((s, e) => s + e.amount, 0);
+  const netProfit          = monthlyRevenue - totalExpenses;
+  const gap                = Math.max(0, monthlyGoal - monthlyRevenue);
+  const progress           = Math.min(100, monthlyGoal > 0 ? (monthlyRevenue / monthlyGoal) * 100 : 0);
+  const wonThisMonth       = useMemo(() => Object.values(monthData).reduce((s, d) => s + (d.clientsSigned ?? 0), 0) + dayData.clientsSigned, [monthData, dayData.clientsSigned]);
   const checklistDone   = dayData.checklist.filter(Boolean).length;
   const selectedData    = selectedDay ? (monthData[selectedDay] ?? null) : null;
 
@@ -578,7 +577,7 @@ export function RevenueTrackerDashboard() {
             </div>
             <div className="flex flex-wrap gap-4 text-right">
               <div><p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Active Clients</p><p className="text-2xl font-black text-[#10233f]">{activeClients.length}</p></div>
-              <div><p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Sessions</p><p className="text-2xl font-black text-[#10233f]">{totalSessions}</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Session Revenue</p><p className="text-2xl font-black text-[#10233f]">{fmtAUD(totalSessionRev)}</p></div>
               {wonThisMonth > 0 && <div><p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Won This Month</p><p className="text-2xl font-black text-emerald-600">{wonThisMonth}</p></div>}
               <div><p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Net Profit</p><p className={`text-2xl font-black ${netProfit >= 0 ? "text-[#9a6820]" : "text-rose-600"}`}>{fmtAUD(netProfit)}</p></div>
             </div>
@@ -606,7 +605,6 @@ export function RevenueTrackerDashboard() {
                   </div>
                 )}
               </div>
-              <div className="text-right"><p className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Session price</p><p className="text-xl font-black">${SESSION_PRICE}</p></div>
             </div>
             {/* Progress */}
             <div className="mb-3">
@@ -617,31 +615,25 @@ export function RevenueTrackerDashboard() {
             {/* Breakdown */}
             <div className="space-y-1.5 mt-3">
               <div className="flex justify-between text-xs"><span className="text-[#6b7b91]">Recurring clients ({activeClients.length})</span><span className="font-semibold">{fmtAUD(recurringMonthly)}/mo</span></div>
-              <div className="flex justify-between text-xs"><span className="text-[#6b7b91]">Sessions ({totalSessions} × ${SESSION_PRICE})</span><span className="font-semibold">{fmtAUD(sessionRevenue)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-[#6b7b91]">Session revenue (manual)</span><span className="font-semibold">{fmtAUD(totalSessionRev)}</span></div>
               <div className="flex justify-between text-xs border-t border-stone-100 pt-1.5"><span className="font-bold">Gross revenue</span><span className="font-black text-[#9a6820]">{fmtAUD(monthlyRevenue)}</span></div>
               {expenses.length > 0 && <div className="flex justify-between text-xs"><span className="text-rose-600">Expenses</span><span className="font-semibold text-rose-600">− {fmtAUD(totalExpenses)}</span></div>}
               {expenses.length > 0 && <div className="flex justify-between text-xs border-t border-stone-100 pt-1.5"><span className="font-bold">Net profit</span><span className={`font-black ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{fmtAUD(netProfit)}</span></div>}
-              {sessionsNeeded > 0 && <p className="text-xs text-[#6b7b91] pt-0.5">{sessionsNeeded} more sessions or add a client to hit goal</p>}
+              {gap > 0 && <p className="text-xs text-[#6b7b91] pt-0.5">{fmtAUD(gap)} to go — add sessions or a new client</p>}
             </div>
           </div>
 
           {/* Fastest path */}
           <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.07)]">
             <p className="text-xs uppercase tracking-widest text-[#9a6820] mb-1">Fastest Path to Goal</p>
-            <p className="text-sm text-[#4a5c73] mb-4">{sessionsNeeded > 0 ? `${sessionsNeeded} sessions @ $${SESSION_PRICE} to close the ${fmtAUD(gap)} gap` : "Monthly goal reached!"}</p>
+            <p className="text-sm text-[#4a5c73] mb-4">{gap > 0 ? `${fmtAUD(gap)} still needed to hit your goal.` : "Monthly goal reached! 🏆"}</p>
             <div className="space-y-2">
-              {[{ freq: "1×/week", div: 1 * 4.33 }, { freq: "2×/week", div: 2 * 4.33 }, { freq: "3×/week", div: 3 * 4.33 }].map(({ freq, div }) => (
-                <div key={freq} className="flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
-                  <div><p className="font-bold text-sm">{freq} per client</p><p className="text-xs text-[#6b7b91]">new clients needed</p></div>
-                  <p className={`text-2xl font-black ${gap <= 0 ? "text-emerald-600" : ""}`}>{gap <= 0 ? "✓" : Math.ceil(sessionsNeeded / div)}</p>
+              {[{ label: "Foundation (1×/wk)", mo: 129 * 4.33 }, { label: "Transformation (2×/wk)", mo: 199 * 4.33 }, { label: "Elite (3×/wk)", mo: 289 * 4.33 }].map(({ label, mo }) => (
+                <div key={label} className="flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+                  <div><p className="font-bold text-sm">{label}</p><p className="text-xs text-[#6b7b91]">{fmtAUD(mo)}/mo per client</p></div>
+                  <p className={`text-2xl font-black ${gap <= 0 ? "text-emerald-600" : ""}`}>{gap <= 0 ? "✓" : Math.ceil(gap / mo)}<span className="text-xs font-normal text-[#6b7b91] ml-1">needed</span></p>
                 </div>
               ))}
-              {gap > 0 && (
-                <div className="rounded-2xl border border-[#e8d5b0] bg-[#fdf3e3] px-4 py-3 text-sm text-[#4a5c73]">
-                  <span className="font-semibold text-[#9a6820] uppercase tracking-widest text-xs block mb-1">Fastest mix</span>
-                  One new client at 3×/week adds <strong className="text-[#10233f]">{fmtAUD(3 * 4.33 * SESSION_PRICE)}/mo</strong>. Book the consult, close it fast.
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -779,7 +771,7 @@ export function RevenueTrackerDashboard() {
                     { label: "Consults Booked", val: selectedData.consultsBooked },
                     { label: "Consults Done", val: selectedData.consultsCompleted },
                     { label: "Signed", val: selectedData.clientsSigned },
-                    { label: "Sessions", val: selectedData.sessionsBooked }
+                    { label: "Session $", val: fmtAUD(selectedData.sessionRevenue ?? 0) }
                   ].map(item => (
                     <div key={item.label}><p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b7b91]">{item.label}</p><p className="text-xl font-black">{item.val}</p></div>
                   ))}
@@ -828,7 +820,7 @@ export function RevenueTrackerDashboard() {
               <Counter label="Consults Completed" value={dayData.consultsCompleted} onChange={v => updateDay("consultsCompleted", v)} />
               <Counter label="Clients Signed"     value={dayData.clientsSigned}     onChange={v => updateDay("clientsSigned", v)} accent />
             </div>
-            <Counter label="Paid Sessions Today" value={dayData.sessionsBooked} onChange={v => updateDay("sessionsBooked", v)} session />
+            <SessionInput value={dayData.sessionRevenue ?? 0} onChange={v => updateDay("sessionRevenue", v)} />
             <div className="mt-3">
               <label className="text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Follow-ups &amp; Lessons</label>
               <textarea rows={3} value={dayData.notes} onChange={e => { setDayData(p => ({ ...p, notes: e.target.value })); setSavedToday(false); }}

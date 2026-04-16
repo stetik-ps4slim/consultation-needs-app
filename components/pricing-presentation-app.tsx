@@ -21,23 +21,23 @@ type PackageOption = {
 
 const initialPackages: PackageOption[] = [
   {
-    id: "foundation",
-    name: "Foundation",
-    tagline: "Build consistency and start seeing results",
-    weeklyPrice: 129,
-    upfrontPrice: 1376,
-    savings: 172,
+    id: "elite",
+    name: "Elite",
+    tagline: "Maximum results and complete transformation",
+    weeklyPrice: 289,
+    upfrontPrice: 2836,
+    savings: 632,
     results: [
-      "Develop strong training habits and routine",
-      "Improve confidence and motivation",
-      "Become more self-motivated and independent",
-      "Make sustainable progress"
+      "Fastest rate of progress possible",
+      "Highest level of accountability and motivation",
+      "Full lifestyle and performance optimisation",
+      "Everything dialled in for you with no guesswork"
     ],
     inclusions: [
-      "1x personal training session per week",
-      "Structured training program tailored to your goals",
-      "Weekly check-ins and habit tracking: steps, sleep, water",
-      "Basic support for accountability and consistency",
+      "3x personal training sessions per week",
+      "Fully customised training and progression system",
+      "Priority check-ins and unlimited support",
+      "Weekly program and lifestyle optimisation",
       "Coaching app access"
     ]
   },
@@ -63,23 +63,23 @@ const initialPackages: PackageOption[] = [
     ]
   },
   {
-    id: "elite",
-    name: "Elite",
-    tagline: "Maximum results and complete transformation",
-    weeklyPrice: 289,
-    upfrontPrice: 2836,
-    savings: 632,
+    id: "foundation",
+    name: "Foundation",
+    tagline: "Build consistency and start seeing results",
+    weeklyPrice: 129,
+    upfrontPrice: 1376,
+    savings: 172,
     results: [
-      "Fastest rate of progress possible",
-      "Highest level of accountability and motivation",
-      "Full lifestyle and performance optimisation",
-      "Everything dialled in for you with no guesswork"
+      "Develop strong training habits and routine",
+      "Improve confidence and motivation",
+      "Become more self-motivated and independent",
+      "Make sustainable progress"
     ],
     inclusions: [
-      "3x personal training sessions per week",
-      "Fully customised training and progression system",
-      "Priority check-ins and unlimited support",
-      "Weekly program and lifestyle optimisation",
+      "1x personal training session per week",
+      "Structured training program tailored to your goals",
+      "Weekly check-ins and habit tracking: steps, sleep, water",
+      "Basic support for accountability and consistency",
       "Coaching app access"
     ]
   }

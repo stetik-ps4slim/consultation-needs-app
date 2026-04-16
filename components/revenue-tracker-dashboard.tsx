@@ -980,16 +980,16 @@ export function RevenueTrackerDashboard() {
           ) : (
             <div className="space-y-2">
               {schedule[scheduleWeek][scheduleDay].blocks.map(block => (
-                <div key={block.id} className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 hover:border-[#9a6820]/30 transition group">
-                  <div className="shrink-0 text-right min-w-[90px]">
+                <div key={block.id} className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 transition hover:border-[#9a6820]/30">
+                  <div className="shrink-0 text-right min-w-[80px]">
                     <p className="text-xs font-semibold text-[#9a6820]">{block.start}</p>
                     <p className="text-[10px] text-[#6b7b91]">→ {block.end}</p>
                   </div>
                   <div className="h-8 w-px bg-stone-200 shrink-0" />
                   <p className="flex-1 text-sm font-semibold text-[#10233f]">{block.activity}</p>
-                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
-                    <button onClick={() => openEditBlock(block)} className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-[#15314a] hover:border-[#9a6820]/60 transition">Edit</button>
-                    <button onClick={() => deleteBlock(block.id)} className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-rose-500 hover:border-rose-300 transition">✕</button>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => openEditBlock(block)} className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#15314a] hover:border-[#9a6820]/60 active:bg-stone-100 transition">Edit</button>
+                    <button onClick={() => deleteBlock(block.id)} className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-500 hover:border-rose-300 active:bg-rose-50 transition">✕</button>
                   </div>
                 </div>
               ))}

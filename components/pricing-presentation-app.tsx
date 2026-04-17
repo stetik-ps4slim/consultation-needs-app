@@ -127,6 +127,7 @@ export function PricingPresentationApp() {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
+  const [showAgreement, setShowAgreement] = useState(false);
 
   const selectedPackage = packages.find((item) => item.id === selectedPackageId) ?? packages[0];
   const weeklyTotal = selectedPackage.weeklyPrice + (nutritionAdded ? nutritionWeeklyPrice : 0);
@@ -370,6 +371,13 @@ export function PricingPresentationApp() {
             </button>
             <button
               type="button"
+              onClick={() => setShowAgreement(true)}
+              className="rounded-full border-2 border-[#9a6820] bg-white px-6 py-4 text-lg font-black text-[#9a6820] transition hover:bg-[#fdf3e3]"
+            >
+              Generate Agreement
+            </button>
+            <button
+              type="button"
               onClick={() => window.print()}
               className="rounded-full bg-[#9a6820] px-6 py-4 text-lg font-black text-white transition hover:brightness-105"
             >
@@ -378,6 +386,163 @@ export function PricingPresentationApp() {
           </div>
         </section>
       </section>
+
+      {/* ── Trainer–Client Agreement Modal ──────────────────────────────── */}
+      {showAgreement && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 py-8 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl my-4">
+
+            {/* Modal header – screen only */}
+            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-5 print:hidden">
+              <div>
+                <p className="text-xs uppercase tracking-widest font-black text-[#9a6820]">Upper Notch Coaching</p>
+                <h2 className="mt-0.5 text-lg font-black text-[#101010]">Trainer & Client Agreement</h2>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-black text-white transition hover:brightness-105">
+                  Print / Save PDF
+                </button>
+                <button onClick={() => setShowAgreement(false)} className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100">✕</button>
+              </div>
+            </div>
+
+            {/* Agreement document */}
+            <div id="agreement-print" className="px-8 py-8 space-y-6 text-[#101010]">
+
+              {/* Letterhead */}
+              <div className="text-center border-b border-zinc-200 pb-6">
+                <p className="text-xs uppercase tracking-[0.3em] font-black text-[#9a6820]">Upper Notch Coaching</p>
+                <h1 className="mt-2 text-2xl font-black text-[#101010]">Trainer & Client Agreement</h1>
+                <p className="mt-1 text-sm text-zinc-500">Jazzay Sallah Personal Training (JS PT)</p>
+              </div>
+
+              {/* Client details band */}
+              <div className="rounded-2xl border border-[#9a6820]/25 bg-[#fdf8ef] px-5 py-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Client Name</p>
+                  <p className="font-bold text-[#101010] mt-0.5">{clientName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Package</p>
+                  <p className="font-bold text-[#101010] mt-0.5">{selectedPackage.name} — {dollars(weeklyTotal)}/wk{nutritionAdded ? " (incl. nutrition)" : ""}</p>
+                </div>
+                {clientPhone && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Phone</p>
+                    <p className="font-bold text-[#101010] mt-0.5">{clientPhone}</p>
+                  </div>
+                )}
+                {clientEmail && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Email</p>
+                    <p className="font-bold text-[#101010] mt-0.5">{clientEmail}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Agreement Date</p>
+                  <p className="font-bold text-[#101010] mt-0.5">{new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
+                </div>
+              </div>
+
+              {/* Clauses */}
+              {[
+                {
+                  title: "Health & Medical Responsibility",
+                  body: "I confirm that I am physically capable of participating in exercise and training activities. I understand that it is my responsibility to consult with a medical professional before beginning any exercise program if I have any medical conditions, injuries, or health concerns. I agree to inform the trainer of any health changes, injuries, discomfort, or pain experienced during training sessions so that exercises can be adjusted where necessary."
+                },
+                {
+                  title: "Assumption of Risk",
+                  body: "I understand that participation in physical exercise — including strength training, cardiovascular exercise, and other fitness activities — involves inherent risks such as muscle soreness, injury, or other physical complications. I voluntarily participate in all training activities and assume full responsibility for any risks, injuries, or damages that may occur."
+                },
+                {
+                  title: "Release of Liability",
+                  body: "I release and hold harmless Upper Notch Coaching and Jazzay Sallah Personal Training (JS PT), its trainers, and any associated staff from any liability, claims, demands, or causes of action that may arise from participation in personal training sessions, including injury, illness, or damages resulting from exercise activities."
+                },
+                {
+                  title: "Supplement & Lifestyle Advice",
+                  body: "Any advice provided regarding nutrition, supplements, or lifestyle is for educational purposes only and should not be considered medical advice. Clients should consult a qualified healthcare professional before beginning any supplementation or making significant dietary changes."
+                },
+                {
+                  title: "Client Responsibility",
+                  body: "I agree to follow the trainer's instructions during sessions and to train within my personal limits. I understand that results depend on personal effort, consistency, and lifestyle factors outside of training sessions."
+                },
+                {
+                  title: "Payments & Pricing",
+                  body: "All personal training sessions and packages must be paid in advance of the scheduled session. Payments may be made via direct debit or upfront payment as agreed. Failure to complete payment may result in suspension or cancellation of sessions until payment is received."
+                },
+                {
+                  title: "Minimum Commitment",
+                  body: "All training packages require a minimum commitment of 12 weeks. This commitment is in place to allow sufficient time for measurable progress and results."
+                },
+                {
+                  title: "24-Hour Cancellation Policy",
+                  body: "All personal training sessions require a minimum of 24 hours' notice for cancellation or rescheduling. If less than 24 hours' notice is provided, the session will be charged in full, as the time has been reserved and cannot be filled on short notice."
+                },
+                {
+                  title: "Notice of Cancellation",
+                  body: "Clients must provide a minimum of 2 weeks' written notice if they wish to cancel ongoing training services. Any sessions scheduled within this notice period will remain payable."
+                },
+                {
+                  title: "Going Away?",
+                  body: "If you have a holiday or trip planned, just let Jazzay know in advance. Any time missed due to travel can be made up with complementary sessions before you leave or after you're back — so you never lose what you've paid for."
+                }
+              ].map(clause => (
+                <div key={clause.title}>
+                  <h3 className="text-sm font-black text-[#101010] mb-1">{clause.title}</h3>
+                  <p className="text-sm leading-7 text-zinc-600">{clause.body}</p>
+                </div>
+              ))}
+
+              {/* Signature block */}
+              <div className="border-t border-zinc-200 pt-6 space-y-5">
+                <p className="text-sm font-bold text-[#101010]">By signing below, both parties confirm they have read, understood, and agree to all terms outlined in this agreement.</p>
+
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {/* Client */}
+                  <div className="space-y-4">
+                    <p className="text-xs font-black uppercase tracking-widest text-[#9a6820]">Client Acknowledgement & Signature</p>
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1">Client Name</p>
+                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm font-bold text-[#101010]">{clientName}</div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1">Signature</p>
+                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[36px]"></div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1">Date</p>
+                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm text-[#101010]">{new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</div>
+                    </div>
+                  </div>
+
+                  {/* Trainer */}
+                  <div className="space-y-4">
+                    <p className="text-xs font-black uppercase tracking-widest text-[#9a6820]">Trainer</p>
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1">Trainer Name</p>
+                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm font-bold text-[#101010]">Jazzay Sallah</div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1">Signature</p>
+                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[36px]"></div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-500 mb-1">Date</p>
+                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm text-[#101010]">{new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-center text-zinc-400 pt-2">Upper Notch Coaching · Jazzay Sallah Personal Training (JS PT) · {new Date().getFullYear()}</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }

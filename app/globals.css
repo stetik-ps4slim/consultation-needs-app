@@ -73,4 +73,39 @@ h6 {
   .print\:break-inside-avoid {
     break-inside: avoid;
   }
+
+  /* Agreement modal print — hide everything except the agreement */
+  body > * {
+    display: none !important;
+  }
+
+  /* The fixed modal overlay */
+  .fixed.inset-0.z-50 {
+    display: block !important;
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* The modal card */
+  .fixed.inset-0.z-50 > div {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Hide modal chrome (header bar with buttons) */
+  .fixed.inset-0.z-50 > div > div:first-child {
+    display: none !important;
+  }
+
+  /* Force colours for print */
+  #agreement-print,
+  #agreement-print * {
+    color: black !important;
+    background: white !important;
+    border-color: #ccc !important;
+  }
 }

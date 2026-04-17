@@ -687,6 +687,41 @@ export function RevenueTrackerDashboard() {
   const [showCopyModal,  setShowCopyModal]  = useState(false);
   const [copyTargets,    setCopyTargets]    = useState<{ week: "week1" | "week2"; day: WeekDay }[]>([]);
 
+  // ── Export / Import schedule ──────────────────────────────────────────────
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText,      setImportText]      = useState("");
+  const [importError,     setImportError]     = useState("");
+  const [exportCopied,    setExportCopied]    = useState(false);
+
+  function exportSchedule() {
+    const json = JSON.stringify(schedule);
+    navigator.clipboard.writeText(json).then(() => {
+      setExportCopied(true);
+      setTimeout(() => setExportCopied(false), 2500);
+    }).catch(() => {
+      // fallback: open modal with the text so user can copy manually
+      setImportText(json);
+      setShowImportModal(true);
+    });
+  }
+  function importSchedule() {
+    try {
+      const parsed = JSON.parse(importText.trim());
+      const w1 = parsed.week1 ?? parsed;
+      const w2 = parsed.week2 ?? EMPTY_WEEK;
+      const merged: TwoWeekSchedule = {
+        week1: { ...EMPTY_WEEK, ...w1 },
+        week2: { ...EMPTY_WEEK, ...w2 },
+      };
+      saveSchedule(() => merged);
+      setShowImportModal(false);
+      setImportText("");
+      setImportError("");
+    } catch {
+      setImportError("Invalid schedule data — make sure you pasted the full copied text.");
+    }
+  }
+
   function toggleCopyTarget(week: "week1" | "week2", day: WeekDay) {
     setCopyTargets(prev => {
       const exists = prev.some(t => t.week === week && t.day === day);
@@ -950,7 +985,15 @@ export function RevenueTrackerDashboard() {
               <p className="text-xs uppercase tracking-widest text-[#9a6820]">2-Week Planner</p>
               <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">Daily Schedule</h2>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button onClick={exportSchedule}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${exportCopied ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-stone-200 bg-white text-[#15314a] hover:border-[#9a6820]/60"}`}>
+                {exportCopied ? "✓ Copied!" : "Export ↑"}
+              </button>
+              <button onClick={() => { setImportText(""); setImportError(""); setShowImportModal(true); }}
+                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                Import ↓
+              </button>
               <button onClick={() => { setCopyTargets([]); setShowCopyModal(true); }}
                 className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Copy day →
@@ -1310,6 +1353,41 @@ export function RevenueTrackerDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Schedule Import Modal ────────────────────────────────── */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-[#10233f]">Import Schedule</h2>
+                <p className="text-xs text-[#6b7b91] mt-0.5">Paste the exported text from another device</p>
+              </div>
+              <button onClick={() => setShowImportModal(false)} className="rounded-full p-2 text-slate-400 hover:bg-stone-100">✕</button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <textarea
+                value={importText}
+                onChange={e => { setImportText(e.target.value); setImportError(""); }}
+                placeholder="Paste schedule data here…"
+                rows={6}
+                className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-mono text-[#15314a] focus:border-[#9a6820] focus:outline-none resize-none"
+              />
+              {importError && <p className="text-xs text-rose-600">{importError}</p>}
+              <p className="text-xs text-[#6b7b91]">
+                On your Mac: tap <strong>Export ↑</strong> in the schedule section — it copies the data to your clipboard. Then paste it here on your phone.
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button onClick={importSchedule} disabled={!importText.trim()}
+                  className="flex-1 rounded-full bg-[#15314a] py-3 text-sm font-semibold text-white transition hover:bg-[#1e3f60] disabled:opacity-40">
+                  Load Schedule
+                </button>
+                <button onClick={() => setShowImportModal(false)} className="rounded-full border border-stone-200 px-5 py-3 text-sm font-semibold text-[#6b7b91] hover:border-stone-300">Cancel</button>
+              </div>
+            </div>
           </div>
         </div>
       )}

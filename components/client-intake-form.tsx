@@ -179,7 +179,7 @@ const agreementClauses = [
   {
     number: "2",
     title: "HEALTH DECLARATION",
-    text: "By attending this consultation, you confirm that:\n• You are physically able to participate in light to moderate exercise\n• You have disclosed any injuries, medical conditions, or limitations\n• You understand it is your responsibility to inform the trainer of any changes to your health status\n\nIf you have any concerns, you should seek medical clearance prior to participation."
+    text: "By attending this consultation, you confirm that:\n• You are physically able to participate in all physical activity\n• You have disclosed any injuries, medical conditions, or limitations\n• You understand it is your responsibility to inform the trainer of any changes to your health status\n\nIf you have any concerns, you should seek medical clearance prior to participation."
   },
   {
     number: "3",
@@ -261,7 +261,15 @@ export function ClientIntakeForm() {
     form.asthmaAttack, form.bloodSugarIssues, form.otherConditionsAffectingExercise
   ].includes("Yes");
 
-  const canSubmit = agreementRead && agreementAcknowledged && form.signOffName.trim() && form.signature.trim() && form.signOffDate;
+  const requiredHealthFields: (keyof ConsultationNeedsForm)[] = [
+    "heartCondition", "chestPain", "dizziness", "asthmaAttack",
+    "bloodSugarIssues", "otherConditionsAffectingExercise",
+    "highBloodPressure", "highCholesterol", "highBloodSugar",
+    "takingMedications", "hospitalVisits", "muscleJointIssues", "smokingStatus"
+  ];
+  const healthScreeningComplete = requiredHealthFields.every((f) => (form[f] as string) !== "");
+
+  const canSubmit = agreementRead && agreementAcknowledged && form.signOffName.trim() && form.signature.trim() && form.signOffDate && healthScreeningComplete;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -319,36 +327,46 @@ export function ClientIntakeForm() {
 
           {/* Intro line */}
           <div className="rounded-3xl border border-white/70 bg-white/90 px-8 py-7 shadow-[0_20px_80px_rgba(0,0,0,0.06)]">
-            <p className="text-sm leading-7 text-[#4a5c73]">
-              Here&apos;s a quick rundown of what the next two complimentary sessions will look like so you can show up ready.
-            </p>
+            <p className="text-base font-semibold text-[#10233f]">Here&apos;s exactly what your next two sessions look like.</p>
+            <p className="mt-2 text-sm leading-7 text-[#4a5c73]">Both are completely complimentary — no pressure, no obligation. Just show up ready to talk and ready to move.</p>
           </div>
 
           {/* Session 1 */}
           <div className="rounded-3xl border border-white/70 bg-white/90 px-8 py-7 shadow-[0_20px_80px_rgba(0,0,0,0.06)]">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#9a6820]">Session 1</p>
-                <h2 className="mt-1 text-xl font-bold text-[#10233f]">Getting To Know You</h2>
+                <h2 className="mt-1 text-2xl font-bold text-[#10233f]">Getting To Know You</h2>
               </div>
               <span className="shrink-0 rounded-full border border-stone-200 bg-stone-50 px-4 py-1.5 text-xs font-semibold text-[#6b7b91]">30–45 min · Complimentary</span>
             </div>
             <p className="text-sm leading-7 text-[#4a5c73]">
-              Your first session isn&apos;t a workout — it&apos;s a conversation. Jazzay will sit down with you and go through everything in detail: your goals, your training history, your schedule, and run through a movement screening to check for any injuries or limitations to work around. This is where the real coaching starts — nothing gets assumed, everything gets covered.
+              This session is a conversation, not a workout. Jazzay will sit down with you and cover your goals, training history, lifestyle, and what you need from a coach. It&apos;s where everything gets mapped out properly — nothing assumed, nothing skipped.
             </p>
+
+            {/* Movement screening callout */}
+            <div className="mt-5 rounded-2xl border-2 border-[#9a6820]/30 bg-[#fdf8f0] px-5 py-4">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-[#9a6820] mb-2">Movement Screening — Included in Session 1</p>
+              <p className="text-sm leading-7 text-[#15314a] font-medium">
+                Jazzay will take you through a full movement screening to identify any injuries, limitations, or imbalances. This is how your program gets built specifically around your body — not a generic template.
+              </p>
+              <p className="mt-2 text-xs text-[#9a6820] font-semibold">
+                Wear comfortable clothing and bring any relevant injury history or medical notes if you have them.
+              </p>
+            </div>
           </div>
 
           {/* Session 2 */}
           <div className="rounded-3xl border border-white/70 bg-white/90 px-8 py-7 shadow-[0_20px_80px_rgba(0,0,0,0.06)]">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#9a6820]">Session 2</p>
-                <h2 className="mt-1 text-xl font-bold text-[#10233f]">Full PT Session &amp; Program Presentation</h2>
+                <h2 className="mt-1 text-2xl font-bold text-[#10233f]">Full PT Session &amp; Program Presentation</h2>
               </div>
               <span className="shrink-0 rounded-full border border-stone-200 bg-stone-50 px-4 py-1.5 text-xs font-semibold text-[#6b7b91]">Complimentary</span>
             </div>
             <p className="text-sm leading-7 text-[#4a5c73]">
-              Come ready to train. Session 2 is a full hands-on personal training session on the house, followed by Jazzay walking you through your custom program and nutrition starting point. You&apos;ll leave knowing exactly what your coaching looks like and ready to hit the ground running.
+              Come ready to train. Session 2 is a full hands-on personal training session — on the house. After you train, Jazzay will walk you through your custom program and nutrition starting point so you leave with a clear picture of exactly what your coaching looks like and how it&apos;s going to get you results.
             </p>
           </div>
 
@@ -414,10 +432,10 @@ export function ClientIntakeForm() {
               <TextareaField label="Why that score?" value={form.commitmentWhy} onChange={(v) => updateField("commitmentWhy", v)} placeholder="e.g. Ready but work is unpredictable." />
             </div>
             <div className="mt-4">
-              <TextareaField label="Past habits that have led you here" value={form.pastHabits} onChange={(v) => updateField("pastHabits", v)} rows={3} />
+              <TextareaField label="Past habits that have led to this position" value={form.pastHabits} onChange={(v) => updateField("pastHabits", v)} rows={3} />
             </div>
             <div className="mt-4">
-              <TextareaField label="What's been stopping you from starting?" value={form.whatsStoppingYou} onChange={(v) => updateField("whatsStoppingYou", v)} />
+              <TextareaField label="What's been stopping you from starting to work on your goals?" value={form.whatsStoppingYou} onChange={(v) => updateField("whatsStoppingYou", v)} />
             </div>
           </SectionBlock>
 
@@ -491,7 +509,12 @@ export function ClientIntakeForm() {
           </SectionBlock>
 
           {/* 05 — Health Screening */}
-          <SectionBlock number="05" title="Health Screening" blurb="This section is required for your safety. Please answer honestly — all information is confidential.">
+          <SectionBlock number="05" title="Health Screening" blurb="Every question in this section must be answered before you can submit — this is required for your safety. All information is kept strictly confidential.">
+            {!healthScreeningComplete && (
+              <div className="mb-5 rounded-xl border border-[#9a6820]/30 bg-[#fdf3e3] p-4 text-sm font-semibold text-[#9a6820]">
+                ⚠ Please answer all health screening questions below — this section is mandatory before submitting.
+              </div>
+            )}
             {clearanceRequired && (
               <div className="mb-5 rounded-xl border border-rose-300/50 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
                 ⚠ Based on your answers, medical clearance may be required before exercise. Please discuss this with your GP if needed.
@@ -599,7 +622,9 @@ export function ClientIntakeForm() {
           {/* Not ready notice */}
           {!canSubmit && (agreementRead || agreementAcknowledged || form.signOffName || form.signature) && (
             <p className="text-center text-xs text-stone-400">
-              Please tick both boxes and complete your name, signature, and date to submit.
+              {!healthScreeningComplete
+                ? "Please answer all health screening questions (Section 05) before submitting."
+                : "Please tick both boxes and complete your name, signature, and date to submit."}
             </p>
           )}
 

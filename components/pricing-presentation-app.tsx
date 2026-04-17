@@ -400,9 +400,10 @@ export function PricingPresentationApp() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => window.print()}
-                  className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-black text-white transition hover:brightness-105">
-                  Print / Save PDF
+                  onClick={() => { void saveOnline(); }}
+                  disabled={isSaving}
+                  className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-black text-white transition hover:brightness-105 disabled:opacity-60">
+                  {isSaving ? "Saving…" : "Save Online"}
                 </button>
                 <button onClick={() => setShowAgreement(false)} className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100">✕</button>
               </div>

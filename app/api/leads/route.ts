@@ -44,16 +44,16 @@ export async function POST(request: Request) {
     const body = (await request.json()) as LeadPayload;
     const payload = normalizeLeadInsert(body);
 
-    if (!payload.name || !payload.phone || !payload.email || !payload.goal) {
+    if (!payload.name) {
       return NextResponse.json(
-        { error: "Please complete every field before submitting." },
+        { error: "Please enter the lead's name before submitting." },
         { status: 400 }
       );
     }
 
-    if (!emailPattern.test(payload.email)) {
+    if (payload.email && !emailPattern.test(payload.email)) {
       return NextResponse.json(
-        { error: "Please enter a valid email address." },
+        { error: "Please enter a valid email address or leave the field blank." },
         { status: 400 }
       );
     }

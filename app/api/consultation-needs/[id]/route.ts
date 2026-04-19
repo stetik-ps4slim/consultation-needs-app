@@ -6,6 +6,42 @@ import {
   type ConsultationNeedsForm
 } from "@/lib/consultation-needs";
 
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  if (!hasSupabaseConfig()) {
+    return NextResponse.json(
+      { error: "Supabase is not configured for consultation form storage yet." },
+      { status: 503 }
+    );
+  }
+
+  try {
+    const { id } = await context.params;
+    const recordId = Number(id);
+
+    if (!Number.isInteger(recordId) || recordId <= 0) {
+      return NextResponse.json({ error: "Invalid consultation form id." }, { status: 400 });
+    }
+
+    const supabase = createSupabaseAdminClient();
+    const { error } = await supabase
+      .from("consultation_needs")
+      .delete()
+      .eq("id", recordId);
+
+    if (error) throw error;
+
+    return NextResponse.json({ message: "Consultation form deleted successfully." });
+  } catch {
+    return NextResponse.json(
+      { error: "Something went wrong while deleting the consultation form." },
+      { status: 500 }
+    );
+  }
+}
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function PATCH(

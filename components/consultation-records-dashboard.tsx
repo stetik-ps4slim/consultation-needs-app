@@ -512,6 +512,18 @@ export function ConsultationRecordsDashboard() {
     setStatus("All cleared page records are visible again. Supabase data was not changed.");
   }
 
+  async function deleteConsultation(recordId: number) {
+    const response = await fetch(`/api/consultation-needs/${recordId}`, { method: "DELETE" });
+    const result = (await response.json()) as { message?: string; error?: string };
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not delete consultation form.");
+    }
+
+    setConsultations((current) => current.filter((r) => r.id !== recordId));
+    setStatus("Consultation form permanently deleted from Supabase.");
+  }
+
   async function updatePricingPresentation(recordId: number, updates: PricingPresentationUpdate) {
     const response = await fetch(`/api/pricing-presentations/${recordId}`, {
       method: "PATCH",
@@ -699,7 +711,7 @@ export function ConsultationRecordsDashboard() {
 
                 <div className="mt-8 space-y-8">
                   <LeadsSection leads={selectedBundle.leads} />
-                  <ConsultationsSection records={selectedBundle.consultations} />
+                  <ConsultationsSection records={selectedBundle.consultations} onDelete={deleteConsultation} />
                   <ScreeningsSection screenings={selectedBundle.screenings} />
                   <PricingPresentationsSection records={selectedBundle.pricingPresentations} onUpdate={updatePricingPresentation} />
                 </div>
@@ -765,41 +777,106 @@ function LeadsSection({ leads }: { leads: Lead[] }) {
   );
 }
 
-function ConsultationsSection({ records }: { records: ConsultationNeedsRecord[] }) {
+function ConsultationsSection({
+  records,
+  onDelete
+}: {
+  records: ConsultationNeedsRecord[];
+  onDelete: (id: number) => Promise<void>;
+}) {
   return (
     <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Consultation Needs Analysis</h3>
       {!records.length ? <EmptyDataCard label="consultation forms" /> : null}
       <div className="mt-4 space-y-6">
         {records.map((record) => (
-          <article key={record.id} className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-lg font-bold text-[#10233f]">{record.goal || "No goal recorded"}</p>
-                <p className="mt-1 text-sm text-[#4a5c73]">Consultation date: {formatDate(record.consultation_date)}</p>
-              </div>
-              <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">Record #{record.id}</span>
-            </div>
-            <WeeklySchedule form={record.form_data} />
-            <div className="mt-6 grid gap-6 xl:grid-cols-2">
-              {detailGroups.map((group) => (
-                <section key={`${record.id}-${group.title}`} className="rounded-[1.25rem] border border-stone-200 bg-white p-4">
-                  <h4 className="font-bold text-[#10233f]">{group.title}</h4>
-                  <dl className="mt-4 space-y-4">
-                    {group.items.map((item) => (
-                      <div key={`${record.id}-${group.title}-${item.key}`}>
-                        <dt className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">{item.label}</dt>
-                        <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.form_data[item.key])}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              ))}
-            </div>
-          </article>
+          <ConsultationCard key={record.id} record={record} onDelete={onDelete} />
         ))}
       </div>
     </section>
+  );
+}
+
+function ConsultationCard({
+  record,
+  onDelete
+}: {
+  record: ConsultationNeedsRecord;
+  onDelete: (id: number) => Promise<void>;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function handleDelete() {
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      await onDelete(record.id);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not delete. Please try again.");
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
+
+  return (
+    <article className="rounded-2xl border border-stone-200 bg-white p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-lg font-bold text-[#10233f]">{record.goal || "No goal recorded"}</p>
+          <p className="mt-1 text-sm text-[#4a5c73]">Consultation date: {formatDate(record.consultation_date)}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">Record #{record.id}</span>
+          {!confirmDelete ? (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"
+            >
+              Delete
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-3 py-2">
+              <span className="text-xs font-semibold text-rose-700">Are you sure? This cannot be undone.</span>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setConfirmDelete(false); setDeleteError(""); }}
+                className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-semibold text-[#15314a] transition hover:border-stone-300"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {deleteError && <p className="mt-2 text-xs text-rose-600 font-semibold">{deleteError}</p>}
+      <WeeklySchedule form={record.form_data} />
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        {detailGroups.map((group) => (
+          <section key={`${record.id}-${group.title}`} className="rounded-[1.25rem] border border-stone-200 bg-white p-4">
+            <h4 className="font-bold text-[#10233f]">{group.title}</h4>
+            <dl className="mt-4 space-y-4">
+              {group.items.map((item) => (
+                <div key={`${record.id}-${group.title}-${item.key}`}>
+                  <dt className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">{item.label}</dt>
+                  <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#4a5c73]">{displayValue(record.form_data[item.key])}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+    </article>
   );
 }
 

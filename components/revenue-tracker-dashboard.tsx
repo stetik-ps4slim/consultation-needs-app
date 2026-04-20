@@ -510,6 +510,54 @@ export function RevenueTrackerDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
+  // ── Google Calendar ───────────────────────────────────────────────────────
+  const [gcalConnected, setGcalConnected] = useState<boolean | null>(null);
+  const [gcalConfigured, setGcalConfigured] = useState(false);
+  const [gcalSyncing, setGcalSyncing] = useState(false);
+  const [gcalStatus, setGcalStatus] = useState("");
+
+  useEffect(() => {
+    // Check connection status
+    fetch("/api/google-calendar/status")
+      .then(r => r.json())
+      .then((d: { connected: boolean; configured: boolean }) => {
+        setGcalConnected(d.connected);
+        setGcalConfigured(d.configured);
+      })
+      .catch(() => {});
+
+    // Show feedback when redirected back from OAuth
+    const params = new URLSearchParams(window.location.search);
+    const gcal = params.get("gcal");
+    if (gcal === "connected") {
+      setGcalConnected(true);
+      setGcalStatus("Google Calendar connected successfully!");
+      window.history.replaceState({}, "", "/revenue");
+    } else if (gcal === "error") {
+      setGcalStatus("Could not connect Google Calendar. Please try again.");
+      window.history.replaceState({}, "", "/revenue");
+    }
+  }, []);
+
+  async function syncToGoogleCalendar() {
+    setGcalSyncing(true);
+    setGcalStatus("Syncing to Google Calendar…");
+    try {
+      const res = await fetch("/api/google-calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schedule }),
+      });
+      const data = (await res.json()) as { message?: string; error?: string };
+      if (!res.ok) throw new Error(data.error || "Sync failed.");
+      setGcalStatus(data.message ?? "Synced!");
+    } catch (err) {
+      setGcalStatus(err instanceof Error ? err.message : "Sync failed. Please try again.");
+    } finally {
+      setGcalSyncing(false);
+    }
+  }
+
   // ── Revenue maths ─────────────────────────────────────────────────────────
   const activeClients   = clients.filter(c => c.status === "active");
   const lostClients     = clients.filter(c => c.status === "lost");
@@ -1065,10 +1113,17 @@ export function RevenueTrackerDashboard() {
                 className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Import ↓
               </button>
-              <button onClick={exportToICS}
-                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
-                📅 Google Calendar
-              </button>
+              {gcalConfigured && (
+                gcalConnected
+                  ? <button onClick={syncToGoogleCalendar} disabled={gcalSyncing}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${gcalSyncing ? "border-stone-200 bg-stone-50 text-stone-400" : "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>
+                      {gcalSyncing ? "Syncing…" : "📅 Sync to Google Calendar"}
+                    </button>
+                  : <a href="/api/google-calendar/auth"
+                      className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                      📅 Connect Google Calendar
+                    </a>
+              )}
               <button onClick={() => { setCopyTargets([]); setShowCopyModal(true); }}
                 className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Copy day →
@@ -1079,6 +1134,11 @@ export function RevenueTrackerDashboard() {
               </button>
             </div>
           </div>
+
+          {/* Google Calendar status message */}
+          {gcalStatus && (
+            <p className="text-xs font-semibold text-[#4a5c73] mb-2">{gcalStatus}</p>
+          )}
 
           {/* Week tabs */}
           <div className="flex gap-2 mb-3">

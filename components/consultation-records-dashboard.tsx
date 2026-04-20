@@ -373,7 +373,36 @@ function buildClientBundles(
     bundle.updatedAt = latestDate([bundle.updatedAt, record.updated_at, record.created_at]);
   });
 
-  return [...bundles.values()].sort(
+  // ── Merge bundles that share the same normalised display name ────────────
+  // This catches duplicates where one record had an email and another didn't,
+  // causing createClientKey to produce two different keys for the same person.
+  const byName = new Map<string, ClientBundle>();
+
+  for (const bundle of bundles.values()) {
+    const nameKey = normalizeText(bundle.displayName);
+    if (!nameKey || nameKey === "unnamed client") {
+      // Can't safely merge nameless bundles — keep as-is under their original key
+      byName.set(bundle.key, bundle);
+      continue;
+    }
+
+    const existing = byName.get(nameKey);
+    if (!existing) {
+      byName.set(nameKey, bundle);
+    } else {
+      // Merge into the existing bundle
+      existing.leads.push(...bundle.leads);
+      existing.consultations.push(...bundle.consultations);
+      existing.screenings.push(...bundle.screenings);
+      existing.pricingPresentations.push(...bundle.pricingPresentations);
+      existing.phone = existing.phone || bundle.phone;
+      existing.email = existing.email || bundle.email;
+      existing.goal = existing.goal || bundle.goal;
+      existing.updatedAt = latestDate([existing.updatedAt, bundle.updatedAt]);
+    }
+  }
+
+  return [...byName.values()].sort(
     (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
   );
 }

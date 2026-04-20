@@ -40,15 +40,27 @@ export async function GET(request: Request) {
 
     const tokens = (await tokenRes.json()) as GoogleTokenResponse;
 
-    if (!tokenRes.ok || !tokens.access_token || !tokens.refresh_token) {
-      return NextResponse.redirect(new URL("/revenue?gcal=error", url.origin));
+    console.log("Google token response:", JSON.stringify({ ok: tokenRes.ok, hasAccess: !!tokens.access_token, hasRefresh: !!tokens.refresh_token, error: tokens.error }));
+
+    if (!tokenRes.ok || !tokens.access_token) {
+      return NextResponse.redirect(new URL(`/revenue?gcal=error&reason=${encodeURIComponent(tokens.error ?? "no_access_token")}`, url.origin));
     }
 
     const supabase = createSupabaseAdminClient();
+
+    // If no refresh_token returned (already granted before), keep the existing one
+    const existing = await supabase.from("google_tokens").select("refresh_token").eq("id", "singleton").maybeSingle();
+    const refreshToken = tokens.refresh_token ?? existing.data?.refresh_token ?? "";
+
+    if (!refreshToken) {
+      // Force re-consent by redirecting back to auth with prompt=consent
+      return NextResponse.redirect(new URL("/api/google-calendar/auth", url.origin));
+    }
+
     await supabase.from("google_tokens").upsert({
       id: "singleton",
       access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
+      refresh_token: refreshToken,
       expires_at: Date.now() + (tokens.expires_in ?? 3600) * 1000,
       event_ids: [],
       updated_at: new Date().toISOString(),

@@ -635,6 +635,77 @@ export function RevenueTrackerDashboard() {
     setDeleteExpenseId(null);
   }
 
+  // ── ICS export ────────────────────────────────────────────────────────────
+  function exportToICS() {
+    // Anchor Week 1 to this week's Monday
+    const now = new Date();
+    const dow = now.getDay(); // 0=Sun
+    const daysToMonday = dow === 0 ? -6 : 1 - dow;
+    const thisMonday = new Date(now);
+    thisMonday.setDate(now.getDate() + daysToMonday);
+    thisMonday.setHours(0, 0, 0, 0);
+
+    const DAY_OFFSET: Record<WeekDay, number> = {
+      monday: 0, tuesday: 1, wednesday: 2, thursday: 3,
+      friday: 4, saturday: 5, sunday: 6
+    };
+
+    function toICSTime(t: string): string | null {
+      if (!t || t === "—") return null;
+      const pm = t.endsWith("pm");
+      const [hStr, mStr] = t.replace(/[ap]m$/, "").split(":");
+      const h = parseInt(hStr, 10); const m = parseInt(mStr, 10);
+      const h24 = pm ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h);
+      return `${String(h24).padStart(2, "0")}${String(m).padStart(2, "0")}00`;
+    }
+
+    function dateStr(d: Date): string {
+      return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    const lines: string[] = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Upper Notch Coaching//Weekly Schedule//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ];
+
+    (["week1", "week2"] as const).forEach((wk, wi) => {
+      WEEK_DAYS.forEach((day) => {
+        const blocks = schedule[wk]?.[day]?.blocks ?? [];
+        if (!blocks.length) return;
+        const eventDate = new Date(thisMonday);
+        eventDate.setDate(thisMonday.getDate() + wi * 7 + DAY_OFFSET[day]);
+        const ds = dateStr(eventDate);
+        blocks.forEach((block) => {
+          const start = toICSTime(block.start);
+          if (!start) return;
+          const end = toICSTime(block.end);
+          lines.push("BEGIN:VEVENT");
+          lines.push(`UID:${ds}-${block.id}@uppernotch`);
+          lines.push(`DTSTART:${ds}T${start}`);
+          if (end) lines.push(`DTEND:${ds}T${end}`);
+          lines.push(`SUMMARY:${block.activity}`);
+          lines.push(`DESCRIPTION:Upper Notch Coaching — ${wk === "week1" ? "Week 1" : "Week 2"}`);
+          lines.push("END:VEVENT");
+        });
+      });
+    });
+
+    lines.push("END:VCALENDAR");
+
+    const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "upper-notch-schedule.ics";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   // ── Schedule helpers ──────────────────────────────────────────────────────
   function timeToMins(t: string): number {
     if (!t || t === "—") return -1;
@@ -993,6 +1064,10 @@ export function RevenueTrackerDashboard() {
               <button onClick={() => { setImportText(""); setImportError(""); setShowImportModal(true); }}
                 className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Import ↓
+              </button>
+              <button onClick={exportToICS}
+                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                📅 Google Calendar
               </button>
               <button onClick={() => { setCopyTargets([]); setShowCopyModal(true); }}
                 className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">

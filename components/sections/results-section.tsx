@@ -6,21 +6,21 @@ export function ResultsSection() {
     <section className="section-space">
       <div className="container-shell">
         <SectionHeading
-          eyebrow="Results"
-          title={siteContent.testimonials.title}
-          description={siteContent.testimonials.description}
+          eyebrow="The Approach"
+          title={siteContent.approach.title}
+          description={siteContent.approach.description}
         />
 
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {siteContent.testimonials.items.map((testimonial) => (
-            <article key={testimonial.name} className="panel p-6 sm:p-8">
-              <p className="text-lg leading-8 text-zinc-100">“{testimonial.quote}”</p>
-              <div className="mt-8 border-t border-white/10 pt-5">
-                <p className="text-xl uppercase text-ink">{testimonial.name}</p>
-                <p className="mt-1 text-sm uppercase tracking-[0.18em] text-accent">
-                  {testimonial.result}
-                </p>
-              </div>
+          {siteContent.approach.items.map((item, index) => (
+            <article key={item.title} className="panel p-6 sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-accent">
+                {String(index + 1).padStart(2, "0")}
+              </p>
+              <h3 className="mt-4 text-3xl uppercase leading-none text-ink">
+                {item.title}
+              </h3>
+              <p className="mt-5 text-base leading-7 text-zinc-300">{item.body}</p>
             </article>
           ))}
         </div>

@@ -14,7 +14,7 @@ export function HeroSection() {
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-accent">
             {siteContent.brand.eyebrow}
           </p>
-          <h1 className="max-w-3xl text-6xl uppercase leading-[0.9] text-ink sm:text-7xl lg:text-8xl">
+          <h1 className="max-w-3xl text-5xl uppercase leading-[0.95] text-ink sm:text-6xl lg:text-7xl">
             {siteContent.hero.headline}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-xl">
@@ -23,21 +23,13 @@ export function HeroSection() {
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             <Button href={siteContent.brand.consultationLink} target="_blank" rel="noreferrer">
-              Book Your Consultation
+              {siteContent.brand.consultationLabel}
             </Button>
-            <a
-              href="/"
-              className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-ink transition hover:border-accent hover:text-accent"
-            >
-              Open Consultation App
-            </a>
-            <a
-              href="#services"
-              className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-ink transition hover:border-accent hover:text-accent"
-            >
-              View Coaching Options
-            </a>
           </div>
+
+          <p className="mt-4 text-xs uppercase tracking-[0.2em] text-zinc-500">
+            Free 30-min call · No obligation
+          </p>
 
           <div className="mt-10 grid gap-3 sm:grid-cols-3">
             {siteContent.hero.highlights.map((item) => (
@@ -53,9 +45,9 @@ export function HeroSection() {
             <p className="text-xs uppercase tracking-[0.3em] text-accent">What You Can Expect</p>
             <div className="mt-6 space-y-5">
               {[
-                ["Structured Training", "Progressive programming tailored to physique and performance goals."],
-                ["Direct Accountability", "Weekly check-ins and coaching support to keep momentum high."],
-                ["Real-World Results", "A premium coaching system designed for busy schedules and lasting change."]
+                ["A Clear Plan", "Structured fat loss and lean muscle programming built around your goals and your schedule."],
+                ["Real Accountability", "Weekly check-ins and direct coaching support to keep you consistent and on track."],
+                ["Simple Process", "No guesswork, no fads — just a proven system that makes getting results feel straightforward."]
               ].map(([title, description]) => (
                 <div key={title} className="border-b border-white/10 pb-5 last:border-none last:pb-0">
                   <h2 className="text-2xl uppercase text-ink">{title}</h2>

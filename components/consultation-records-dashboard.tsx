@@ -178,6 +178,44 @@ function displayValue(value: unknown) {
   return typeof value === "string" && value.trim() ? value : "Not recorded";
 }
 
+const PRICING_PREFILL_KEY = "pricing-presentation-prefill";
+
+// Carries a client's details over to the Pricing Presentation page so they
+// don't need to be retyped. Reads from the client's latest consultation
+// form when available, falling back to their lead/bundle info.
+function goToPricingPresentation(bundle: ClientBundle) {
+  const latestConsultation = bundle.consultations[0];
+  const fd = latestConsultation?.form_data;
+  const latestLead = bundle.leads[0];
+
+  const clientName =
+    bundle.displayName && bundle.displayName !== "Unnamed client"
+      ? bundle.displayName
+      : fd?.fullName || latestLead?.name || "";
+
+  const clientGoal =
+    [fd?.goalWhat, fd?.goalWhy].filter(Boolean).join(" — ") || bundle.goal || latestLead?.goal || "";
+
+  const clientNeeds =
+    [fd?.whatsStoppingYou, fd?.needsFromCoach].filter(Boolean).join(" ") || latestLead?.notes || "";
+
+  const prefill = {
+    clientName,
+    clientPhone: bundle.phone || latestLead?.phone || "",
+    clientEmail: bundle.email || latestLead?.email || "",
+    clientGoal,
+    clientNeeds
+  };
+
+  try {
+    window.sessionStorage.setItem(PRICING_PREFILL_KEY, JSON.stringify(prefill));
+  } catch {
+    // sessionStorage unavailable — presentation page will just start blank
+  }
+
+  window.location.href = "/pricing-presentation";
+}
+
 // Prints only the agreement modal (not the whole client hub page). Toggles a
 // body class that the print stylesheet uses to hide everything else.
 function printAgreementOnly() {
@@ -475,6 +513,7 @@ export function ConsultationRecordsDashboard() {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
+  const [showScript, setShowScript] = useState(false);
 
   async function loadRecords() {
     setIsLoading(true);
@@ -880,6 +919,20 @@ export function ConsultationRecordsDashboard() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => goToPricingPresentation(selectedBundle)}
+                      className="mt-3 w-full rounded-full border border-[#9a6820] bg-[#fdf3e3] px-4 py-2 text-sm font-semibold text-[#9a6820] transition hover:bg-[#f5e6cc] print:hidden"
+                    >
+                      Generate Price Presentation
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowScript(true)}
+                      className="mt-3 w-full rounded-full border border-[#15314a] bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:bg-stone-50 print:hidden"
+                    >
+                      View Summary & Script
+                    </button>
+                    <button
+                      type="button"
                       onClick={clearSelectedFromPage}
                       className="mt-3 w-full rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60 print:hidden"
                     >
@@ -917,6 +970,10 @@ export function ConsultationRecordsDashboard() {
           </section>
         </section>
       </div>
+
+      {showScript && selectedBundle && (
+        <ClientScriptModal bundle={selectedBundle} onClose={() => setShowScript(false)} />
+      )}
     </main>
   );
 }
@@ -1185,6 +1242,177 @@ function IntakeWaiverModal({ record, onClose }: { record: ConsultationNeedsRecor
             )}
             <p className="text-[10px] text-center text-stone-400 pt-2">Upper Notch Coaching · Jazzay Sallah Personal Training (JS PT) · {new Date().getFullYear()}</p>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Pain-point fields pulled straight from the client's own words on their
+// consultation form — only shown when they actually answered them.
+const painPointFields: Array<{ label: string; key: keyof ConsultationNeedsForm }> = [
+  { label: "What's been stopping them", key: "whatsStoppingYou" },
+  { label: "What needs to change", key: "needsToChange" },
+  { label: "How they'll feel if they don't achieve it", key: "feelNotAchieved" },
+  { label: "Past habits that led here", key: "pastHabits" },
+  { label: "What they didn't like before", key: "dislikedBefore" },
+  { label: "Styles/exercises they avoid", key: "leastFavourite" },
+  { label: "Other considerations", key: "otherConsiderations" }
+];
+
+function firstNameOf(fullName: string) {
+  const trimmed = fullName.trim();
+  return trimmed ? trimmed.split(/\s+/)[0] : "the client";
+}
+
+type ScriptSection = { heading: string; body: string };
+
+function buildCallScript(bundle: ClientBundle, fd: ConsultationNeedsForm | undefined): ScriptSection[] {
+  const name = firstNameOf(bundle.displayName !== "Unnamed client" ? bundle.displayName : fd?.fullName || "");
+  const goal = fd?.goalWhat || bundle.goal || "get results they're proud of";
+  const why = fd?.goalWhy;
+  const barrier = fd?.whatsStoppingYou;
+  const needsFromCoach = fd?.needsFromCoach;
+  const commitmentWhy = fd?.commitmentWhy;
+  const feelAchieved = fd?.feelAchieved;
+  const pricing = bundle.pricingPresentations[0];
+
+  const sections: ScriptSection[] = [
+    {
+      heading: "Open",
+      body: `Thanks for making time today, ${name}. Before we get into numbers, I want to make sure I've got your goal right: you told me the aim is to ${goal.toLowerCase()}${why ? `, because ${why.toLowerCase()}` : ""}. Does that still sound right?`
+    }
+  ];
+
+  if (barrier) {
+    sections.push({
+      heading: "Acknowledge the barrier",
+      body: `You mentioned that ${barrier.toLowerCase()} has been getting in the way. That's really common, and it's exactly the kind of thing structure and accountability fix — it's not a willpower problem, it's a plan problem.`
+    });
+  }
+
+  if (needsFromCoach) {
+    sections.push({
+      heading: "Bridge to the solution",
+      body: `From what you told me, what would help most is ${needsFromCoach.toLowerCase()}. That's exactly what this program is built around.`
+    });
+  }
+
+  if (feelAchieved) {
+    sections.push({
+      heading: "Reconnect to the outcome",
+      body: `Picture how it'll feel once you get there — you said ${feelAchieved.toLowerCase()}. That's what we're working towards together, not just the sessions themselves.`
+    });
+  }
+
+  sections.push({
+    heading: "Present the recommendation",
+    body: pricing
+      ? `Based on everything we've covered, I'd recommend the ${pricing.selected_package_name || "recommended"} package — it gives you the level of support that matches where you're at right now.`
+      : "Walk them through the package that matches their commitment level and schedule, then show the price presentation."
+  });
+
+  if (commitmentWhy) {
+    sections.push({
+      heading: "Handle hesitation",
+      body: `If they hesitate, remind them of their own words: "${commitmentWhy}". Reflecting their own reasoning back is more persuasive than any pitch.`
+    });
+  }
+
+  sections.push({
+    heading: "Close",
+    body: `Ask directly: "Does this feel like the right next step for you?" Then move straight to signing them up while the conversation is fresh — don't let the momentum drop.`
+  });
+
+  return sections;
+}
+
+function ClientScriptModal({ bundle, onClose }: { bundle: ClientBundle; onClose: () => void }) {
+  const latestConsultation = bundle.consultations[0];
+  const fd = latestConsultation?.form_data;
+  const pricing = bundle.pricingPresentations[0];
+  const painPoints = fd
+    ? painPointFields
+        .map((field) => ({ label: field.label, value: fd[field.key] }))
+        .filter((item): item is { label: string; value: string } => typeof item.value === "string" && item.value.trim() !== "")
+    : [];
+  const script = buildCallScript(bundle, fd);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 py-8 backdrop-blur-sm overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl my-4">
+        <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5 print:hidden">
+          <div>
+            <p className="text-xs uppercase tracking-widest font-bold text-[#9a6820]">Upper Notch Coaching</p>
+            <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">Client Summary & Call Script</h2>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={printAgreementOnly} className="rounded-full bg-[#15314a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">Print / PDF</button>
+            <button onClick={onClose} className="rounded-full p-2 text-slate-400 hover:bg-stone-100">✕</button>
+          </div>
+        </div>
+
+        <div className="print-doc px-8 py-8 space-y-6 text-[#10233f]">
+          <div className="text-center border-b border-stone-200 pb-6">
+            <p className="text-xs uppercase tracking-[0.3em] font-bold text-[#9a6820]">Upper Notch Coaching</p>
+            <h1 className="mt-2 text-2xl font-bold text-[#10233f]">Client Summary & Call Script</h1>
+            <p className="mt-1 text-sm text-stone-500">Jazzay Sallah Personal Training (JS PT)</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-sm">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest font-bold text-[#9a6820]">Client Name</p>
+              <p className="font-bold text-[#10233f] mt-0.5">{displayValue(bundle.displayName)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest font-bold text-[#9a6820]">Goal</p>
+              <p className="font-bold text-[#10233f] mt-0.5">{displayValue(fd?.goalWhat || bundle.goal)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest font-bold text-[#9a6820]">Phone</p>
+              <p className="text-[#10233f] mt-0.5">{displayValue(bundle.phone)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest font-bold text-[#9a6820]">Email</p>
+              <p className="text-[#10233f] mt-0.5">{displayValue(bundle.email)}</p>
+            </div>
+            {pricing && (
+              <div className="col-span-2">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#9a6820]">Recommended Package</p>
+                <p className="font-bold text-[#10233f] mt-0.5">{displayValue(pricing.selected_package_name)}</p>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[#9a6820] mb-3">Pain Points</h3>
+            {painPoints.length ? (
+              <div className="space-y-3">
+                {painPoints.map((item) => (
+                  <div key={item.label}>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-stone-500">{item.label}</p>
+                    <p className="mt-1 text-sm leading-6 text-[#4a5c73] whitespace-pre-wrap">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-stone-400">No consultation form on file yet — pain points will appear here once one is saved.</p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-[#9a6820] mb-3">Suggested Call Script</h3>
+            <div className="space-y-4">
+              {script.map((section) => (
+                <div key={section.heading}>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-stone-500">{section.heading}</p>
+                  <p className="mt-1 text-sm leading-7 text-[#4a5c73]">{section.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[10px] text-center text-stone-400 pt-2 border-t border-stone-200">This script is a starting point generated from their consultation answers — adjust it to fit how the conversation actually goes.</p>
         </div>
       </div>
     </div>

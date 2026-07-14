@@ -105,7 +105,10 @@ h6 {
     display: none !important;
   }
 
-  /* Force colours for print */
+  /* Force colours for print — reusable across any printable modal
+     (agreement, waiver, client script) so ids never collide. */
+  .print-doc,
+  .print-doc *,
   #agreement-print,
   #agreement-print * {
     color: black !important;

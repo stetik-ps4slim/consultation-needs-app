@@ -149,6 +149,34 @@ export function PricingPresentationApp() {
   const clientSigRef = useRef<HTMLCanvasElement | null>(null);
   const trainerSigRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Picks up client details handed over from Client Hub's
+  // "Generate Price Presentation" button, so nothing needs retyping.
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem("pricing-presentation-prefill");
+      if (!raw) return;
+
+      const data = JSON.parse(raw) as Partial<{
+        clientName: string;
+        clientPhone: string;
+        clientEmail: string;
+        clientGoal: string;
+        clientNeeds: string;
+      }>;
+
+      if (data.clientName) setClientName(data.clientName);
+      if (data.clientPhone) setClientPhone(data.clientPhone);
+      if (data.clientEmail) setClientEmail(data.clientEmail);
+      if (data.clientGoal) setClientGoal(data.clientGoal);
+      if (data.clientNeeds) setClientNeeds(data.clientNeeds);
+
+      window.sessionStorage.removeItem("pricing-presentation-prefill");
+    } catch {
+      // Ignore malformed/unavailable sessionStorage — page just starts blank
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const selectedPackage = packages.find((item) => item.id === selectedPackageId) ?? packages[0];
   const weeklyTotal = selectedPackage.weeklyPrice + (nutritionAdded ? nutritionWeeklyPrice : 0);
   const upfrontTotal = selectedPackage.upfrontPrice + (nutritionAdded ? nutritionWeeklyPrice * minimumWeeks : 0);

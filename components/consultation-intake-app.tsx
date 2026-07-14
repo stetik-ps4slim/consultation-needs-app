@@ -224,6 +224,7 @@ function InputField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        spellCheck={type === "text" || type === "email" ? true : undefined}
         className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
       />
     </label>
@@ -251,6 +252,7 @@ function TextareaField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        spellCheck={true}
         className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
       />
     </label>

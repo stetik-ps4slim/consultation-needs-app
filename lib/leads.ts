@@ -67,6 +67,10 @@ export type LeadPayload = Partial<LeadInsert>;
 export type LeadUpdate = Partial<
   Pick<
     Lead,
+    | "name"
+    | "phone"
+    | "email"
+    | "goal"
     | "status"
     | "source"
     | "service_interest"
@@ -105,6 +109,10 @@ export function normalizeLeadInsert(input: Partial<LeadInsert>) {
 
 export function normalizeLeadUpdate(input: Record<string, unknown>): LeadUpdate {
   return {
+    name: typeof input.name === "string" && input.name.trim() ? input.name.trim() : undefined,
+    phone: typeof input.phone === "string" ? input.phone.trim() : undefined,
+    email: typeof input.email === "string" ? input.email.trim().toLowerCase() : undefined,
+    goal: typeof input.goal === "string" ? input.goal.trim() : undefined,
     status: parseLeadStatus(input.status),
     source: parseLeadSource(input.source),
     service_interest:

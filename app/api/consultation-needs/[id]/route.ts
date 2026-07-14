@@ -63,27 +63,23 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid consultation form id." }, { status: 400 });
     }
 
-    const body = (await request.json()) as Partial<ConsultationNeedsForm>;
-    const payload = buildConsultationNeedsInsert(body);
+    const body = (await request.json()) as Record<string, unknown>;
 
-    if (!payload.client_name || !payload.client_phone || !payload.goal) {
-      return NextResponse.json(
-        { error: "Client name, phone number, and goal are required before saving online." },
-        { status: 400 }
-      );
-    }
+    // Support partial updates (e.g. just updating client_name)
+    const partialUpdate: Record<string, unknown> = {};
+    if (body.client_name !== undefined) partialUpdate.client_name = String(body.client_name).trim();
+    if (body.client_phone !== undefined) partialUpdate.client_phone = String(body.client_phone).trim();
+    if (body.client_email !== undefined) partialUpdate.client_email = String(body.client_email).trim().toLowerCase();
+    if (body.goal !== undefined) partialUpdate.goal = String(body.goal).trim();
 
-    if (payload.client_email && !emailPattern.test(payload.client_email)) {
-      return NextResponse.json(
-        { error: "Please enter a valid email address before saving online." },
-        { status: 400 }
-      );
+    if (Object.keys(partialUpdate).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
     }
 
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("consultation_needs")
-      .update(payload)
+      .update(partialUpdate)
       .eq("id", recordId)
       .select()
       .single();

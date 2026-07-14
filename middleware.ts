@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Always allow public pages and Next.js internals
-  if (PUBLIC_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (pathname === "/" || PUBLIC_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
 

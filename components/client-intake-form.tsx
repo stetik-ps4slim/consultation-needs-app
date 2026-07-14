@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   ConsultationNeedsForm,
   ConsultationNeedsRecord,
-  InvestmentRange,
   WeeklyScheduleEntry,
   YesNo
 } from "@/lib/consultation-needs";
@@ -37,11 +36,7 @@ const createInitialState = (): ConsultationNeedsForm => ({
   commitmentWhy: "",
   pastHabits: "",
   otherConsiderations: "",
-  weeklyInvestmentRange: "",
-  investmentCloserTo: "",
-  howLongWantedToStart: "",
   whatsStoppingYou: "",
-  setBudget: "",
   daysAvailable: "",
   preferredTrainingTime: "",
   currentTrainingLevel: "",
@@ -393,7 +388,7 @@ export function ClientIntakeForm() {
         </div>
       </header>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="mx-auto max-w-3xl space-y-6 px-5 py-8 sm:px-6">
 
           {/* 01 — Client Details */}
@@ -545,11 +540,11 @@ export function ClientIntakeForm() {
               <TextareaField label="Muscle / joint details" value={form.muscleJointDetails} onChange={(v) => updateField("muscleJointDetails", v)} />
               <TextareaField label="Family history of heart disease" value={form.familyHistory} onChange={(v) => updateField("familyHistory", v)} />
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-4">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <InputField label="Weight (kg)" value={form.weightKg} onChange={(v) => updateField("weightKg", v)} />
               <InputField label="Height (cm)" value={form.heightCm} onChange={(v) => updateField("heightCm", v)} />
               <ToggleField label="Smoker?" value={form.smokingStatus} onChange={(v) => updateField("smokingStatus", v)} />
-              <InputField label="Amount (if yes)" value={form.smokingAmount} onChange={(v) => updateField("smokingAmount", v)} />
+              <InputField label="Smoking amount (if yes)" value={form.smokingAmount} onChange={(v) => updateField("smokingAmount", v)} />
             </div>
           </SectionBlock>
 
@@ -619,12 +614,14 @@ export function ClientIntakeForm() {
             </div>
           )}
 
-          {/* Not ready notice */}
-          {!canSubmit && (agreementRead || agreementAcknowledged || form.signOffName || form.signature) && (
+          {/* Not ready notice — always visible so users know what's blocking */}
+          {!canSubmit && (
             <p className="text-center text-xs text-stone-400">
               {!healthScreeningComplete
-                ? "Please answer all health screening questions (Section 05) before submitting."
-                : "Please tick both boxes and complete your name, signature, and date to submit."}
+                ? "⚠ Please answer all health screening questions in Section 05 (including the Smoker? toggle at the bottom) before submitting."
+                : !agreementRead || !agreementAcknowledged
+                ? "Please tick both agreement boxes in Section 06 before submitting."
+                : "Please complete your name, signature, and date in Section 06 before submitting."}
             </p>
           )}
 

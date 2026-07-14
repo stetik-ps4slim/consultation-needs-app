@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   ConsultationNeedsForm,
   ConsultationNeedsRecord,
-  InvestmentRange,
   WeeklyScheduleEntry,
   YesNo
 } from "@/lib/consultation-needs";
@@ -42,11 +41,7 @@ const createInitialState = (): ConsultationNeedsForm => ({
   commitmentWhy: "",
   pastHabits: "",
   otherConsiderations: "",
-  weeklyInvestmentRange: "",
-  investmentCloserTo: "",
-  howLongWantedToStart: "",
   whatsStoppingYou: "",
-  setBudget: "",
   daysAvailable: "",
   preferredTrainingTime: "",
   currentTrainingLevel: "",
@@ -123,11 +118,7 @@ const textFieldKeys: Array<keyof ConsultationNeedsForm> = [
   "commitmentWhy",
   "pastHabits",
   "otherConsiderations",
-  "weeklyInvestmentRange",
-  "investmentCloserTo",
-  "howLongWantedToStart",
   "whatsStoppingYou",
-  "setBudget",
   "daysAvailable",
   "preferredTrainingTime",
   "currentTrainingLevel",
@@ -753,19 +744,6 @@ export function ConsultationIntakeApp() {
               <InputField label="Commitment level (1-10)" value={form.commitmentLevel} onChange={(value) => updateField("commitmentLevel", value)} placeholder="e.g. 8" />
               <TextareaField label="Why that score?" value={form.commitmentWhy} onChange={(value) => updateField("commitmentWhy", value)} placeholder="Example: I'm ready, but work is unpredictable." />
               <TextareaField label="Past habits that led here" value={form.pastHabits} onChange={(value) => updateField("pastHabits", value)} />
-            </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {(["$100-150", "$150-250", "$250-400+"] as InvestmentRange[]).map((range) => (
-                <ChoiceCard
-                  key={range}
-                  label={range}
-                  active={form.weeklyInvestmentRange === range}
-                  onClick={() => updateField("weeklyInvestmentRange", range)}
-                />
-              ))}
-              <InputField label="Closer To" value={form.investmentCloserTo} onChange={(value) => updateField("investmentCloserTo", value)} />
-              <InputField label="How long have you wanted to start?" value={form.howLongWantedToStart} onChange={(value) => updateField("howLongWantedToStart", value)} />
-              <InputField label="Set budget" value={form.setBudget} onChange={(value) => updateField("setBudget", value)} />
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <TextareaField label="What's been stopping you?" value={form.whatsStoppingYou} onChange={(value) => updateField("whatsStoppingYou", value)} />

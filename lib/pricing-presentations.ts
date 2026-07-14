@@ -33,6 +33,8 @@ export type PricingPresentationForm = {
   nutritionDescription: string;
   weeklyTotal: number;
   upfrontTotal: number;
+  clientSignature?: string;
+  trainerSignature?: string;
 };
 
 export type PricingPresentationRecord = {
@@ -59,6 +61,7 @@ export type PricingPresentationUpdate = Partial<{
   accepted_package_name: string;
   follow_up_at: string | null;
   follow_up_note: string;
+  presentation_data: PricingPresentationForm;
 }>;
 
 export function hasSupabaseConfig() {
@@ -138,7 +141,9 @@ export function normalizePricingPresentation(input: Partial<PricingPresentationF
     nutritionWeeklyPrice: cleanNumber(input.nutritionWeeklyPrice),
     nutritionDescription: cleanString(input.nutritionDescription),
     weeklyTotal: cleanNumber(input.weeklyTotal),
-    upfrontTotal: cleanNumber(input.upfrontTotal)
+    upfrontTotal: cleanNumber(input.upfrontTotal),
+    ...(input.clientSignature !== undefined ? { clientSignature: input.clientSignature } : {}),
+    ...(input.trainerSignature !== undefined ? { trainerSignature: input.trainerSignature } : {})
   } satisfies PricingPresentationForm;
 }
 
@@ -169,7 +174,10 @@ export function normalizePricingPresentationUpdate(input: Record<string, unknown
     ...(parseDecisionStatus(input.decision_status) ? { decision_status: parseDecisionStatus(input.decision_status) } : {}),
     ...(input.accepted_package_name !== undefined ? { accepted_package_name: cleanString(input.accepted_package_name) } : {}),
     ...(followUpAt !== undefined ? { follow_up_at: followUpAt } : {}),
-    ...(input.follow_up_note !== undefined ? { follow_up_note: cleanString(input.follow_up_note) } : {})
+    ...(input.follow_up_note !== undefined ? { follow_up_note: cleanString(input.follow_up_note) } : {}),
+    ...(input.presentation_data !== undefined && typeof input.presentation_data === "object" && input.presentation_data !== null
+      ? { presentation_data: normalizePricingPresentation(input.presentation_data as Partial<PricingPresentationForm>) }
+      : {})
   } satisfies PricingPresentationUpdate;
 }
 

@@ -6,8 +6,6 @@ export type WeeklyScheduleEntry = {
 
 export type YesNo = "" | "Yes" | "No";
 
-export type InvestmentRange = "$100-150" | "$150-250" | "$250-400+" | "";
-
 export type ConsultationNeedsForm = {
   fullName: string;
   dateOfBirth: string;
@@ -33,11 +31,7 @@ export type ConsultationNeedsForm = {
   commitmentWhy: string;
   pastHabits: string;
   otherConsiderations: string;
-  weeklyInvestmentRange: InvestmentRange;
-  investmentCloserTo: string;
-  howLongWantedToStart: string;
   whatsStoppingYou: string;
-  setBudget: string;
   daysAvailable: string;
   preferredTrainingTime: "" | "AM" | "PM";
   currentTrainingLevel: string;
@@ -113,12 +107,6 @@ function cleanYesNo(value: unknown): YesNo {
   return value === "Yes" || value === "No" ? value : "";
 }
 
-function cleanInvestmentRange(value: unknown): InvestmentRange {
-  return value === "$100-150" || value === "$150-250" || value === "$250-400+"
-    ? value
-    : "";
-}
-
 function cleanTrainingTime(value: unknown): "" | "AM" | "PM" {
   return value === "AM" || value === "PM" ? value : "";
 }
@@ -171,11 +159,7 @@ export function normalizeConsultationNeedsForm(input: Partial<ConsultationNeedsF
     commitmentWhy: cleanString(input.commitmentWhy),
     pastHabits: cleanString(input.pastHabits),
     otherConsiderations: cleanString(input.otherConsiderations),
-    weeklyInvestmentRange: cleanInvestmentRange(input.weeklyInvestmentRange),
-    investmentCloserTo: cleanString(input.investmentCloserTo),
-    howLongWantedToStart: cleanString(input.howLongWantedToStart),
     whatsStoppingYou: cleanString(input.whatsStoppingYou),
-    setBudget: cleanString(input.setBudget),
     daysAvailable: cleanString(input.daysAvailable),
     preferredTrainingTime: cleanTrainingTime(input.preferredTrainingTime),
     currentTrainingLevel: cleanString(input.currentTrainingLevel),

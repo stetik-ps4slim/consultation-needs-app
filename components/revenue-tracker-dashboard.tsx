@@ -32,10 +32,10 @@ const TIME_OPTIONS: string[] = (() => {
 })();
 
 const ACTIVITY_OPTIONS = [
-  "Floor walk", "Train", "Break", "Lunch", "Calls",
+  "PT", "Consultation", "Floor walk", "Train", "Break", "Lunch", "Calls",
   "Follow up calls", "B2B", "Walk Floor", "Admin",
   "Social media", "Content creation", "Program writing",
-  "Client session", "Prospecting", "Morning routine", "Off",
+  "Prospecting", "Morning routine", "Off",
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -100,9 +100,9 @@ type TwoWeekSchedule = { week1: WeekSchedule; week2: WeekSchedule };
 // ─── Package config ───────────────────────────────────────────────────────────
 
 const PACKAGES: { label: PackageKey; weekly: number }[] = [
-  { label: "Foundation",     weekly: 129 },
-  { label: "Transformation", weekly: 199 },
-  { label: "Elite",          weekly: 289 },
+  { label: "Foundation",     weekly: 109 },
+  { label: "Transformation", weekly: 189 },
+  { label: "Elite",          weekly: 279 },
   { label: "Custom",         weekly: 0   }
 ];
 
@@ -226,27 +226,40 @@ const EMPTY_WEEK: WeekSchedule = { monday: { blocks: [] }, tuesday: { blocks: []
 
 const DEFAULT_SCHEDULE: TwoWeekSchedule = {
   week1: {
-    monday:    { blocks: [
-      { id: 1, start: "6:00am",  end: "8:00am",  activity: "Floor walk" },
-      { id: 2, start: "8:00am",  end: "9:30am",  activity: "Train" },
-      { id: 3, start: "9:30am",  end: "10:30am", activity: "Break" },
-      { id: 4, start: "10:30am", end: "12:30pm", activity: "Calls" },
-      { id: 5, start: "12:30pm", end: "1:30pm",  activity: "Lunch" },
-      { id: 6, start: "1:30pm",  end: "2:30pm",  activity: "Follow up calls" },
-      { id: 7, start: "2:30pm",  end: "3:00pm",  activity: "B2B" },
-    ]},
+    monday:    { blocks: [] },
     tuesday:   { blocks: [
-      { id: 1, start: "11:00am", end: "12:30pm", activity: "Train" },
-      { id: 2, start: "12:30pm", end: "1:30pm",  activity: "Lunch" },
-      { id: 3, start: "1:30pm",  end: "3:30pm",  activity: "Calls" },
-      { id: 4, start: "3:30pm",  end: "4:30pm",  activity: "Break" },
-      { id: 5, start: "4:30pm",  end: "6:00pm",  activity: "Walk Floor" },
-      { id: 6, start: "6:00pm",  end: "7:00pm",  activity: "Follow up calls" },
+      { id: 1, start: "10:30am", end: "11:30am", activity: "PT — Cameron" },
     ]},
-    wednesday: { blocks: [] }, thursday: { blocks: [] },
-    friday:    { blocks: [] }, saturday: { blocks: [] }, sunday: { blocks: [] },
+    wednesday: { blocks: [
+      { id: 2, start: "7:00am",  end: "8:00am",  activity: "PT — Conner" },
+      { id: 3, start: "10:00am", end: "11:00am", activity: "PT — Vicky" },
+    ]},
+    thursday:  { blocks: [
+      { id: 4, start: "10:30am", end: "11:30am", activity: "PT — Cameron" },
+      { id: 5, start: "1:00pm",  end: "2:00pm",  activity: "PT — Marita Batten" },
+      { id: 6, start: "3:00pm",  end: "4:00pm",  activity: "PT — Caeden" },
+    ]},
+    friday:    { blocks: [
+      { id: 7, start: "9:15am",  end: "10:15am", activity: "PT — Vicky" },
+      { id: 8, start: "10:30am", end: "11:30am", activity: "PT — Monica Pecotich" },
+      { id: 9, start: "11:30am", end: "12:30pm", activity: "PT — Caeden" },
+    ]},
+    saturday:  { blocks: [] },
+    sunday:    { blocks: [
+      { id: 10, start: "5:30pm", end: "6:30pm",  activity: "PT — Lauren" },
+    ]},
   },
-  week2: { ...EMPTY_WEEK },
+  week2: {
+    monday:    { blocks: [] },
+    tuesday:   { blocks: [
+      { id: 11, start: "10:00am", end: "11:30am", activity: "Consultation — Connie" },
+    ]},
+    wednesday: { blocks: [] },
+    thursday:  { blocks: [] },
+    friday:    { blocks: [] },
+    saturday:  { blocks: [] },
+    sunday:    { blocks: [] },
+  },
 };
 
 function todayStr() {
@@ -408,6 +421,11 @@ export function RevenueTrackerDashboard() {
   const [monthData, setMonthData] = useState<Record<string, DayData>>({});
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
+  // ── Calendar navigation (independent of "today") ─────────────────────────
+  const [viewYear,  setViewYear]  = useState(curYear);
+  const [viewMonth, setViewMonth] = useState(curMonth);
+  const [viewMonthData, setViewMonthData] = useState<Record<string, DayData>>({});
+
   // ── Clients ──────────────────────────────────────────────────────────────
   const [clients,      setClients]      = useState<Client[]>([]);
   const [clientTab,    setClientTab]    = useState<"active" | "lost">("active");
@@ -418,6 +436,11 @@ export function RevenueTrackerDashboard() {
   const [lossReason,     setLossReason]     = useState("");
   const [lossDate,       setLossDate]       = useState(todayISO());
   const [deleteClientId, setDeleteClientId] = useState<number | null>(null);
+  // ── Client search (for pre-filling Add Client form) ───────────────────────
+  const [clientSearch,        setClientSearch]        = useState("");
+  const [clientSearchPool,    setClientSearchPool]    = useState<Array<{ name: string; contact: string; goal: string; packageSuggestion: string }>>([]);
+  const [clientSearchLoading, setClientSearchLoading] = useState(false);
+  const [showClientDropdown,  setShowClientDropdown]  = useState(false);
 
   // ── Expenses ─────────────────────────────────────────────────────────────
   const [expenses,        setExpenses]        = useState<Expense[]>([]);
@@ -440,7 +463,7 @@ export function RevenueTrackerDashboard() {
   const [scheduleDay,    setScheduleDay]    = useState<WeekDay>(_initDay);
   const [showBlockForm,  setShowBlockForm]  = useState(false);
   const [editBlockId,    setEditBlockId]    = useState<number | null>(null);
-  const [blockForm,      setBlockForm]      = useState({ start: "—", end: "—", activity: ACTIVITY_OPTIONS[0] });
+  const [blockForm,      setBlockForm]      = useState({ start: "—", end: "—", activity: ACTIVITY_OPTIONS[0], clientName: "" });
 
   // ── Track date/month changes (e.g. tab revisited after midnight) ──────────
   useEffect(() => {
@@ -510,53 +533,49 @@ export function RevenueTrackerDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
-  // ── Google Calendar ───────────────────────────────────────────────────────
-  const [gcalConnected, setGcalConnected] = useState<boolean | null>(null);
-  const [gcalConfigured, setGcalConfigured] = useState(false);
-  const [gcalSyncing, setGcalSyncing] = useState(false);
-  const [gcalStatus, setGcalStatus] = useState("");
-
+  // ── Load data for the viewed month whenever navigation changes ───────────
   useEffect(() => {
-    // Check connection status
-    fetch("/api/google-calendar/status")
-      .then(r => r.json())
-      .then((d: { connected: boolean; configured: boolean }) => {
-        setGcalConnected(d.connected);
-        setGcalConfigured(d.configured);
-      })
-      .catch(() => {});
-
-    // Show feedback when redirected back from OAuth
-    const params = new URLSearchParams(window.location.search);
-    const gcal = params.get("gcal");
-    if (gcal === "connected") {
-      setGcalConnected(true);
-      setGcalStatus("Google Calendar connected successfully!");
-      window.history.replaceState({}, "", "/revenue");
-    } else if (gcal === "error") {
-      setGcalStatus("Could not connect Google Calendar. Please try again.");
-      window.history.replaceState({}, "", "/revenue");
+    const daysInView = new Date(viewYear, viewMonth, 0).getDate();
+    const isCurrentMonth = viewYear === curYear && viewMonth === curMonth;
+    if (isCurrentMonth) {
+      // current month data already in monthData — merge with today's live state
+      setViewMonthData({ ...monthData, [today]: dayData });
+    } else {
+      const md: Record<string, DayData> = {};
+      for (let d = 1; d <= daysInView; d++) {
+        const ds = `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const r = localStorage.getItem(dayKey(ds));
+        if (r) { try { md[ds] = JSON.parse(r); } catch { /* skip */ } }
+      }
+      setViewMonthData(md);
     }
-  }, []);
+    setSelectedDay(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewYear, viewMonth, monthData, dayData]);
 
-  async function syncToGoogleCalendar() {
-    setGcalSyncing(true);
-    setGcalStatus("Syncing to Google Calendar…");
-    try {
-      const res = await fetch("/api/google-calendar/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schedule }),
-      });
-      const data = (await res.json()) as { message?: string; error?: string };
-      if (!res.ok) throw new Error(data.error || "Sync failed.");
-      setGcalStatus(data.message ?? "Synced!");
-    } catch (err) {
-      setGcalStatus(err instanceof Error ? err.message : "Sync failed. Please try again.");
-    } finally {
-      setGcalSyncing(false);
-    }
+  // ── Navigate calendar months ──────────────────────────────────────────────
+  function calPrev() {
+    if (viewMonth === 1) { setViewYear(y => y - 1); setViewMonth(12); }
+    else setViewMonth(m => m - 1);
   }
+  function calNext() {
+    // Don't allow navigating past current month
+    if (viewYear === curYear && viewMonth === curMonth) return;
+    if (viewMonth === 12) { setViewYear(y => y + 1); setViewMonth(1); }
+    else setViewMonth(m => m + 1);
+  }
+  const isCurrentView = viewYear === curYear && viewMonth === curMonth;
+
+  // ── Viewed month summary totals ───────────────────────────────────────────
+  const viewMonthTotals = useMemo(() => {
+    const all = Object.values(viewMonthData);
+    return {
+      leads:    all.reduce((s, d) => s + (d.leadsContacted ?? 0), 0),
+      consults: all.reduce((s, d) => s + (d.consultsCompleted ?? 0), 0),
+      signed:   all.reduce((s, d) => s + (d.clientsSigned ?? 0), 0),
+      revenue:  all.reduce((s, d) => s + (d.sessionRevenue ?? 0), 0),
+    };
+  }, [viewMonthData]);
 
   // ── Revenue maths ─────────────────────────────────────────────────────────
   const activeClients   = clients.filter(c => c.status === "active");
@@ -570,7 +589,10 @@ export function RevenueTrackerDashboard() {
   const netProfit          = monthlyRevenue - totalExpenses;
   const gap                = Math.max(0, monthlyGoal - monthlyRevenue);
   const progress           = Math.min(100, monthlyGoal > 0 ? (monthlyRevenue / monthlyGoal) * 100 : 0);
-  const wonThisMonth       = useMemo(() => Object.values(monthData).reduce((s, d) => s + (d.clientsSigned ?? 0), 0) + dayData.clientsSigned, [monthData, dayData.clientsSigned]);
+  const wonThisMonth       = useMemo(() => {
+    const prefix = `${curYear}-${String(curMonth).padStart(2, "0")}`;
+    return clients.filter(c => c.startDate?.startsWith(prefix)).length;
+  }, [clients, curYear, curMonth]);
   const checklistDone   = dayData.checklist.filter(Boolean).length;
   const selectedData    = selectedDay ? (monthData[selectedDay] ?? null) : null;
 
@@ -612,7 +634,40 @@ export function RevenueTrackerDashboard() {
   }, []);
 
   function openAddClient() {
-    setEditClientId(null); setClientForm(blankClientForm()); setShowClientForm(true);
+    setEditClientId(null);
+    setClientForm(blankClientForm());
+    setClientSearch("");
+    setShowClientDropdown(false);
+    setShowClientForm(true);
+    // Load search pool from leads + consultations
+    setClientSearchLoading(true);
+    Promise.allSettled([
+      fetch("/api/leads").then(r => r.json()) as Promise<{ leads?: Array<{ name: string; phone: string; email: string; goal: string; service_interest: string }> }>,
+      fetch("/api/consultation-needs").then(r => r.json()) as Promise<{ records?: Array<{ id: number; client_name: string; client_phone: string; client_email: string; goal: string }> }>
+    ]).then(([leadsRes, consultRes]) => {
+      const pool: typeof clientSearchPool = [];
+      const seen = new Set<string>();
+      if (leadsRes.status === "fulfilled") {
+        (leadsRes.value.leads ?? []).forEach(l => {
+          const key = (l.name ?? "").toLowerCase().trim();
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            const sug = ["Foundation","Transformation","Elite"].find(p => l.service_interest?.toLowerCase().includes(p.toLowerCase())) ?? "";
+            pool.push({ name: l.name, contact: l.phone || l.email, goal: l.goal, packageSuggestion: sug });
+          }
+        });
+      }
+      if (consultRes.status === "fulfilled") {
+        (consultRes.value.records ?? []).forEach(r => {
+          const key = (r.client_name ?? "").toLowerCase().trim();
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            pool.push({ name: r.client_name, contact: r.client_phone || r.client_email, goal: r.goal, packageSuggestion: "" });
+          }
+        });
+      }
+      setClientSearchPool(pool);
+    }).finally(() => setClientSearchLoading(false));
   }
   function openEditClient(c: Client) {
     setEditClientId(c.id);
@@ -778,22 +833,30 @@ export function RevenueTrackerDashboard() {
 
   function openAddBlock() {
     setEditBlockId(null);
-    setBlockForm({ start: "—", end: "—", activity: ACTIVITY_OPTIONS[0] });
+    setBlockForm({ start: "—", end: "—", activity: ACTIVITY_OPTIONS[0], clientName: "" });
     setShowBlockForm(true);
   }
   function openEditBlock(b: ScheduleBlock) {
     setEditBlockId(b.id);
-    setBlockForm({ start: b.start, end: b.end, activity: b.activity });
+    const sepIdx = b.activity.indexOf(" — ");
+    const activityType = sepIdx !== -1 ? b.activity.slice(0, sepIdx) : b.activity;
+    const clientName   = sepIdx !== -1 ? b.activity.slice(sepIdx + 3) : "";
+    const knownActivity = ACTIVITY_OPTIONS.includes(activityType) ? activityType : ACTIVITY_OPTIONS[0];
+    setBlockForm({ start: b.start, end: b.end, activity: knownActivity, clientName });
     setShowBlockForm(true);
   }
   function submitBlock(e: React.FormEvent) {
     e.preventDefault();
     const day = scheduleDay; const wk = scheduleWeek;
+    const finalActivity = blockForm.clientName.trim()
+      ? `${blockForm.activity} — ${blockForm.clientName.trim()}`
+      : blockForm.activity;
+    const blockData = { start: blockForm.start, end: blockForm.end, activity: finalActivity };
     if (editBlockId !== null) {
       const bid = editBlockId;
-      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: sortBlocks(prev[wk][day].blocks.map(b => b.id === bid ? { ...b, ...blockForm } : b)) } } }));
+      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: sortBlocks(prev[wk][day].blocks.map(b => b.id === bid ? { ...b, ...blockData } : b)) } } }));
     } else {
-      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: sortBlocks([...prev[wk][day].blocks, { id: Date.now(), ...blockForm }]) } } }));
+      saveSchedule(prev => ({ ...prev, [wk]: { ...prev[wk], [day]: { blocks: sortBlocks([...prev[wk][day].blocks, { id: Date.now(), ...blockData }]) } } }));
     }
     setShowBlockForm(false); setEditBlockId(null);
   }
@@ -1070,11 +1133,34 @@ export function RevenueTrackerDashboard() {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <p className="text-xs uppercase tracking-widest text-[#9a6820]">Monthly Calendar</p>
-              <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">{new Date(today + "T12:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" })}</h2>
+              <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">
+                {new Date(viewYear, viewMonth - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" })}
+                {!isCurrentView && <span className="ml-2 text-xs font-semibold text-stone-400">(past)</span>}
+              </h2>
             </div>
-            {selectedDay && <button onClick={() => setSelectedDay(null)} className="rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-[#6b7b91] hover:border-stone-300">Clear</button>}
+            <div className="flex items-center gap-2">
+              {selectedDay && <button onClick={() => setSelectedDay(null)} className="rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-[#6b7b91] hover:border-stone-300">Clear</button>}
+              <button onClick={calPrev} className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-white text-[#10233f] transition hover:border-[#9a6820]/60" aria-label="Previous month">‹</button>
+              <button onClick={calNext} disabled={isCurrentView} className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-white text-[#10233f] transition hover:border-[#9a6820]/60 disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Next month">›</button>
+              {!isCurrentView && <button onClick={() => { setViewYear(curYear); setViewMonth(curMonth); }} className="rounded-full border border-[#9a6820]/40 bg-[#fdf3e3] px-3 py-1.5 text-xs font-semibold text-[#9a6820] hover:bg-[#9a6820]/15">Today</button>}
+            </div>
           </div>
-          <MonthCalendar year={curYear} month={curMonth} today={today} monthData={{ ...monthData, [today]: dayData }} onDayClick={d => setSelectedDay(d === selectedDay ? null : d)} />
+          <MonthCalendar year={viewYear} month={viewMonth} today={today} monthData={viewMonthData} onDayClick={d => setSelectedDay(d === selectedDay ? null : d)} />
+
+          {/* Monthly totals row */}
+          <div className="mt-4 grid grid-cols-4 gap-2 rounded-2xl border border-stone-100 bg-stone-50 px-4 py-3 text-center">
+            {[
+              { label: "Leads", val: viewMonthTotals.leads },
+              { label: "Consults", val: viewMonthTotals.consults },
+              { label: "Signed", val: viewMonthTotals.signed },
+              { label: "Session $", val: fmtAUD(viewMonthTotals.revenue) },
+            ].map(item => (
+              <div key={item.label}>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#6b7b91]">{item.label}</p>
+                <p className="mt-0.5 text-base font-black text-[#10233f]">{item.val}</p>
+              </div>
+            ))}
+          </div>
           {selectedDay && selectedDay !== today && (
             <div className="mt-4 rounded-2xl border border-[#e8d5b0] bg-[#fdf3e3] px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-[#9a6820] mb-2">{new Date(selectedDay + "T12:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</p>
@@ -1113,17 +1199,14 @@ export function RevenueTrackerDashboard() {
                 className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Import ↓
               </button>
-              {gcalConfigured && (
-                gcalConnected
-                  ? <button onClick={syncToGoogleCalendar} disabled={gcalSyncing}
-                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${gcalSyncing ? "border-stone-200 bg-stone-50 text-stone-400" : "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>
-                      {gcalSyncing ? "Syncing…" : "📅 Sync to Google Calendar"}
-                    </button>
-                  : <a href="/api/google-calendar/auth"
-                      className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
-                      📅 Connect Google Calendar
-                    </a>
-              )}
+              <button onClick={() => { saveSchedule(() => DEFAULT_SCHEDULE); setScheduleWeek("week1"); setScheduleDay("tuesday"); }}
+                className="rounded-full border border-[#9a6820]/40 bg-[#fdf3e3] px-4 py-2 text-sm font-semibold text-[#9a6820] transition hover:bg-[#9a6820]/15">
+                Load This Week
+              </button>
+              <button onClick={exportToICS}
+                className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                📅 Export to Calendar
+              </button>
               <button onClick={() => { setCopyTargets([]); setShowCopyModal(true); }}
                 className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 Copy day →
@@ -1134,11 +1217,6 @@ export function RevenueTrackerDashboard() {
               </button>
             </div>
           </div>
-
-          {/* Google Calendar status message */}
-          {gcalStatus && (
-            <p className="text-xs font-semibold text-[#4a5c73] mb-2">{gcalStatus}</p>
-          )}
 
           {/* Week tabs */}
           <div className="flex gap-2 mb-3">
@@ -1276,6 +1354,53 @@ export function RevenueTrackerDashboard() {
               <button onClick={() => setShowClientForm(false)} className="rounded-full p-2 text-slate-400 hover:bg-stone-100">✕</button>
             </div>
             <form onSubmit={submitClient} className="grid gap-4 px-6 py-5">
+              {/* Search existing clients — only shown when adding */}
+              {!editClientId && (
+                <div className="relative">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">
+                    Search Existing Client {clientSearchLoading && <span className="normal-case font-normal text-stone-400">(loading…)</span>}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Type a name to find and fill from your records…"
+                    value={clientSearch}
+                    autoComplete="off"
+                    onChange={e => { setClientSearch(e.target.value); setShowClientDropdown(true); }}
+                    onFocus={() => setShowClientDropdown(true)}
+                    className={inputCls}
+                  />
+                  {showClientDropdown && clientSearch.trim().length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full rounded-2xl border border-stone-200 bg-white shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+                      {clientSearchPool
+                        .filter(r => r.name.toLowerCase().includes(clientSearch.toLowerCase()))
+                        .slice(0, 8)
+                        .map(r => (
+                          <button key={r.name} type="button"
+                            onMouseDown={() => {
+                              const matchedPkg = (["Foundation","Transformation","Elite"] as PackageKey[]).find(p => r.packageSuggestion === p);
+                              const rate = matchedPkg ? String(PACKAGES.find(p => p.label === matchedPkg)?.weekly ?? 0) : "";
+                              setClientForm(f => ({
+                                ...f,
+                                name: r.name,
+                                contact: r.contact || f.contact,
+                                notes: r.goal ? `Goal: ${r.goal}` : f.notes,
+                                ...(matchedPkg ? { package: matchedPkg, weeklyRate: rate } : {}),
+                              }));
+                              setClientSearch(r.name);
+                              setShowClientDropdown(false);
+                            }}
+                            className="flex w-full flex-col px-4 py-3 text-left hover:bg-stone-50 border-b border-stone-100 last:border-b-0">
+                            <span className="text-sm font-semibold text-[#10233f]">{r.name}</span>
+                            <span className="text-xs text-stone-400">{r.contact}{r.goal ? ` · ${r.goal.slice(0, 50)}` : ""}</span>
+                          </button>
+                        ))}
+                      {clientSearchPool.filter(r => r.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 && (
+                        <p className="px-4 py-3 text-sm text-stone-400">No matches — fill in manually below.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Full Name *</label>
                 <input required value={clientForm.name} onChange={e => setClientForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Sarah Johnson" className={inputCls} />
@@ -1477,6 +1602,16 @@ export function RevenueTrackerDashboard() {
                 <select value={blockForm.activity} onChange={e => setBlockForm(f => ({ ...f, activity: e.target.value }))} className={inputCls}>
                   {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-[#6b7b91]">Client name <span className="normal-case font-normal text-stone-400">(optional)</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g. Cameron"
+                  value={blockForm.clientName}
+                  onChange={e => setBlockForm(f => ({ ...f, clientName: e.target.value }))}
+                  className={inputCls}
+                />
               </div>
               <div className="flex gap-2 pt-1">
                 <button type="submit" className="flex-1 rounded-full bg-[#15314a] py-3 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">

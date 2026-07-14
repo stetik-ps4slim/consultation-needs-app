@@ -2,6 +2,30 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import { hasSupabaseConfig, normalizePricingPresentationUpdate } from "@/lib/pricing-presentations";
 
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  if (!hasSupabaseConfig()) {
+    return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
+  }
+
+  try {
+    const { id } = await context.params;
+    const recordId = Number(id);
+    if (!Number.isInteger(recordId) || recordId <= 0) {
+      return NextResponse.json({ error: "Invalid pricing presentation id." }, { status: 400 });
+    }
+
+    const supabase = createSupabaseAdminClient();
+    const { error } = await supabase.from("pricing_presentations").delete().eq("id", recordId);
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong while deleting the pricing presentation." }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }

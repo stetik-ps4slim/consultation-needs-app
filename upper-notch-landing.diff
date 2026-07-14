@@ -1,0 +1,410 @@
+diff --git a/app/page.tsx b/app/page.tsx
+index ba9e554..e383f61 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -1,6 +1,7 @@
+ import { AboutSection } from "@/components/sections/about-section";
+ import { BookingSection } from "@/components/sections/booking-section";
+ import { CtaBanner } from "@/components/sections/cta-banner";
++import { FaqSection } from "@/components/sections/faq-section";
+ import { HeroSection } from "@/components/sections/hero-section";
+ import { LeadFormSection } from "@/components/sections/lead-form-section";
+ import { ResultsSection } from "@/components/sections/results-section";
+@@ -13,6 +14,7 @@ export default function HomePage() {
+       <AboutSection />
+       <ServicesSection />
+       <ResultsSection />
++      <FaqSection />
+       <LeadFormSection />
+       <BookingSection />
+       <CtaBanner />
+diff --git a/components/sections/about-section.tsx b/components/sections/about-section.tsx
+index 8f4a0b9..e76bb26 100644
+--- a/components/sections/about-section.tsx
++++ b/components/sections/about-section.tsx
+@@ -17,9 +17,16 @@ export function AboutSection() {
+             <p className="mt-4 text-base leading-7 text-slate-700">
+               {siteContent.about.coachCardText}
+             </p>
+-            <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
+-              {siteContent.brand.location}
+-            </p>
++            <div className="mt-6 flex flex-wrap gap-2">
++              {siteContent.about.credentials.map((credential) => (
++                <span
++                  key={credential}
++                  className="inline-flex items-center rounded-full border border-accent/50 bg-accent/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-800"
++                >
++                  {credential}
++                </span>
++              ))}
++            </div>
+           </div>
+         </div>
+ 
+@@ -36,7 +43,7 @@ export function AboutSection() {
+               </div>
+             ))}
+           </div>
+-          <p className="mt-6 text-lg font-semibold text-accent">{siteContent.about.closing}</p>
++          <p className="mt-6 text-lg font-semibold text-white">{siteContent.about.closing}</p>
+         </div>
+       </div>
+     </section>
+diff --git a/components/sections/cta-banner.tsx b/components/sections/cta-banner.tsx
+index 9e3d000..e4ebb6a 100644
+--- a/components/sections/cta-banner.tsx
++++ b/components/sections/cta-banner.tsx
+@@ -1,4 +1,3 @@
+-import { Button } from "@/components/ui/button";
+ import { siteContent } from "@/lib/site-content";
+ 
+ export function CtaBanner() {
+@@ -18,9 +17,14 @@ export function CtaBanner() {
+                 {siteContent.cta.description}
+               </p>
+             </div>
+-            <Button href="#lead-form">
+-              {siteContent.brand.applicationLabel}
+-            </Button>
++            <a
++              href={siteContent.brand.consultationLink}
++              target="_blank"
++              rel="noreferrer"
++              className="inline-flex items-center justify-center rounded-full border border-accent bg-accent px-6 py-3 text-sm font-extrabold uppercase tracking-[0.18em] text-canvas shadow-[0_14px_35px_rgba(255,210,63,0.35)] transition hover:-translate-y-0.5 hover:bg-[#ffe26f]"
++            >
++              {siteContent.brand.consultationLabel}
++            </a>
+           </div>
+         </div>
+       </div>
+diff --git a/components/sections/faq-section.tsx b/components/sections/faq-section.tsx
+index 5f9f18e..99b08d7 100644
+--- a/components/sections/faq-section.tsx
++++ b/components/sections/faq-section.tsx
+@@ -14,8 +14,8 @@ export function FaqSection() {
+         <div className="space-y-4">
+           {siteContent.faq.items.map((faq) => (
+             <div key={faq.question} className="panel p-6">
+-              <h3 className="text-2xl uppercase text-ink">{faq.question}</h3>
+-              <p className="mt-3 text-base leading-7 text-zinc-300">{faq.answer}</p>
++              <h3 className="text-2xl uppercase text-slate-950">{faq.question}</h3>
++              <p className="mt-3 text-base leading-7 text-slate-700">{faq.answer}</p>
+             </div>
+           ))}
+         </div>
+diff --git a/components/sections/hero-section.tsx b/components/sections/hero-section.tsx
+index b556551..e4603c4 100644
+--- a/components/sections/hero-section.tsx
++++ b/components/sections/hero-section.tsx
+@@ -1,4 +1,3 @@
+-import { Button } from "@/components/ui/button";
+ import { SiteHeader } from "@/components/ui/site-header";
+ import { siteContent } from "@/lib/site-content";
+ 
+@@ -22,7 +21,6 @@ export function HeroSection() {
+           </p>
+ 
+           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+-            <Button href="#lead-form">{siteContent.brand.applicationLabel}</Button>
+             <a
+               href={siteContent.brand.consultationLink}
+               target="_blank"
+@@ -31,7 +29,16 @@ export function HeroSection() {
+             >
+               {siteContent.brand.consultationLabel}
+             </a>
++            <a
++              href="#services"
++              className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-800 transition hover:border-accent hover:text-slate-950"
++            >
++              View Coaching Options
++            </a>
+           </div>
++          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
++            Free 30-min call &middot; No obligation
++          </p>
+ 
+           <div className="mt-10 grid gap-3 sm:grid-cols-3">
+             {siteContent.hero.highlights.map((item) => (
+diff --git a/components/sections/results-section.tsx b/components/sections/results-section.tsx
+index 532a5b9..6fc6804 100644
+--- a/components/sections/results-section.tsx
++++ b/components/sections/results-section.tsx
+@@ -6,21 +6,21 @@ export function ResultsSection() {
+     <section className="section-space">
+       <div className="container-shell">
+         <SectionHeading
+-          eyebrow="Results"
+-          title={siteContent.testimonials.title}
+-          description={siteContent.testimonials.description}
++          eyebrow="The Approach"
++          title={siteContent.approach.title}
++          description={siteContent.approach.description}
+         />
+ 
+         <div className="mt-10 grid gap-5 lg:grid-cols-3">
+-          {siteContent.testimonials.items.map((testimonial) => (
+-            <article key={testimonial.name} className="panel p-6 sm:p-8">
+-              <p className="text-lg leading-8 text-slate-700">“{testimonial.quote}”</p>
+-              <div className="mt-8 border-t border-sky-200 pt-5">
+-                <p className="text-xl uppercase text-slate-950">{testimonial.name}</p>
+-                <p className="mt-1 text-sm uppercase tracking-[0.18em] text-accent">
+-                  {testimonial.result}
+-                </p>
+-              </div>
++          {siteContent.approach.items.map((item, index) => (
++            <article key={item.title} className="panel p-6 sm:p-8">
++              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-accent">
++                {String(index + 1).padStart(2, "0")}
++              </p>
++              <h3 className="mt-4 text-3xl uppercase leading-none text-slate-950">
++                {item.title}
++              </h3>
++              <p className="mt-5 text-base leading-7 text-slate-700">{item.body}</p>
+             </article>
+           ))}
+         </div>
+diff --git a/components/ui/site-header.tsx b/components/ui/site-header.tsx
+index db3ef7a..eebd2f1 100644
+--- a/components/ui/site-header.tsx
++++ b/components/ui/site-header.tsx
+@@ -15,10 +15,10 @@ export function SiteHeader() {
+ 
+       <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+         <a
+-          href="#lead-form"
+-          className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:border-cta hover:bg-cta hover:text-white"
++          href="#services"
++          className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:border-white hover:bg-white/25"
+         >
+-          {siteContent.brand.applicationLabel}
++          Coaching Options
+         </a>
+         <Button
+           href={siteContent.brand.consultationLink}
+diff --git a/lib/site-content.ts b/lib/site-content.ts
+index d7216a0..619c251 100644
+--- a/lib/site-content.ts
++++ b/lib/site-content.ts
+@@ -2,20 +2,20 @@ export const siteContent = {
+   brand: {
+     name: "Upper Notch Coaching",
+     shortName: "Upper Notch",
+-    eyebrow: "Upper Notch Coaching - Richmond, Melbourne",
+-    consultationLink: "https://calendly.com/jazz04092005",
+-    consultationLabel: "Book Consultation",
++    eyebrow: "Personal Training · In-Person Richmond + Online Worldwide",
++    consultationLink: "https://calendly.com/theuppernotch/30min",
++    consultationLabel: "Book Your Free Consult",
+     applicationLabel: "Apply for Coaching",
+     location: "Richmond, Melbourne, Victoria"
+   },
+   hero: {
+     headline: "Build a body and mindset that integrates into every part of your life.",
+     subheading:
+-      "Upper Notch Coaching helps busy men and women look, feel, and perform at their best through fat loss, strength and muscle gain, improved performance, accountability, and clear, structured direction through evidence-based training. Based in Richmond, Melbourne.",
++      "Upper Notch Coaching helps busy men and women lose fat, build strength, and perform at their best through structured training, accountability, and clear direction. Coaching available in-person in Richmond, Melbourne and online worldwide.",
+     highlights: [
+-      "Reach your potential and turn it up a notch",
+-      "Transform your routine, not just your workouts",
+-      "Evidence-based coaching built for real life"
++      "In-person in Richmond + online worldwide",
++      "Evidence-based coaching, not guesswork",
++      "Accountability that keeps your standard high"
+     ]
+   },
+   about: {
+@@ -23,9 +23,15 @@ export const siteContent = {
+     description:
+       "Upper Notch Coaching is built for people who want serious progress without letting training take over their life. The goal is simple: create a stronger body, a sharper mindset, and a standard you can carry into work, relationships, and everything else that matters.",
+     coachName: "Jazzay Sallah",
+-    coachRole: "Personal Trainer",
++    coachRole: "Personal Trainer & Nutrition Coach",
+     coachCardText:
+-      "Evidence-based coaching for clients who want structure, discipline, and results that actually last.",
++      "Evidence-based coaching for clients who want structure, discipline, and results that actually last. Working with clients in-person in Richmond and online worldwide.",
++    credentials: [
++      "Cert III in Fitness",
++      "Cert IV in Fitness",
++      "Certified Nutrition Coach",
++      "Richmond, Melbourne"
++    ],
+     points: [
+       "Training here is not random. Every phase is built around your current level, your lifestyle, and the result you are chasing.",
+       "Jazzay combines strength training, functional movement, and aerobic performance to improve body composition, fitness, and confidence at the same time.",
+@@ -37,7 +43,7 @@ export const siteContent = {
+   services: {
+     title: "Choose the level of coaching that matches your standard.",
+     description:
+-      "Every option is designed to create momentum. The difference is the speed of progress, the level of support, and how closely you want your training held to a higher standard.",
++      "Every option is designed to create momentum. The difference is the speed of progress, the level of support, and how closely you want your training held to a higher standard. Train in-person in Richmond or online from anywhere.",
+     categories: [
+       {
+         name: "Hybrid Coaching",
+@@ -49,7 +55,7 @@ export const siteContent = {
+             idealFor:
+               "For building consistency, confidence, and a strong baseline with expert guidance each week.",
+             savings: "Save $172 with upfront payment",
+-            ctaLabel: "Book Consultation",
++            ctaLabel: "Book Your Free Consult",
+             badge: "",
+             featured: false
+           },
+@@ -60,7 +66,7 @@ export const siteContent = {
+             idealFor:
+               "For clients ready to make noticeable physique and performance changes with more support, more accountability, and more momentum.",
+             savings: "Save $432 with upfront payment",
+-            ctaLabel: "Book Consultation",
++            ctaLabel: "Book Your Free Consult",
+             featured: true,
+             badge: "Most Popular"
+           },
+@@ -71,7 +77,7 @@ export const siteContent = {
+             idealFor:
+               "For clients who want the highest level of hybrid coaching, tighter accountability, and the fastest path to results.",
+             savings: "Save $632 with upfront payment",
+-            ctaLabel: "Book Consultation",
++            ctaLabel: "Book Your Free Consult",
+             badge: "",
+             featured: false
+           }
+@@ -85,9 +91,9 @@ export const siteContent = {
+             price: "From $89/week",
+             minimumTerm: "8-week minimum",
+             idealFor:
+-              "For clients who want a structured plan, weekly accountability, and expert direction while training on their own schedule.",
++              "For clients who want a structured plan, weekly accountability, and expert direction while training on their own schedule, anywhere in the world.",
+             savings: "Save $80 with upfront payment",
+-            ctaLabel: "Apply for Coaching",
++            ctaLabel: "Book Your Free Consult",
+             badge: "",
+             featured: false
+           }
+@@ -103,7 +109,7 @@ export const siteContent = {
+             idealFor:
+               "For clients who want their nutrition aligned with their training through tailored calorie and macro targets, food guidance, and ongoing adjustments.",
+             savings: "",
+-            ctaLabel: "Book Consultation",
++            ctaLabel: "Book Your Free Consult",
+             badge: "",
+             featured: false
+           }
+@@ -111,78 +117,91 @@ export const siteContent = {
+       }
+     ]
+   },
+-  testimonials: {
+-    title: "Clients stay because the process works.",
++  approach: {
++    title: "Why clients stick with the process.",
+     description:
+-      "The best transformations come from consistency, clear expectations, and coaching that keeps standards high. The reviews below are launch placeholders and should be replaced with real client feedback once available.",
++      "Coaching at Upper Notch is built on three pillars. They are the reason results compound and the reason clients keep training long after their first block.",
+     items: [
+       {
+-        quote:
+-          "Training with Jazzay gave me structure I had never had before. I dropped body fat, got noticeably stronger, and stayed consistent because the plan fit around work.",
+-        name: "Placeholder Review",
+-        result: "Busy professional, Richmond"
++        title: "Evidence-Based Programming",
++        body:
++          "Every program is built around your current level, training history, and the result you are chasing using proven principles, not trends. Structured phases and clear targets so you always know what you are working toward."
+       },
+       {
+-        quote:
+-          "The accountability was the biggest difference. Every session had purpose, the coaching felt premium, and I started feeling more confident in and out of the gym within weeks.",
+-        name: "Placeholder Review",
+-        result: "Transformation client"
++        title: "Direct Accountability",
++        body:
++          "Weekly check-ins and ongoing support keep you locked in between sessions. The standard is held high so staying consistent stops being something you have to fight for."
+       },
+       {
+-        quote:
+-          "Upper Notch Coaching made training feel simple again. I knew exactly what to do, my nutrition improved, and I finally saw real changes in how I looked and performed.",
+-        name: "Placeholder Review",
+-        result: "Hybrid coaching client"
++        title: "Built Around Real Life",
++        body:
++          "Training is designed to fit your week, whether you train in-person in Richmond or online from anywhere. A stronger body and sharper mindset you carry into everything else, without it taking over your life."
+       }
+     ]
+   },
+   faq: {
+     title: "Everything you need to know before you get started.",
+     description:
+-      "The right coaching experience should feel clear from the start. These are the questions most people ask before taking the next step.",
++      "The right coaching experience should feel clear from the start. These are the questions most people ask before booking a free consult.",
+     items: [
++      {
++        question: "What happens on the free consult?",
++        answer:
++          "A 30-minute call (Zoom or phone) where we go through your goals, training history, and lifestyle. By the end you will have a clear sense of the right option for you. No pressure and no obligation."
++      },
++      {
++        question: "Can I train online, or is this Richmond only?",
++        answer:
++          "Both. You can train in-person at the Richmond, Melbourne studio, or fully online from anywhere with personalised programming, weekly check-ins, and direct support. Many clients train online interstate and overseas."
++      },
+       {
+         question: "Is this only for people who are already fit?",
+         answer:
+-          "No. Upper Notch Coaching is built around your starting point. Whether you are rebuilding momentum or already training consistently, the plan is matched to your level and progressed properly."
++          "No. Coaching is built around your starting point. Whether you are rebuilding momentum or already training consistently, the plan is matched to your level and progressed properly. Beginners are welcome."
+       },
+       {
+         question: "What if my schedule is busy or inconsistent?",
+         answer:
+           "That is exactly why the coaching is structured the way it is. The training system is designed to fit around real life so you can stay consistent without everything feeling excessive or unsustainable."
+       },
++      {
++        question: "What is the minimum commitment?",
++        answer:
++          "In-person and hybrid coaching run on a 12-week minimum and online coaching on an 8-week minimum. Real change takes a full training block, so short-term arrangements are not offered."
++      },
+       {
+         question: "Will I get nutrition support as well?",
+         answer:
+-          "Yes. Nutrition is a major part of results. Coaching includes practical nutrition guidance, and there is also a dedicated nutrition coaching add-on for more personalised support."
++          "Yes. Nutrition is a major part of results. Coaching includes practical nutrition guidance, and there is a dedicated nutrition coaching add-on for more personalised support."
+       },
+       {
+-        question: "How do I know which option is right for me?",
++        question: "How do I get started?",
+         answer:
+-          "That is what the consultation is for. You will talk through your current situation, your goals, and the level of support that makes the most sense for you."
++          "Book your free consult using the button at the top of the page, pick a time that works for you, and we will take it from there."
+       }
+     ]
+   },
+   leadForm: {
+-    title: "Apply for coaching and see if you're the right fit.",
++    title: "Prefer to send a quick enquiry first?",
+     description:
+-      "This is not a generic gym enquiry. It is a short application for people who are serious about changing how they look, perform, and show up. If it looks like a strong fit, the next step is a private consultation.",
++      "If you would rather share your details and have Jazzay reach out, send a short enquiry below. For the fastest response, book the free consult at the top of the page.",
+     note:
+-      "Applications are reviewed personally. Coaching spots are kept limited so every client gets a high standard of attention.",
++      "Enquiries are reviewed personally. Coaching spots are kept limited so every client gets a high standard of attention.",
+     fitPoints: [
+       "Busy professionals who want a clear plan and strong accountability",
+       "Men and women aiming to lose fat, build muscle, or lift performance",
+-      "People ready to invest in coaching that feels structured and premium"
++      "People ready to invest in coaching that feels structured and premium",
++      "Available in-person in Richmond or online from anywhere"
+     ]
+   },
+   booking: {
+     title: "Book a private consultation.",
+     description:
+-      "If you already know you are ready, you can book a private consultation directly. This is the best option for people who want clarity quickly and are prepared to move."
++      "If you already know you are ready, you can book a free consultation directly. This is the best option for people who want clarity quickly and are prepared to move."
+   },
+   cta: {
+     title: "Reach your potential. Are you ready to turn it up a notch?",
+     description:
+-      "Transform your routine, not just your workouts. Book your consultation today."
++      "Transform your routine, not just your workouts. Book your free consult today, in-person in Richmond or online worldwide."
+   }
+ } as const;

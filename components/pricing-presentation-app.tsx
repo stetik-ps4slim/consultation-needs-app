@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PricingPresentationRecord } from "@/lib/pricing-presentations";
 
 type SavePricingResponse = {
@@ -24,8 +24,8 @@ const initialPackages: PackageOption[] = [
     id: "elite",
     name: "Elite",
     tagline: "Maximum results and complete transformation",
-    weeklyPrice: 289,
-    upfrontPrice: 2836,
+    weeklyPrice: 279,
+    upfrontPrice: 2716,
     savings: 632,
     results: [
       "Fastest rate of progress possible",
@@ -45,8 +45,8 @@ const initialPackages: PackageOption[] = [
     id: "transformation",
     name: "Transformation",
     tagline: "Faster results and higher accountability",
-    weeklyPrice: 199,
-    upfrontPrice: 1956,
+    weeklyPrice: 189,
+    upfrontPrice: 1836,
     savings: 432,
     results: [
       "Hit your goals faster with increased frequency",
@@ -66,9 +66,9 @@ const initialPackages: PackageOption[] = [
     id: "foundation",
     name: "Foundation",
     tagline: "Build consistency and start seeing results",
-    weeklyPrice: 129,
-    upfrontPrice: 1376,
-    savings: 172,
+    weeklyPrice: 109,
+    upfrontPrice: 1156,
+    savings: 152,
     results: [
       "Develop strong training habits and routine",
       "Improve confidence and motivation",
@@ -109,6 +109,20 @@ function textToList(value: string) {
     .filter(Boolean);
 }
 
+// Prints only the signed agreement modal (not the whole page). Toggles a
+// body class that the print stylesheet uses to hide everything else.
+function printAgreementOnly() {
+  document.body.classList.add("print-agreement-only");
+  const cleanup = () => {
+    document.body.classList.remove("print-agreement-only");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+  // Fallback in case afterprint doesn't fire (e.g. print dialog dismissed unusually)
+  setTimeout(cleanup, 5000);
+}
+
 export function PricingPresentationApp() {
   const [packages, setPackages] = useState(initialPackages);
   const [selectedPackageId, setSelectedPackageId] = useState(initialPackages[1].id);
@@ -120,6 +134,7 @@ export function PricingPresentationApp() {
   const [clientGoal, setClientGoal] = useState("Build strength, improve consistency, and feel confident in training.");
   const [clientNeeds, setClientNeeds] = useState("Needs structure, accountability, and a clear plan that fits work and lifestyle.");
   const [recommendation, setRecommendation] = useState("Based on the consultation, Transformation is the best fit because it gives enough weekly contact to build momentum while keeping the plan realistic.");
+  const [minimumWeeks, setMinimumWeeks] = useState(12);
   const [nutritionAdded, setNutritionAdded] = useState(false);
   const [nutritionWeeklyPrice, setNutritionWeeklyPrice] = useState(49);
   const [nutritionDescription, setNutritionDescription] = useState(
@@ -128,10 +143,15 @@ export function PricingPresentationApp() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
+  const [savedRecordId, setSavedRecordId] = useState<number | null>(null);
+  const [isSavingSigs, setIsSavingSigs] = useState(false);
+  const [sigSaveStatus, setSigSaveStatus] = useState("");
+  const clientSigRef = useRef<HTMLCanvasElement | null>(null);
+  const trainerSigRef = useRef<HTMLCanvasElement | null>(null);
 
   const selectedPackage = packages.find((item) => item.id === selectedPackageId) ?? packages[0];
   const weeklyTotal = selectedPackage.weeklyPrice + (nutritionAdded ? nutritionWeeklyPrice : 0);
-  const upfrontTotal = selectedPackage.upfrontPrice + (nutritionAdded ? nutritionWeeklyPrice * 12 : 0);
+  const upfrontTotal = selectedPackage.upfrontPrice + (nutritionAdded ? nutritionWeeklyPrice * minimumWeeks : 0);
 
   const packageRecommendation = useMemo(() => {
     if (selectedPackage.id === "foundation") {
@@ -182,11 +202,44 @@ export function PricingPresentationApp() {
         throw new Error(result.error || "Could not save this pricing presentation.");
       }
 
+      if (result.pricingPresentation?.id) setSavedRecordId(result.pricingPresentation.id);
       setSaveStatus(`Saved online. This price presentation is now in Client Hub as record #${result.pricingPresentation?.id ?? "new"}.`);
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : "Could not save this pricing presentation.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function saveSignatures() {
+    if (!savedRecordId) {
+      setSigSaveStatus("Save the presentation first (click Save Online), then save signatures.");
+      return;
+    }
+    const clientDataUrl = clientSigRef.current?.toDataURL("image/png") ?? "";
+    const trainerDataUrl = trainerSigRef.current?.toDataURL("image/png") ?? "";
+    setIsSavingSigs(true);
+    setSigSaveStatus("Saving signatures…");
+    try {
+      const existing = {
+        clientName, clientEmail, clientPhone, clientGoal: clientGoal ?? "",
+        clientNeeds, recommendation, selectedPackageId,
+        selectedPackage, packages, nutritionAdded,
+        nutritionWeeklyPrice, nutritionDescription, weeklyTotal, upfrontTotal
+      };
+      const response = await fetch(`/api/pricing-presentations/${savedRecordId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          presentation_data: { ...existing, clientSignature: clientDataUrl, trainerSignature: trainerDataUrl }
+        })
+      });
+      if (!response.ok) throw new Error("Could not save signatures.");
+      setSigSaveStatus("✓ Signatures saved — visible in Client Hub.");
+    } catch (error) {
+      setSigSaveStatus(error instanceof Error ? error.message : "Could not save signatures.");
+    } finally {
+      setIsSavingSigs(false);
     }
   }
 
@@ -211,6 +264,7 @@ export function PricingPresentationApp() {
             <TextInput label="Client name" value={clientName} onChange={setClientName} />
             <TextInput label="Client phone" value={clientPhone} onChange={setClientPhone} />
             <TextInput label="Client email" value={clientEmail} onChange={setClientEmail} />
+            <NumberInput label="Minimum commitment (weeks)" value={minimumWeeks} onChange={setMinimumWeeks} />
             <TextArea label="Goal / outcome" value={clientGoal} onChange={setClientGoal} rows={3} />
             <TextArea label="Consultation needs" value={clientNeeds} onChange={setClientNeeds} rows={3} />
             <TextArea label="Coach recommendation" value={recommendation} onChange={setRecommendation} rows={3} />
@@ -247,7 +301,7 @@ export function PricingPresentationApp() {
             <div className="rounded-[1.5rem] border border-zinc-200 bg-zinc-50 p-5 text-xl font-bold leading-9 text-zinc-900">
               <p><span className="font-bold text-[#101010]">Selected:</span> {selectedPackage.name}</p>
               <p><span className="font-bold text-[#101010]">Weekly total:</span> {dollars(weeklyTotal)}/week</p>
-              <p><span className="font-bold text-[#101010]">12-week upfront:</span> {dollars(upfrontTotal)}</p>
+              <p><span className="font-bold text-[#101010]">{minimumWeeks}-week upfront:</span> {dollars(upfrontTotal)}</p>
               <p><span className="font-bold text-[#101010]">Nutrition:</span> {nutritionAdded ? "Included" : "Not added"}</p>
             </div>
           </div>
@@ -271,7 +325,7 @@ export function PricingPresentationApp() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9a6820]">12 Week Minimum</p>
+                      <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9a6820]">{minimumWeeks} Week Minimum</p>
                       {isEditing ? (
                         <input
                           value={packageOption.name}
@@ -361,6 +415,9 @@ export function PricingPresentationApp() {
             <a href="/clients" className="rounded-full border border-zinc-200 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:border-[#9a6820]/60">
               Client Hub
             </a>
+            <a href="/online-coaching" className="rounded-full border-2 border-zinc-800 bg-zinc-800 px-6 py-4 text-lg font-black text-white transition hover:bg-zinc-700">
+              Online Coaching →
+            </a>
             <button
               type="button"
               onClick={saveOnline}
@@ -398,14 +455,29 @@ export function PricingPresentationApp() {
                 <p className="text-xs uppercase tracking-widest font-black text-[#9a6820]">Upper Notch Coaching</p>
                 <h2 className="mt-0.5 text-lg font-black text-[#101010]">Trainer & Client Agreement</h2>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { void saveOnline(); }}
-                  disabled={isSaving}
-                  className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-black text-white transition hover:brightness-105 disabled:opacity-60">
-                  {isSaving ? "Saving…" : "Save Online"}
-                </button>
-                <button onClick={() => setShowAgreement(false)} className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100">✕</button>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { void saveOnline(); }}
+                    disabled={isSaving}
+                    className="rounded-full bg-[#9a6820] px-4 py-2 text-sm font-black text-white transition hover:brightness-105 disabled:opacity-60">
+                    {isSaving ? "Saving…" : "Save Online"}
+                  </button>
+                  <button
+                    onClick={() => { void saveSignatures(); }}
+                    disabled={isSavingSigs}
+                    className="rounded-full border border-[#9a6820] px-4 py-2 text-sm font-black text-[#9a6820] transition hover:bg-[#9a6820]/10 disabled:opacity-60">
+                    {isSavingSigs ? "Saving…" : "Save Signatures"}
+                  </button>
+                  <button
+                    onClick={printAgreementOnly}
+                    className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-black text-[#101010] transition hover:border-[#9a6820]/60">
+                    Print / Save PDF
+                  </button>
+                  <button onClick={() => setShowAgreement(false)} className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100">✕</button>
+                </div>
+                {sigSaveStatus && <p className="text-xs text-zinc-500">{sigSaveStatus}</p>}
+                {saveStatus && <p className="text-xs text-zinc-500">{saveStatus}</p>}
               </div>
             </div>
 
@@ -448,7 +520,7 @@ export function PricingPresentationApp() {
               </div>
 
               {/* Clauses */}
-              {[
+              {([
                 {
                   title: "Health & Medical Responsibility",
                   body: "I confirm that I am physically capable of participating in exercise and training activities. I understand that it is my responsibility to consult with a medical professional before beginning any exercise program if I have any medical conditions, injuries, or health concerns. I agree to inform the trainer of any health changes, injuries, discomfort, or pain experienced during training sessions so that exercises can be adjusted where necessary."
@@ -475,7 +547,7 @@ export function PricingPresentationApp() {
                 },
                 {
                   title: "Minimum Commitment",
-                  body: "All training packages require a minimum commitment of 12 weeks. This commitment is in place to allow sufficient time for measurable progress and results."
+                  body: `All training packages require a minimum commitment of ${minimumWeeks} weeks. This commitment is in place to allow sufficient time for measurable progress and results.`
                 },
                 {
                   title: "24-Hour Cancellation Policy",
@@ -489,7 +561,7 @@ export function PricingPresentationApp() {
                   title: "Going Away?",
                   body: "If you have a holiday or trip planned, just let Jazzay know in advance. Any time missed due to travel can be made up with complementary sessions before you leave or after you're back — so you never lose what you've paid for."
                 }
-              ].map(clause => (
+              ] as { title: string; body: string }[]).map(clause => (
                 <div key={clause.title}>
                   <h3 className="text-sm font-black text-[#101010] mb-1">{clause.title}</h3>
                   <p className="text-sm leading-7 text-zinc-600">{clause.body}</p>
@@ -508,10 +580,7 @@ export function PricingPresentationApp() {
                       <p className="text-xs text-zinc-500 mb-1">Client Name</p>
                       <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm font-bold text-[#101010]">{clientName}</div>
                     </div>
-                    <div>
-                      <p className="text-xs text-zinc-500 mb-1">Signature</p>
-                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[36px]"></div>
-                    </div>
+                    <SignaturePad label="Signature" canvasRef={clientSigRef} />
                     <div>
                       <p className="text-xs text-zinc-500 mb-1">Date</p>
                       <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm text-[#101010]">{new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</div>
@@ -525,10 +594,7 @@ export function PricingPresentationApp() {
                       <p className="text-xs text-zinc-500 mb-1">Trainer Name</p>
                       <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm font-bold text-[#101010]">Jazzay Sallah</div>
                     </div>
-                    <div>
-                      <p className="text-xs text-zinc-500 mb-1">Signature</p>
-                      <div className="border-b-2 border-zinc-300 pb-1 min-h-[36px]"></div>
-                    </div>
+                    <SignaturePad label="Signature" canvasRef={trainerSigRef} />
                     <div>
                       <p className="text-xs text-zinc-500 mb-1">Date</p>
                       <div className="border-b-2 border-zinc-300 pb-1 min-h-[28px] text-sm text-[#101010]">{new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</div>
@@ -566,6 +632,111 @@ function PackageDetails({ packageOption }: { packageOption: PackageOption }) {
             <li key={item} className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">{item}</li>
           ))}
         </ul>
+      </div>
+    </div>
+  );
+}
+
+function SignaturePad({ label, canvasRef: externalRef }: { label: string; canvasRef?: React.MutableRefObject<HTMLCanvasElement | null> }) {
+  const internalRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = (externalRef ?? internalRef) as React.RefObject<HTMLCanvasElement>;
+  const drawing = useRef(false);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
+  const [hasSignature, setHasSignature] = useState(false);
+
+  const getPos = useCallback((e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      const t = e.touches[0];
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+    return { x: ((e as MouseEvent).clientX - rect.left) * scaleX, y: ((e as MouseEvent).clientY - rect.top) * scaleY };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const startDraw = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      drawing.current = true;
+      lastPos.current = getPos(e, canvas);
+    };
+    const draw = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      if (!drawing.current || !lastPos.current) return;
+      const pos = getPos(e, canvas);
+      ctx.beginPath();
+      ctx.moveTo(lastPos.current.x, lastPos.current.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = "#10233f";
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+      lastPos.current = pos;
+      setHasSignature(true);
+    };
+    const endDraw = () => {
+      drawing.current = false;
+      lastPos.current = null;
+    };
+
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", endDraw);
+    canvas.addEventListener("mouseleave", endDraw);
+    canvas.addEventListener("touchstart", startDraw, { passive: false });
+    canvas.addEventListener("touchmove", draw, { passive: false });
+    canvas.addEventListener("touchend", endDraw);
+
+    return () => {
+      canvas.removeEventListener("mousedown", startDraw);
+      canvas.removeEventListener("mousemove", draw);
+      canvas.removeEventListener("mouseup", endDraw);
+      canvas.removeEventListener("mouseleave", endDraw);
+      canvas.removeEventListener("touchstart", startDraw);
+      canvas.removeEventListener("touchmove", draw);
+      canvas.removeEventListener("touchend", endDraw);
+    };
+  }, [getPos]);
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-xs text-zinc-500">{label}</p>
+        {hasSignature && (
+          <button type="button" onClick={clear} className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-red-400 transition">
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="relative rounded-xl border-2 border-zinc-300 bg-zinc-50 overflow-hidden" style={{ touchAction: "none" }}>
+        {!hasSignature && (
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-zinc-400 select-none">
+            Sign here
+          </span>
+        )}
+        <canvas
+          ref={canvasRef}
+          width={500}
+          height={100}
+          className="block w-full cursor-crosshair"
+          style={{ height: "80px" }}
+        />
       </div>
     </div>
   );

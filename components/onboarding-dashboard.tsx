@@ -410,7 +410,7 @@ export function OnboardingDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <a href="/" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+              <a href="/consultation-needs" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
                 New Consultation
               </a>
               <a href="/clients" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
@@ -579,7 +579,6 @@ function ProfilePanel({ profile }: { profile: OnboardingProfile }) {
             <>
               <p>Date: {formatDate(latestConsultation.consultation_date)}</p>
               <p>Commitment: {displayValue(latestConsultation.form_data.commitmentLevel)}</p>
-              <p>Budget: {displayValue(latestConsultation.form_data.weeklyInvestmentRange || latestConsultation.form_data.setBudget)}</p>
               <p className="whitespace-pre-wrap">Needs from coach: {displayValue(latestConsultation.form_data.needsFromCoach)}</p>
             </>
           ) : null}

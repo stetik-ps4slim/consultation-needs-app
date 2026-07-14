@@ -74,13 +74,17 @@ h6 {
     break-inside: avoid;
   }
 
-  /* Agreement modal print — hide everything except the agreement */
-  body > * {
+  /* Agreement modal print — hide everything except the agreement.
+     Scoped to body.print-agreement-only so it only kicks in when we're
+     specifically printing the signed agreement modal — otherwise this
+     rule was hiding the entire page and producing blank printouts/PDFs
+     on the consultation form, pricing presentation, and client summary. */
+  body.print-agreement-only > * {
     display: none !important;
   }
 
   /* The fixed modal overlay */
-  .fixed.inset-0.z-50 {
+  body.print-agreement-only .fixed.inset-0.z-50 {
     display: block !important;
     position: static !important;
     background: none !important;
@@ -89,7 +93,7 @@ h6 {
   }
 
   /* The modal card */
-  .fixed.inset-0.z-50 > div {
+  body.print-agreement-only .fixed.inset-0.z-50 > div {
     box-shadow: none !important;
     border-radius: 0 !important;
     max-width: 100% !important;
@@ -97,7 +101,7 @@ h6 {
   }
 
   /* Hide modal chrome (header bar with buttons) */
-  .fixed.inset-0.z-50 > div > div:first-child {
+  body.print-agreement-only .fixed.inset-0.z-50 > div > div:first-child {
     display: none !important;
   }
 

@@ -86,6 +86,9 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
   const [sourceFilter, setSourceFilter] = useState<LeadSource | "all">("all");
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState<DraftLead>(emptyDraft);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [editDraft, setEditDraft] = useState<DraftLead>(emptyDraft);
+  const [editError, setEditError] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -165,6 +168,53 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
     setDeleteConfirm(null);
   }
 
+  function openEdit(lead: Lead) {
+    setEditDraft({
+      name: lead.name,
+      phone: lead.phone ?? "",
+      email: lead.email ?? "",
+      goal: lead.goal ?? "",
+      source: lead.source,
+      service_interest: lead.service_interest ?? "1:1 PT",
+      priority: String(lead.priority) as "1" | "2" | "3",
+      budget: lead.budget ?? "",
+      notes: lead.notes ?? "",
+      follow_up_calls: String(lead.follow_up_calls),
+      consultation_sessions_completed: String(lead.consultation_sessions_completed),
+      next_follow_up_at: lead.next_follow_up_at ? formatDateTimeLocal(lead.next_follow_up_at) : "",
+    });
+    setEditingLead(lead);
+    setEditError("");
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingLead) return;
+    setEditError("");
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/leads/${editingLead.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...editDraft,
+            priority: Number(editDraft.priority),
+            follow_up_calls: Number(editDraft.follow_up_calls),
+            consultation_sessions_completed: Number(editDraft.consultation_sessions_completed),
+          }),
+        });
+        const payload = (await res.json()) as { lead?: Lead; error?: string };
+        if (!res.ok) throw new Error(payload.error || "Could not save changes.");
+        if (payload.lead) {
+          setLeads((prev) => prev.map((l) => (l.id === editingLead.id ? (payload.lead as Lead) : l)));
+        }
+        setEditingLead(null);
+      } catch (err) {
+        setEditError(err instanceof Error ? err.message : "Something went wrong.");
+      }
+    });
+  }
+
   return (
     <main className="min-h-dvh bg-[linear-gradient(160deg,#f7f4ef_0%,#ede8df_100%)] text-[#10233f]">
       {/* Page header */}
@@ -177,7 +227,7 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
               <p className="text-sm text-[#6b7b91]">Manage your pipeline and follow-ups</p>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <a href="/" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">New Consultation</a>
+              <a href="/consultation-needs" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">New Consultation</a>
               <a href="/onboarding" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Onboarding</a>
               <a href="/clients" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Client Hub</a>
               <a href="/screening" className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">Movement Screening</a>
@@ -247,6 +297,7 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
                 onUpdate={updateLeadOptimistic}
                 onLogFollowUp={() => logFollowUp(lead)}
                 onAddConsultation={() => addConsultation(lead)}
+                onEditRequest={() => openEdit(lead)}
                 onDeleteRequest={() => setDeleteConfirm(lead.id)}
                 deleteConfirm={deleteConfirm === lead.id}
                 onDeleteConfirm={() => deleteLead(lead.id)}
@@ -256,6 +307,76 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
           )}
         </div>
       </div>
+
+      {/* Edit lead modal */}
+      {editingLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl overflow-y-auto rounded-2xl border border-stone-200 bg-white shadow-2xl" style={{ maxHeight: "90vh" }}>
+            <div className="flex items-center justify-between border-b border-stone-200 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-black text-[#10233f]">Edit Lead</h2>
+                <p className="text-xs text-stone-400 mt-0.5">{editingLead.name}</p>
+              </div>
+              <button type="button" onClick={() => setEditingLead(null)} className="text-stone-400 transition hover:text-[#10233f]">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={saveEdit} className="grid gap-4 p-6 sm:grid-cols-2">
+              {([
+                { key: "name", label: "Name *", placeholder: "Full name", required: true },
+                { key: "phone", label: "Phone", placeholder: "0400 000 000" },
+                { key: "email", label: "Email", placeholder: "email@example.com" },
+                { key: "goal", label: "Goal", placeholder: "What are they trying to achieve?" },
+                { key: "budget", label: "Budget", placeholder: "$200–$300/wk" },
+                { key: "service_interest", label: "Service Interest", placeholder: "e.g. Hybrid Coaching" },
+              ] as Array<{ key: keyof DraftLead; label: string; placeholder: string; required?: boolean }>).map(({ key, label, placeholder, required }) => (
+                <div key={key}>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">{label}</label>
+                  <input
+                    type="text"
+                    required={required}
+                    placeholder={placeholder}
+                    value={editDraft[key] as string}
+                    onChange={(e) => setEditDraft((p) => ({ ...p, [key]: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Source</label>
+                <select value={editDraft.source} onChange={(e) => setEditDraft((p) => ({ ...p, source: e.target.value as LeadSource }))} className={inputCls}>
+                  {leadSources.map((s) => <option key={s} value={s}>{formatSourceLabel(s)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Priority</label>
+                <select value={editDraft.priority} onChange={(e) => setEditDraft((p) => ({ ...p, priority: e.target.value as DraftLead["priority"] }))} className={inputCls}>
+                  <option value="3">High</option>
+                  <option value="2">Medium</option>
+                  <option value="1">Low</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Next Follow-Up</label>
+                <input type="datetime-local" lang="en-AU" value={editDraft.next_follow_up_at} onChange={(e) => setEditDraft((p) => ({ ...p, next_follow_up_at: e.target.value }))} className={inputCls} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Notes</label>
+                <textarea rows={3} value={editDraft.notes} onChange={(e) => setEditDraft((p) => ({ ...p, notes: e.target.value }))} placeholder="Any additional notes..." className={inputCls + " resize-none"} />
+              </div>
+              {editError && <p className="text-sm text-rose-600 sm:col-span-2">{editError}</p>}
+              <div className="flex gap-3 sm:col-span-2">
+                <button type="submit" disabled={isPending} className="flex-1 rounded-full bg-[#9a6820] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-60">
+                  {isPending ? "Saving..." : "Save Changes"}
+                </button>
+                <button type="button" onClick={() => setEditingLead(null)} className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add lead modal */}
       {showForm && (
@@ -303,12 +424,6 @@ export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProp
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Status</label>
-                <select value={draft.source} onChange={(e) => setDraft((p) => ({ ...p, source: e.target.value as LeadSource }))} className={inputCls}>
-                  {leadStatuses.map((s) => <option key={s} value={s}>{formatStatusLabel(s)}</option>)}
-                </select>
-              </div>
-              <div>
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-400">Next Follow-Up</label>
                 <input type="datetime-local" lang="en-AU" value={draft.next_follow_up_at} onChange={(e) => setDraft((p) => ({ ...p, next_follow_up_at: e.target.value }))} className={inputCls} />
               </div>
@@ -353,13 +468,14 @@ interface LeadCardProps {
   onUpdate: (id: number, patch: Partial<Lead>) => void;
   onLogFollowUp: () => void;
   onAddConsultation: () => void;
+  onEditRequest: () => void;
   onDeleteRequest: () => void;
   deleteConfirm: boolean;
   onDeleteConfirm: () => void;
   onDeleteCancel: () => void;
 }
 
-function LeadCard({ lead, expanded, onToggle, onUpdate, onLogFollowUp, onAddConsultation, onDeleteRequest, deleteConfirm, onDeleteConfirm, onDeleteCancel }: LeadCardProps) {
+function LeadCard({ lead, expanded, onToggle, onUpdate, onLogFollowUp, onAddConsultation, onEditRequest, onDeleteRequest, deleteConfirm, onDeleteConfirm, onDeleteCancel }: LeadCardProps) {
   const overdue = isOverdue(lead.next_follow_up_at) && !["won", "lost"].includes(lead.status);
   const priorityLabel = lead.priority === 3 ? "High" : lead.priority === 2 ? "Medium" : "Low";
   const priorityColor = lead.priority === 3 ? "text-rose-500" : lead.priority === 2 ? "text-amber-500" : "text-stone-400";
@@ -477,6 +593,9 @@ function LeadCard({ lead, expanded, onToggle, onUpdate, onLogFollowUp, onAddCons
             </button>
             <button type="button" onClick={onAddConsultation} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60">
               Add Consult
+            </button>
+            <button type="button" onClick={onEditRequest} className="rounded-full border border-[#9a6820]/40 bg-[#9a6820]/5 px-4 py-2 text-sm font-semibold text-[#9a6820] transition hover:bg-[#9a6820]/10">
+              Edit
             </button>
             {deleteConfirm ? (
               <div className="ml-auto flex items-center gap-2">

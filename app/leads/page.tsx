@@ -3,6 +3,8 @@ import { LeadTrackerDashboard } from "@/components/lead-tracker-dashboard";
 import { hasSupabaseConfig, sampleLeads, type Lead } from "@/lib/leads";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Lead Tracker | The Upper Notch",
   description: "Track every enquiry from first message to signed client."

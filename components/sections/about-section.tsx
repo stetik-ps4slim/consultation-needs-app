@@ -17,9 +17,16 @@ export function AboutSection() {
             <p className="mt-4 text-base leading-7 text-zinc-300">
               {siteContent.about.coachCardText}
             </p>
-            <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
-              {siteContent.brand.location}
-            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {siteContent.about.credentials.map((credential) => (
+                <span
+                  key={credential}
+                  className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent"
+                >
+                  {credential}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 

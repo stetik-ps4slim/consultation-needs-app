@@ -86,11 +86,7 @@ const detailGroups: DetailGroup[] = [
     title: "Needs Analysis",
     items: [
       { label: "Other considerations", key: "otherConsiderations" },
-      { label: "Weekly investment", key: "weeklyInvestmentRange" },
-      { label: "Closer to", key: "investmentCloserTo" },
-      { label: "How long wanted to start", key: "howLongWantedToStart" },
-      { label: "What has been stopping them", key: "whatsStoppingYou" },
-      { label: "Set budget", key: "setBudget" }
+      { label: "What has been stopping them", key: "whatsStoppingYou" }
     ]
   },
   {
@@ -182,6 +178,19 @@ function displayValue(value: unknown) {
   return typeof value === "string" && value.trim() ? value : "Not recorded";
 }
 
+// Prints only the agreement modal (not the whole client hub page). Toggles a
+// body class that the print stylesheet uses to hide everything else.
+function printAgreementOnly() {
+  document.body.classList.add("print-agreement-only");
+  const cleanup = () => {
+    document.body.classList.remove("print-agreement-only");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+  setTimeout(cleanup, 5000);
+}
+
 function formatDate(value: string | null | undefined) {
   if (!value) {
     return "Not recorded";
@@ -213,6 +222,38 @@ function formatDateTimeLocal(value: string | null | undefined) {
 
   const offsetMs = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+type StageKey =
+  | "signed"
+  | "follow-up"
+  | "price-presented"
+  | "screening-done"
+  | "consult-completed"
+  | "waiting-consult"
+  | "in-contact"
+  | "new-lead";
+
+const STAGE_CONFIG: Record<StageKey, { label: string; color: string; dot: string; order: number }> = {
+  "signed":            { label: "Signed",                  color: "border-emerald-200 bg-emerald-50 text-emerald-800", dot: "bg-emerald-500", order: 0 },
+  "follow-up":         { label: "Follow-Up Needed",        color: "border-amber-200 bg-amber-50 text-amber-800",       dot: "bg-amber-400",   order: 1 },
+  "price-presented":   { label: "Price Presented",         color: "border-violet-200 bg-violet-50 text-violet-800",    dot: "bg-violet-500",  order: 2 },
+  "screening-done":    { label: "Screening Done",          color: "border-sky-200 bg-sky-50 text-sky-800",             dot: "bg-sky-500",     order: 3 },
+  "consult-completed": { label: "Consult Completed",       color: "border-blue-200 bg-blue-50 text-blue-800",          dot: "bg-blue-500",    order: 4 },
+  "waiting-consult":   { label: "Waiting for Consult",     color: "border-orange-200 bg-orange-50 text-orange-800",    dot: "bg-orange-400",  order: 5 },
+  "in-contact":        { label: "In Contact",              color: "border-stone-300 bg-stone-100 text-stone-700",      dot: "bg-stone-400",   order: 6 },
+  "new-lead":          { label: "New Lead",                color: "border-stone-200 bg-white text-[#6b7b91]",          dot: "bg-stone-300",   order: 7 },
+};
+
+function getClientStage(bundle: ClientBundle): StageKey {
+  if (bundle.pricingPresentations.some((r) => r.decision_status === "signed-up")) return "signed";
+  if (bundle.pricingPresentations.some((r) => r.decision_status === "follow-up-needed")) return "follow-up";
+  if (bundle.pricingPresentations.length) return "price-presented";
+  if (bundle.screenings.length) return "screening-done";
+  if (bundle.consultations.length) return "consult-completed";
+  if (bundle.leads.some((l) => l.status === "consult-booked")) return "waiting-consult";
+  if (bundle.leads.some((l) => l.status === "contacted" || l.status === "proposal-sent")) return "in-contact";
+  return "new-lead";
 }
 
 function formatClientStatus(bundle: ClientBundle) {
@@ -255,12 +296,12 @@ function latestDate(values: Array<string | null | undefined>) {
   return sorted[0] ?? "";
 }
 
-function createClientKey(input: { name?: string; email?: string; phone?: string; contact?: string }) {
+function createClientKey(input: { name?: string; email?: string; phone?: string; contact?: string; fallbackId?: string }) {
   const email = normalizeText(input.email);
   const phone = normalizePhone(input.phone || input.contact);
   const name = normalizeText(input.name);
 
-  return email || phone || name || `client-${Math.random().toString(36).slice(2)}`;
+  return email || phone || name || input.fallbackId || `client-unknown`;
 }
 
 function upsertBundle(map: Map<string, ClientBundle>, key: string, defaults: Partial<ClientBundle>) {
@@ -296,7 +337,7 @@ function buildClientBundles(
   const bundles = new Map<string, ClientBundle>();
 
   leads.forEach((lead) => {
-    const key = createClientKey({ name: lead.name, email: lead.email, phone: lead.phone });
+    const key = createClientKey({ name: lead.name, email: lead.email, phone: lead.phone, fallbackId: `lead-${lead.id}` });
     const bundle = upsertBundle(bundles, key, {
       displayName: lead.name,
       phone: lead.phone,
@@ -317,7 +358,8 @@ function buildClientBundles(
     const key = createClientKey({
       name: record.client_name,
       email: record.client_email,
-      phone: record.client_phone
+      phone: record.client_phone,
+      fallbackId: `consultation-${record.id}`
     });
     const bundle = upsertBundle(bundles, key, {
       displayName: record.client_name,
@@ -336,7 +378,7 @@ function buildClientBundles(
   });
 
   screenings.forEach((screening) => {
-    const key = createClientKey({ name: screening.name, contact: screening.contact });
+    const key = createClientKey({ name: screening.name, contact: screening.contact, fallbackId: `screening-${screening.id}` });
     const bundle = upsertBundle(bundles, key, {
       displayName: screening.name,
       phone: screening.contact,
@@ -355,7 +397,8 @@ function buildClientBundles(
     const key = createClientKey({
       name: record.client_name,
       email: record.client_email,
-      phone: record.client_phone
+      phone: record.client_phone,
+      fallbackId: `pricing-${record.id}`
     });
     const bundle = upsertBundle(bundles, key, {
       displayName: record.client_name,
@@ -425,9 +468,13 @@ export function ConsultationRecordsDashboard() {
   const [pricingPresentations, setPricingPresentations] = useState<PricingPresentationRecord[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [hiddenClientKeys, setHiddenClientKeys] = useState<Set<string>>(() => new Set());
+  const [collapsedStages, setCollapsedStages] = useState<Set<StageKey>>(() => new Set());
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState("Loading saved Supabase data...");
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
 
   async function loadRecords() {
     setIsLoading(true);
@@ -473,6 +520,13 @@ export function ConsultationRecordsDashboard() {
 
   useEffect(() => {
     void loadRecords();
+
+    // Auto-refresh when the user switches back to this tab
+    function handleVisibilityChange() {
+      if (!document.hidden) void loadRecords();
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
   const bundles = useMemo(
@@ -491,6 +545,9 @@ export function ConsultationRecordsDashboard() {
     if (!cleanQuery) {
       return visibleBundles;
     }
+
+    // Split into individual words so "Petherbridge" finds "Zoe Petherbridge"
+    const words = cleanQuery.split(/\s+/).filter(Boolean);
 
     return visibleBundles.filter((bundle) => {
       const searchableText = [
@@ -512,13 +569,52 @@ export function ConsultationRecordsDashboard() {
         .join(" ")
         .toLowerCase();
 
-      return searchableText.includes(cleanQuery);
+      // All words must appear somewhere in the searchable text
+      return words.every((word) => searchableText.includes(word));
     });
   }, [query, visibleBundles]);
 
   const selectedBundle = useMemo(() => {
     return filteredBundles.find((bundle) => bundle.key === selectedKey) ?? filteredBundles[0] ?? null;
   }, [filteredBundles, selectedKey]);
+
+  const groupedBundles = useMemo(() => {
+    const groups = new Map<StageKey, typeof bundles>();
+    (Object.keys(STAGE_CONFIG) as StageKey[]).forEach((k) => groups.set(k, []));
+    filteredBundles.forEach((b) => groups.get(getClientStage(b))!.push(b));
+    return (Object.keys(STAGE_CONFIG) as StageKey[])
+      .map((k) => ({ stage: k, config: STAGE_CONFIG[k], bundles: groups.get(k)! }))
+      .filter((g) => g.bundles.length > 0);
+  }, [filteredBundles]);
+
+  async function saveName() {
+    if (!selectedBundle || !nameInput.trim()) return;
+    setNameSaving(true);
+    try {
+      // Patch the lead name if a lead exists, otherwise patch the first consultation record
+      const lead = selectedBundle.leads[0];
+      const consultation = selectedBundle.consultations[0];
+      if (lead) {
+        await fetch(`/api/leads/${lead.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: nameInput.trim() })
+        });
+      } else if (consultation) {
+        await fetch(`/api/consultation-needs/${consultation.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ client_name: nameInput.trim() })
+        });
+      }
+      setEditingName(false);
+      await loadRecords();
+    } catch {
+      // ignore
+    } finally {
+      setNameSaving(false);
+    }
+  }
 
   function clearSelectedFromPage() {
     if (!selectedBundle) {
@@ -551,6 +647,22 @@ export function ConsultationRecordsDashboard() {
 
     setConsultations((current) => current.filter((r) => r.id !== recordId));
     setStatus("Consultation form permanently deleted from Supabase.");
+  }
+
+  async function deleteScreening(recordId: number) {
+    const response = await fetch(`/api/screenings/${recordId}`, { method: "DELETE" });
+    const result = (await response.json()) as { success?: boolean; error?: string };
+    if (!response.ok) throw new Error(result.error || "Could not delete screening.");
+    setScreenings((current) => current.filter((r) => r.id !== recordId));
+    setStatus("Movement screening permanently deleted from Supabase.");
+  }
+
+  async function deletePricingPresentation(recordId: number) {
+    const response = await fetch(`/api/pricing-presentations/${recordId}`, { method: "DELETE" });
+    const result = (await response.json()) as { success?: boolean; error?: string };
+    if (!response.ok) throw new Error(result.error || "Could not delete pricing presentation.");
+    setPricingPresentations((current) => current.filter((r) => r.id !== recordId));
+    setStatus("Pricing presentation permanently deleted from Supabase.");
   }
 
   async function updatePricingPresentation(recordId: number, updates: PricingPresentationUpdate) {
@@ -589,7 +701,7 @@ export function ConsultationRecordsDashboard() {
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1 print:hidden">
               <a
-                href="/"
+                href="/consultation-needs"
                 className="shrink-0 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#15314a] transition hover:border-[#9a6820]/60"
               >
                 New Form
@@ -653,34 +765,57 @@ export function ConsultationRecordsDashboard() {
             />
             <p className="mt-3 text-sm text-[#4a5c73]">{status}</p>
 
-            <div className="mt-5 space-y-3">
-              {filteredBundles.map((bundle) => {
-                const isSelected = selectedBundle?.key === bundle.key;
-                const recordCount = bundle.leads.length + bundle.consultations.length + bundle.screenings.length + bundle.pricingPresentations.length;
-
+            <div className="mt-5 space-y-4">
+              {groupedBundles.map(({ stage, config, bundles: stageBundles }) => {
+                const collapsed = collapsedStages.has(stage);
                 return (
-                  <button
-                    key={bundle.key}
-                    type="button"
-                    onClick={() => setSelectedKey(bundle.key)}
-                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-                      isSelected
-                        ? "border-[#9a6820] bg-[#9a6820]/10 shadow-[0_12px_35px_rgba(154,104,32,0.18)]"
-                        : "border-stone-200 bg-white hover:border-[#9a6820]/60"
-                    }`}
-                  >
-                    <span className="block text-base font-bold text-[#10233f]">{bundle.displayName}</span>
-                    <span className="mt-1 block text-sm text-[#4a5c73]">{bundle.goal || "No goal recorded"}</span>
-                    <span className="mt-3 flex flex-wrap gap-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[#15314a]">
-                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.leads.length} lead{bundle.leads.length === 1 ? "" : "s"}</span>
-                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.consultations.length} consult{bundle.consultations.length === 1 ? "" : "s"}</span>
-                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.screenings.length} screen{bundle.screenings.length === 1 ? "" : "s"}</span>
-                      <span className="rounded-full bg-stone-100 px-2 py-1">{bundle.pricingPresentations.length} price{bundle.pricingPresentations.length === 1 ? "" : "s"}</span>
-                    </span>
-                    <span className="mt-2 block text-xs uppercase tracking-[0.18em] text-[#6b7b91]">
-                      {recordCount} total record{recordCount === 1 ? "" : "s"} · {formatDate(bundle.updatedAt)}
-                    </span>
-                  </button>
+                  <div key={stage}>
+                    {/* Stage header */}
+                    <button
+                      type="button"
+                      onClick={() => setCollapsedStages((prev) => {
+                        const next = new Set(prev);
+                        collapsed ? next.delete(stage) : next.add(stage);
+                        return next;
+                      })}
+                      className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${config.dot}`} />
+                        <span className="text-xs font-black uppercase tracking-[0.2em] text-[#10233f]">{config.label}</span>
+                        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-[#6b7b91]">{stageBundles.length}</span>
+                      </div>
+                      <svg className={`h-3.5 w-3.5 text-stone-400 transition-transform ${collapsed ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+
+                    {/* Client cards in this stage */}
+                    {!collapsed && (
+                      <div className="mt-1.5 space-y-2">
+                        {stageBundles.map((bundle) => {
+                          const isSelected = selectedBundle?.key === bundle.key;
+                          return (
+                            <button
+                              key={bundle.key}
+                              type="button"
+                              onClick={() => { setSelectedKey(bundle.key); setEditingName(false); }}
+                              className={`w-full rounded-2xl border px-4 py-3.5 text-left transition ${
+                                isSelected
+                                  ? "border-[#9a6820] bg-[#9a6820]/10 shadow-[0_12px_35px_rgba(154,104,32,0.18)]"
+                                  : "border-stone-200 bg-white hover:border-[#9a6820]/60"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="block text-sm font-bold text-[#10233f]">{bundle.displayName}</span>
+                                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${config.color}`}>{config.label}</span>
+                              </div>
+                              <span className="mt-0.5 block text-xs text-[#4a5c73]">{bundle.goal || "No goal recorded"}</span>
+                              <span className="mt-2 block text-[10px] uppercase tracking-[0.16em] text-[#6b7b91]">{formatDate(bundle.updatedAt)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -698,9 +833,37 @@ export function ConsultationRecordsDashboard() {
                 <div className="flex flex-col gap-4 border-b border-stone-200 pb-6 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#9a6820]">Selected Client</p>
-                    <h2 className="mt-3 font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f] sm:text-6xl">
-                      {selectedBundle.displayName}
-                    </h2>
+                    {editingName ? (
+                      <div className="mt-3 flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={nameInput}
+                          onChange={(e) => setNameInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") void saveName(); if (e.key === "Escape") setEditingName(false); }}
+                          className="font-[Arial_Narrow] text-3xl uppercase tracking-[0.08em] text-[#10233f] border-b-2 border-[#9a6820] bg-transparent outline-none w-full sm:text-5xl"
+                          placeholder="Enter name"
+                        />
+                        <button onClick={() => void saveName()} disabled={nameSaving} className="shrink-0 rounded-full bg-[#9a6820] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+                          {nameSaving ? "Saving…" : "Save"}
+                        </button>
+                        <button onClick={() => setEditingName(false)} className="shrink-0 rounded-full border border-stone-200 px-4 py-2 text-sm font-bold text-[#15314a]">
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex items-center gap-3">
+                        <h2 className="font-[Arial_Narrow] text-4xl uppercase tracking-[0.08em] text-[#10233f] sm:text-6xl">
+                          {selectedBundle.displayName}
+                        </h2>
+                        <button
+                          type="button"
+                          onClick={() => { setNameInput(selectedBundle.displayName === "Unnamed client" ? "" : selectedBundle.displayName); setEditingName(true); }}
+                          className="shrink-0 rounded-full border border-stone-200 px-3 py-1 text-xs font-semibold text-[#6b7b91] transition hover:border-[#9a6820]/60 hover:text-[#9a6820]"
+                        >
+                          Edit name
+                        </button>
+                      </div>
+                    )}
                     <p className="mt-3 max-w-3xl text-sm leading-7 text-[#4a5c73]">{selectedBundle.goal || "No main goal recorded."}</p>
                     <span className="mt-4 inline-flex rounded-full bg-[#9a6820]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#9a6820]">{formatClientStatus(selectedBundle)}</span>
                   </div>
@@ -741,8 +904,8 @@ export function ConsultationRecordsDashboard() {
                 <div className="mt-8 space-y-8">
                   <LeadsSection leads={selectedBundle.leads} />
                   <ConsultationsSection records={selectedBundle.consultations} onDelete={deleteConsultation} />
-                  <ScreeningsSection screenings={selectedBundle.screenings} />
-                  <PricingPresentationsSection records={selectedBundle.pricingPresentations} onUpdate={updatePricingPresentation} />
+                  <ScreeningsSection screenings={selectedBundle.screenings} onDelete={deleteScreening} />
+                  <PricingPresentationsSection records={selectedBundle.pricingPresentations} onUpdate={updatePricingPresentation} onDelete={deletePricingPresentation} />
                 </div>
               </div>
             ) : (
@@ -836,6 +999,7 @@ function ConsultationCard({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [showWaiver, setShowWaiver] = useState(false);
 
   async function handleDelete() {
     setIsDeleting(true);
@@ -856,8 +1020,17 @@ function ConsultationCard({
           <p className="text-lg font-bold text-[#10233f]">{record.goal || "No goal recorded"}</p>
           <p className="mt-1 text-sm text-[#4a5c73]">Consultation date: {formatDate(record.consultation_date)}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">Record #{record.id}</span>
+          {record.form_data.signOffName && (
+            <button
+              type="button"
+              onClick={() => setShowWaiver(true)}
+              className="rounded-full border border-[#9a6820]/40 bg-[#fdf3e3] px-3 py-1 text-xs font-semibold text-[#9a6820] transition hover:bg-[#f5e6cc]"
+            >
+              View Waiver
+            </button>
+          )}
           {!confirmDelete ? (
             <button
               type="button"
@@ -889,6 +1062,7 @@ function ConsultationCard({
         </div>
       </div>
       {deleteError && <p className="mt-2 text-xs text-rose-600 font-semibold">{deleteError}</p>}
+      {showWaiver && <IntakeWaiverModal record={record} onClose={() => setShowWaiver(false)} />}
       <WeeklySchedule form={record.form_data} />
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         {detailGroups.map((group) => (
@@ -906,6 +1080,114 @@ function ConsultationCard({
         ))}
       </div>
     </article>
+  );
+}
+
+const intakeWaiverClauses = [
+  { title: "Purpose of Consultation", body: "The initial consultation is designed to assess the client's current fitness level, goals, lifestyle, and suitability for personal training services. It may include discussion, movement screening, and light physical activity." },
+  { title: "Health Declaration", body: "By attending this consultation, you confirm that you are physically able to participate in all physical activity, you have disclosed any injuries, medical conditions, or limitations, and you understand it is your responsibility to inform the trainer of any changes to your health status. If you have any concerns, you should seek medical clearance prior to participation." },
+  { title: "Assumption of Risk", body: "You acknowledge that participation in any form of physical activity involves inherent risks, including but not limited to muscle soreness, strains or sprains, and dizziness or fatigue. By attending the consultation, you voluntarily accept these risks." },
+  { title: "Limitation of Liability", body: "To the maximum extent permitted by law, Jazzay Sallah Personal Training is not liable for any injury, loss, or damage sustained during or after the consultation, or any pre-existing condition aggravated during the session. You participate at your own risk." },
+  { title: "No Obligation to Continue", body: "The consultation is an assessment only. There is no obligation to purchase personal training services following the session." },
+  { title: "Payment & Cancellation", body: "Consultation fees (if charged) must be paid prior to or at the time of booking. A minimum of 12 hours' notice is required to reschedule or cancel. Late cancellations or no-shows may result in forfeiture of the session." },
+  { title: "Professional Boundaries", body: "All sessions are conducted in a professional manner. Any inappropriate behaviour may result in termination of the consultation." },
+  { title: "Privacy", body: "All personal information collected during the consultation will remain confidential and used solely for the purpose of providing fitness services." },
+  { title: "Acknowledgement", body: "By signing below, you confirm that you have read, understood, and agree to these terms and conditions." }
+];
+
+function IntakeWaiverModal({ record, onClose }: { record: ConsultationNeedsRecord; onClose: () => void }) {
+  const f = record.form_data;
+  const fmtDate = (s: string | null | undefined) =>
+    s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : "—";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 py-8 backdrop-blur-sm overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl my-4">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-stone-100 px-6 py-5">
+          <div>
+            <p className="text-xs uppercase tracking-widest font-black text-[#9a6820]">Upper Notch Coaching</p>
+            <h2 className="mt-0.5 text-lg font-black text-[#10233f]">Intake Waiver & Agreement</h2>
+          </div>
+          <button onClick={onClose} className="rounded-full p-2 text-stone-400 hover:bg-stone-100">✕</button>
+        </div>
+
+        {/* Document */}
+        <div className="px-8 py-8 space-y-6 text-[#10233f]">
+          {/* Letterhead */}
+          <div className="text-center border-b border-stone-200 pb-6">
+            <p className="text-xs uppercase tracking-[0.3em] font-black text-[#9a6820]">Upper Notch Coaching</p>
+            <h1 className="mt-2 text-2xl font-black text-[#10233f]">Consultation Waiver & Agreement</h1>
+            <p className="mt-1 text-sm text-stone-500">Jazzay Sallah Personal Training (JS PT)</p>
+          </div>
+
+          {/* Client info */}
+          <div className="grid grid-cols-2 gap-4 rounded-2xl border border-stone-200 bg-stone-50 p-4 text-sm">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Client Name</p>
+              <p className="font-bold text-[#10233f] mt-0.5">{record.client_name}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Date</p>
+              <p className="font-bold text-[#10233f] mt-0.5">{fmtDate(f.signOffDate || record.consultation_date)}</p>
+            </div>
+            {record.client_email && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Email</p>
+                <p className="text-[#10233f] mt-0.5">{record.client_email}</p>
+              </div>
+            )}
+            {record.client_phone && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Phone</p>
+                <p className="text-[#10233f] mt-0.5">{record.client_phone}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Clauses */}
+          <div className="space-y-4">
+            {intakeWaiverClauses.map((clause) => (
+              <div key={clause.title}>
+                <h3 className="text-sm font-black text-[#10233f] mb-1">{clause.title}</h3>
+                <p className="text-sm leading-7 text-stone-600">{clause.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Signature block */}
+          <div className="border-t border-stone-200 pt-6 space-y-4">
+            <p className="text-sm font-bold text-[#10233f]">By signing below, the client confirms they have read, understood, and agreed to all terms above.</p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs text-stone-500 mb-1">Client Name</p>
+                <div className="border-b-2 border-stone-300 pb-1 min-h-[28px] text-sm font-bold text-[#10233f]">{f.signOffName || "—"}</div>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 mb-1">Signature</p>
+                <div className="border-b-2 border-stone-300 pb-1 min-h-[28px] text-sm italic text-[#10233f]">{f.signature || <span className="text-stone-400 not-italic text-xs">Not recorded</span>}</div>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 mb-1">Date</p>
+                <div className="border-b-2 border-stone-300 pb-1 min-h-[28px] text-sm text-[#10233f]">{fmtDate(f.signOffDate)}</div>
+              </div>
+            </div>
+            {f.signOffName ? (
+              <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                <p className="text-sm font-semibold text-emerald-800">Waiver signed by {f.signOffName} on {fmtDate(f.signOffDate)}</p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />
+                <p className="text-sm font-semibold text-amber-800">Waiver not yet signed</p>
+              </div>
+            )}
+            <p className="text-[10px] text-center text-stone-400 pt-2">Upper Notch Coaching · Jazzay Sallah Personal Training (JS PT) · {new Date().getFullYear()}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -947,7 +1229,18 @@ function WeeklySchedule({ form }: { form: ConsultationNeedsForm }) {
   );
 }
 
-function ScreeningsSection({ screenings }: { screenings: ScreeningClient[] }) {
+function ScreeningsSection({ screenings, onDelete }: { screenings: ScreeningClient[]; onDelete: (id: number) => Promise<void> }) {
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function handleDelete(id: number) {
+    setDeleting(true); setDeleteError("");
+    try { await onDelete(id); setConfirmId(null); }
+    catch (e) { setDeleteError(e instanceof Error ? e.message : "Delete failed."); }
+    finally { setDeleting(false); }
+  }
+
   return (
     <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Movement Screening Data</h3>
@@ -965,10 +1258,22 @@ function ScreeningsSection({ screenings }: { screenings: ScreeningClient[] }) {
                   <p className="text-lg font-bold text-[#10233f]">{screening.injury || "Movement screening"}</p>
                   <p className="mt-1 text-sm text-[#4a5c73]">Screening date: {formatDate(screening.screeningDate)} · Conducted by {displayValue(screening.conductedBy)}</p>
                 </div>
-                <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">
-                  Avg {average ?? "N/A"} · {completed}/{total} done
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#15314a]">
+                    Avg {average ?? "N/A"} · {completed}/{total} done
+                  </span>
+                  {confirmId === screening.id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-rose-600">Delete?</span>
+                      <button onClick={() => handleDelete(screening.id)} disabled={deleting} className="rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-600 disabled:opacity-50">Yes</button>
+                      <button onClick={() => { setConfirmId(null); setDeleteError(""); }} className="rounded-full border border-stone-200 px-3 py-1 text-xs font-semibold text-[#15314a] hover:border-stone-300">No</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmId(screening.id)} className="rounded-full border border-stone-200 px-3 py-1 text-xs font-semibold text-rose-500 hover:border-rose-300">Delete</button>
+                  )}
+                </div>
               </div>
+              {deleteError && <p className="mt-2 text-xs text-rose-600">{deleteError}</p>}
               <div className="mt-4 grid gap-3 text-sm text-[#4a5c73] md:grid-cols-2">
                 <p><span className="font-semibold text-[#10233f]">Contact:</span> {displayValue(screening.contact)}</p>
                 <p><span className="font-semibold text-[#10233f]">Health:</span> {displayValue(screening.health)}</p>
@@ -1013,7 +1318,7 @@ function ClientSnapshot({ bundle }: { bundle: ClientBundle }) {
         <p><span className="font-semibold text-[#10233f]">Goal:</span> {displayValue(bundle.goal)}</p>
         <p><span className="font-semibold text-[#10233f]">Recommended package:</span> {displayValue(latestPricing?.selected_package_name)}</p>
         <p><span className="font-semibold text-[#10233f]">Accepted package:</span> {displayValue(latestPricing?.accepted_package_name)}</p>
-        <p><span className="font-semibold text-[#10233f]">Budget / investment:</span> {displayValue(latestConsultation?.form_data.weeklyInvestmentRange || bundle.leads[0]?.budget)}</p>
+        <p><span className="font-semibold text-[#10233f]">Budget / investment:</span> {displayValue(bundle.leads[0]?.budget)}</p>
         <p><span className="font-semibold text-[#10233f]">Needs / barrier:</span> {displayValue(latestPricing?.presentation_data.clientNeeds || latestConsultation?.form_data.whatsStoppingYou)}</p>
         <p><span className="font-semibold text-[#10233f]">Injury / screening focus:</span> {displayValue(latestScreening?.injury || latestConsultation?.form_data.injuriesHistory)}</p>
         <p><span className="font-semibold text-[#10233f]">Next follow-up:</span> {formatDate(latestPricing?.follow_up_at || bundle.leads[0]?.next_follow_up_at)}</p>
@@ -1052,18 +1357,45 @@ function OnboardingChecklist({ bundle }: { bundle: ClientBundle }) {
 
 function PricingPresentationsSection({
   records,
-  onUpdate
+  onUpdate,
+  onDelete,
 }: {
   records: PricingPresentationRecord[];
   onUpdate: (recordId: number, updates: PricingPresentationUpdate) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
 }) {
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function handleDelete(id: number) {
+    setDeleting(true); setDeleteError("");
+    try { await onDelete(id); setConfirmId(null); }
+    catch (e) { setDeleteError(e instanceof Error ? e.message : "Delete failed."); }
+    finally { setDeleting(false); }
+  }
+
   return (
     <section className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
       <h3 className="text-xl font-bold text-[#10233f]">Pricing Presentations</h3>
       {!records.length ? <EmptyDataCard label="pricing presentations" /> : null}
+      {deleteError && <p className="mt-2 text-xs text-rose-600">{deleteError}</p>}
       <div className="mt-4 space-y-4">
         {records.map((record) => (
-          <PricingPresentationCard key={record.id} record={record} onUpdate={onUpdate} />
+          <div key={record.id} className="relative">
+            <PricingPresentationCard record={record} onUpdate={onUpdate} />
+            <div className="mt-2 flex justify-end">
+              {confirmId === record.id ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-rose-600">Are you sure?</span>
+                  <button onClick={() => handleDelete(record.id)} disabled={deleting} className="rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-600 disabled:opacity-50">Yes, Delete</button>
+                  <button onClick={() => { setConfirmId(null); setDeleteError(""); }} className="rounded-full border border-stone-200 px-3 py-1 text-xs font-semibold text-[#15314a] hover:border-stone-300">Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmId(record.id)} className="rounded-full border border-stone-200 px-3 py-1 text-xs font-semibold text-rose-500 hover:border-rose-300">Delete</button>
+              )}
+            </div>
+          </div>
         ))}
       </div>
     </section>
@@ -1097,7 +1429,7 @@ function AgreementModal({ record, onClose }: { record: PricingPresentationRecord
             <h2 className="mt-0.5 text-lg font-bold text-[#10233f]">Trainer & Client Agreement</h2>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => window.print()} className="rounded-full bg-[#15314a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">Print / PDF</button>
+            <button onClick={printAgreementOnly} className="rounded-full bg-[#15314a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e3f60]">Print / PDF</button>
             <button onClick={onClose} className="rounded-full p-2 text-slate-400 hover:bg-stone-100">✕</button>
           </div>
         </div>
@@ -1130,13 +1462,23 @@ function AgreementModal({ record, onClose }: { record: PricingPresentationRecord
               <div className="space-y-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#9a6820]">Client Acknowledgement & Signature</p>
                 <div><p className="text-xs text-[#6b7b91] mb-1">Client Name</p><div className="border-b-2 border-stone-300 pb-1 min-h-[28px] text-sm font-semibold text-[#10233f]">{record.client_name}</div></div>
-                <div><p className="text-xs text-[#6b7b91] mb-1">Signature</p><div className="border-b-2 border-stone-300 pb-1 min-h-[36px]"></div></div>
+                <div>
+                  <p className="text-xs text-[#6b7b91] mb-1">Signature</p>
+                  {d.clientSignature && d.clientSignature.startsWith("data:image")
+                    ? <img src={d.clientSignature} alt="Client signature" className="max-h-[80px] border-b-2 border-stone-300 pb-1 w-full object-contain object-left" />
+                    : <div className="border-b-2 border-stone-300 pb-1 min-h-[36px] flex items-end"><span className="text-[10px] text-stone-400 italic">Not yet signed</span></div>}
+                </div>
                 <div><p className="text-xs text-[#6b7b91] mb-1">Date</p><div className="border-b-2 border-stone-300 pb-1 min-h-[28px] text-sm text-[#10233f]">{fmtDate(record.created_at)}</div></div>
               </div>
               <div className="space-y-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#9a6820]">Trainer</p>
                 <div><p className="text-xs text-[#6b7b91] mb-1">Trainer Name</p><div className="border-b-2 border-stone-300 pb-1 min-h-[28px] text-sm font-semibold text-[#10233f]">Jazzay Sallah</div></div>
-                <div><p className="text-xs text-[#6b7b91] mb-1">Signature</p><div className="border-b-2 border-stone-300 pb-1 min-h-[36px]"></div></div>
+                <div>
+                  <p className="text-xs text-[#6b7b91] mb-1">Signature</p>
+                  {d.trainerSignature && d.trainerSignature.startsWith("data:image")
+                    ? <img src={d.trainerSignature} alt="Trainer signature" className="max-h-[80px] border-b-2 border-stone-300 pb-1 w-full object-contain object-left" />
+                    : <div className="border-b-2 border-stone-300 pb-1 min-h-[36px] flex items-end"><span className="text-[10px] text-stone-400 italic">Not yet signed</span></div>}
+                </div>
                 <div><p className="text-xs text-[#6b7b91] mb-1">Date</p><div className="border-b-2 border-stone-300 pb-1 min-h-[28px] text-sm text-[#10233f]">{fmtDate(record.created_at)}</div></div>
               </div>
             </div>

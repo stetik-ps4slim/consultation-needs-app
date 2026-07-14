@@ -40,28 +40,27 @@ export function ServicesSection() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-semibold uppercase tracking-[0.25em] text-accent">
-                          {plan.badge ?? "Coaching Package"}
+                          {plan.badge ? plan.badge : "Coaching Package"}
                         </p>
                         <h3 className="mt-3 text-4xl uppercase leading-none text-ink">
                           {plan.name}
                         </h3>
-                        <p className="mt-3 text-sm font-semibold uppercase tracking-[0.18em] text-zinc-300">
-                          {plan.price}
-                        </p>
-                        {plan.minimumTerm ? (
-                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                            {plan.minimumTerm}
-                          </p>
-                        ) : null}
                       </div>
+                    </div>
+
+                    <div className="mt-5">
+                      <p className="text-3xl font-semibold text-ink">{plan.price}</p>
+                      {plan.minimumTerm ? (
+                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                          {plan.minimumTerm}
+                        </p>
+                      ) : null}
                     </div>
 
                     <p className="mt-5 text-base leading-7 text-zinc-300">{plan.idealFor}</p>
 
                     {plan.savings ? (
-                      <div className="mt-6 rounded-2xl border border-accent/20 bg-accent/10 px-4 py-3 text-sm font-semibold text-accent">
-                        {plan.savings}
-                      </div>
+                      <p className="mt-4 text-sm font-semibold text-accent">{plan.savings}</p>
                     ) : null}
 
                     <a

@@ -73,6 +73,42 @@ export async function POST(request: Request) {
       throw error;
     }
 
+    // ── Auto-create lead from intake form ─────────────────────────────────────
+    // Check if a lead already exists with the same phone or email to avoid duplicates
+    try {
+      const orFilters: string[] = [];
+      if (payload.client_phone) orFilters.push(`phone.eq.${payload.client_phone}`);
+      if (payload.client_email) orFilters.push(`email.eq.${payload.client_email}`);
+
+      let alreadyExists = false;
+      if (orFilters.length > 0) {
+        const { data: existing } = await supabase
+          .from("leads")
+          .select("id")
+          .or(orFilters.join(","))
+          .limit(1);
+        alreadyExists = (existing?.length ?? 0) > 0;
+      }
+
+      if (!alreadyExists) {
+        await supabase.from("leads").insert({
+          name: payload.client_name,
+          phone: payload.client_phone ?? "",
+          email: payload.client_email ?? "",
+          goal: payload.goal ?? "",
+          source: "intake-form",
+          service_interest: "1:1 PT",
+          status: "new",
+          notes: `Auto-added from intake form submission.`,
+          follow_up_calls: 0,
+          consultation_sessions_completed: 0,
+          last_contacted_at: null
+        });
+      }
+    } catch {
+      // Lead creation is best-effort — don't fail the whole request if it errors
+    }
+
     return NextResponse.json({
       message: "Consultation form saved successfully.",
       record: data

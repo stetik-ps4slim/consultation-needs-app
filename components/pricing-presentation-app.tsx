@@ -123,6 +123,80 @@ function printAgreementOnly() {
   setTimeout(cleanup, 5000);
 }
 
+type ScriptSection = { heading: string; body: string };
+
+function firstNameOf(fullName: string) {
+  const trimmed = fullName.trim();
+  return trimmed && trimmed.toLowerCase() !== "client name" ? trimmed.split(/\s+/)[0] : "them";
+}
+
+// Builds a full talking-points sales script from everything already on the
+// presentation — goal, needs, recommendation, and the selected package's
+// own pricing, results, and inclusions.
+function buildSalesScript(params: {
+  clientName: string;
+  clientGoal: string;
+  clientNeeds: string;
+  recommendation: string;
+  packageRecommendation: string;
+  selectedPackage: PackageOption;
+  weeklyTotal: number;
+  upfrontTotal: number;
+  minimumWeeks: number;
+  nutritionAdded: boolean;
+  nutritionDescription: string;
+}): ScriptSection[] {
+  const {
+    clientName,
+    clientGoal,
+    clientNeeds,
+    recommendation,
+    packageRecommendation,
+    selectedPackage,
+    weeklyTotal,
+    upfrontTotal,
+    minimumWeeks,
+    nutritionAdded,
+    nutritionDescription
+  } = params;
+  const name = firstNameOf(clientName);
+
+  const sections: ScriptSection[] = [
+    {
+      heading: "Open",
+      body: `Thanks for coming in, ${name}. Before I show you the options, I want to make sure I've got this right — your goal is to ${clientGoal.toLowerCase() || "make real progress"}. That's what everything I'm about to show you is built around.`
+    },
+    {
+      heading: "Reconnect to their why",
+      body: clientNeeds
+        ? `From what we talked about, ${clientNeeds.toLowerCase()} That's the gap we need to close — and it's exactly why a structured program with real accountability works better than trying to figure it out alone.`
+        : "Reflect back what's been making this hard on their own — lack of structure, accountability, or time — before presenting the fix."
+    },
+    {
+      heading: "Present the recommendation",
+      body: `${recommendation} ${packageRecommendation}`
+    },
+    {
+      heading: "Walk through what's included",
+      body: `Show them the ${selectedPackage.name} package results and inclusions on screen — ${selectedPackage.results[0] ? selectedPackage.results[0].toLowerCase() : "the results"}, and everything listed under what's included. Let them see exactly what they're getting, not just the price.`
+    },
+    {
+      heading: "Frame the investment",
+      body: `It works out to ${dollars(weeklyTotal)} a week${nutritionAdded ? " with nutrition coaching included" : ""}. Paying the full ${minimumWeeks}-week commitment upfront brings it to ${dollars(upfrontTotal)} and saves ${dollars(selectedPackage.savings)} compared to paying weekly.${nutritionAdded ? ` ${nutritionDescription}` : ""}`
+    },
+    {
+      heading: "Handle \"let me think about it\"",
+      body: "Ask what specifically they want to think over — price, time, or whether it'll work for them. Address that one thing directly rather than letting the conversation end vaguely. If it's price, revisit the cost of staying stuck vs. the weekly investment. If it's time, point back to the schedule you already built together."
+    },
+    {
+      heading: "Close",
+      body: `Ask directly: "Does this feel like the right fit to get you to ${clientGoal.toLowerCase() || "your goal"}?" If yes, move straight into Generate Agreement and get it signed while the decision is fresh — don't let the moment pass.`
+    }
+  ];
+
+  return sections;
+}
+
 export function PricingPresentationApp() {
   const [packages, setPackages] = useState(initialPackages);
   const [selectedPackageId, setSelectedPackageId] = useState(initialPackages[1].id);
@@ -143,6 +217,7 @@ export function PricingPresentationApp() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
+  const [showSalesScript, setShowSalesScript] = useState(false);
   const [savedRecordId, setSavedRecordId] = useState<number | null>(null);
   const [isSavingSigs, setIsSavingSigs] = useState(false);
   const [sigSaveStatus, setSigSaveStatus] = useState("");
@@ -192,6 +267,36 @@ export function PricingPresentationApp() {
 
     return "Best when the client wants stronger accountability, faster progress, and enough support to stay locked in.";
   }, [selectedPackage.id]);
+
+  const salesScript = useMemo(
+    () =>
+      buildSalesScript({
+        clientName,
+        clientGoal,
+        clientNeeds,
+        recommendation,
+        packageRecommendation,
+        selectedPackage,
+        weeklyTotal,
+        upfrontTotal,
+        minimumWeeks,
+        nutritionAdded,
+        nutritionDescription
+      }),
+    [
+      clientName,
+      clientGoal,
+      clientNeeds,
+      recommendation,
+      packageRecommendation,
+      selectedPackage,
+      weeklyTotal,
+      upfrontTotal,
+      minimumWeeks,
+      nutritionAdded,
+      nutritionDescription
+    ]
+  );
 
   function updatePackage(id: string, update: Partial<PackageOption>) {
     setPackages((current) =>
@@ -456,6 +561,13 @@ export function PricingPresentationApp() {
             </button>
             <button
               type="button"
+              onClick={() => setShowSalesScript(true)}
+              className="rounded-full border-2 border-zinc-800 bg-white px-6 py-4 text-lg font-black text-[#101010] transition hover:bg-zinc-50"
+            >
+              View Summary & Script
+            </button>
+            <button
+              type="button"
               onClick={() => setShowAgreement(true)}
               className="rounded-full border-2 border-[#9a6820] bg-white px-6 py-4 text-lg font-black text-[#9a6820] transition hover:bg-[#fdf3e3]"
             >
@@ -634,6 +746,66 @@ export function PricingPresentationApp() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ── Summary & Script Modal ──────────────────────────────── */}
+      {showSalesScript && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 py-8 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl my-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-5 print:hidden">
+              <div>
+                <p className="text-xs uppercase tracking-widest font-black text-[#9a6820]">Upper Notch Coaching</p>
+                <h2 className="mt-0.5 text-lg font-black text-[#101010]">Summary & Sales Script</h2>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={printAgreementOnly} className="rounded-full bg-[#101010] px-4 py-2 text-sm font-black text-white transition hover:bg-zinc-800">Print / PDF</button>
+                <button onClick={() => setShowSalesScript(false)} className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100">✕</button>
+              </div>
+            </div>
+
+            <div className="print-doc px-8 py-8 space-y-6 text-[#101010]">
+              <div className="text-center border-b border-zinc-200 pb-6">
+                <p className="text-xs uppercase tracking-[0.3em] font-black text-[#9a6820]">Upper Notch Coaching</p>
+                <h1 className="mt-2 text-2xl font-black text-[#101010]">Summary & Sales Script</h1>
+                <p className="mt-1 text-sm text-zinc-500">Jazzay Sallah Personal Training (JS PT)</p>
+              </div>
+
+              <div className="rounded-2xl border border-[#9a6820]/25 bg-[#fdf8ef] px-5 py-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Client Name</p>
+                  <p className="font-bold text-[#101010] mt-0.5">{clientName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Recommended Package</p>
+                  <p className="font-bold text-[#101010] mt-0.5">{selectedPackage.name} — {dollars(weeklyTotal)}/wk</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[10px] uppercase tracking-widest font-black text-[#9a6820]">Goal</p>
+                  <p className="font-bold text-[#101010] mt-0.5">{clientGoal || "Not recorded"}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#9a6820] mb-3">Pain Points / Needs</h3>
+                <p className="text-sm leading-7 text-zinc-700 whitespace-pre-wrap">{clientNeeds || "Not recorded"}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#9a6820] mb-3">Sales Script</h3>
+                <div className="space-y-4">
+                  {salesScript.map((section) => (
+                    <div key={section.heading}>
+                      <p className="text-xs font-black uppercase tracking-widest text-zinc-500">{section.heading}</p>
+                      <p className="mt-1 text-sm leading-7 text-zinc-700">{section.body}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-[10px] text-center text-zinc-400 pt-2 border-t border-zinc-200">This is a starting point built from what's on this presentation — adjust it to fit how the conversation actually goes.</p>
+            </div>
           </div>
         </div>
       )}

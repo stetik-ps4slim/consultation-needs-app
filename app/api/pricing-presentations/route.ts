@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from("pricing_presentations")
       .select("*")
-      .or(`user_id.eq.${userId},user_id.is.null`)
+      .eq('user_id', userId)
       .order("updated_at", { ascending: false });
 
     if (error) throw error;

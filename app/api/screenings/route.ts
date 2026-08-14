@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from("movement_screenings")
       .select("*")
-      .or(`user_id.eq.${userId},user_id.is.null`)
+      .eq('user_id', userId)
       .order("updated_at", { ascending: false });
 
     if (error) throw error;

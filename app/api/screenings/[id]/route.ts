@@ -39,7 +39,7 @@ export async function PATCH(
         ...(updates.sections !== undefined ? { sections: updates.sections } : {})
       })
       .eq("id", clientId)
-      .or(`user_id.eq.${userId},user_id.is.null`)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -95,7 +95,7 @@ export async function DELETE(
       .from("movement_screenings")
       .delete()
       .eq("id", clientId)
-      .or(`user_id.eq.${userId},user_id.is.null`);
+      .eq('user_id', userId);
 
     if (error) throw error;
 

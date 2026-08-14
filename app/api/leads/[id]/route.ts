@@ -32,7 +32,7 @@ export async function PATCH(
       .from("leads")
       .update(updates)
       .eq("id", leadId)
-      .or(`user_id.eq.${userId},user_id.is.null`)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -71,7 +71,7 @@ export async function DELETE(
       .from("leads")
       .delete()
       .eq("id", leadId)
-      .or(`user_id.eq.${userId},user_id.is.null`);
+      .eq('user_id', userId);
 
     if (error) throw error;
 

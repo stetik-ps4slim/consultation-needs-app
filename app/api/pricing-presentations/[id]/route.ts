@@ -25,7 +25,7 @@ export async function DELETE(
       .from("pricing_presentations")
       .delete()
       .eq("id", recordId)
-      .or(`user_id.eq.${userId},user_id.is.null`);
+      .eq('user_id', userId);
 
     if (error) throw error;
 
@@ -65,7 +65,7 @@ export async function PATCH(
       .from("pricing_presentations")
       .update(updates)
       .eq("id", recordId)
-      .or(`user_id.eq.${userId},user_id.is.null`)
+      .eq('user_id', userId)
       .select()
       .single();
 

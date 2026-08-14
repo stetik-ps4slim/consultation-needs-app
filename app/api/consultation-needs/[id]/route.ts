@@ -28,7 +28,7 @@ export async function DELETE(
       .from("consultation_needs")
       .delete()
       .eq("id", recordId)
-      .or(`user_id.eq.${userId},user_id.is.null`);
+      .eq('user_id', userId);
 
     if (error) throw error;
 
@@ -78,7 +78,7 @@ export async function PATCH(
       .from("consultation_needs")
       .update(partialUpdate)
       .eq("id", recordId)
-      .or(`user_id.eq.${userId},user_id.is.null`)
+      .eq('user_id', userId)
       .select()
       .single();
 

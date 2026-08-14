@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   formatSourceLabel,
   formatStatusLabel,
@@ -81,6 +81,14 @@ const inputCls = "w-full rounded-xl border border-stone-200 bg-white px-3 py-2 t
 
 export function LeadTrackerDashboard({ initialLeads, isFallback }: DashboardProps) {
   const [leads, setLeads] = useState(initialLeads);
+
+  useEffect(() => {
+    if (isFallback) return;
+    fetch("/api/leads")
+      .then((r) => r.json())
+      .then((data) => { if (data.leads) setLeads(data.leads); })
+      .catch(() => {});
+  }, [isFallback]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [sourceFilter, setSourceFilter] = useState<LeadSource | "all">("all");

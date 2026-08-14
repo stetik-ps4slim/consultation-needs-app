@@ -81,6 +81,19 @@ function renderSection(section: MovementSection) {
 
 export function MovementScreeningDashboard({ initialClients, isPersistent }: DashboardProps) {
   const [clients, setClients] = useState(initialClients);
+
+  useEffect(() => {
+    if (!isPersistent) return;
+    fetch("/api/screenings")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.clients && data.clients.length) {
+          setClients(data.clients);
+          setSelectedClientId(data.clients[0]?.id ?? null);
+        }
+      })
+      .catch(() => {});
+  }, [isPersistent]);
   const [selectedClientId, setSelectedClientId] = useState(initialClients[0]?.id ?? null);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<ClientSort>("recent");

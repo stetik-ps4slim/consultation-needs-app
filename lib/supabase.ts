@@ -15,3 +15,22 @@ export function createSupabaseAdminClient() {
     }
   });
 }
+
+/**
+ * Extract and validate the authenticated user's ID from the sb-token cookie.
+ * Returns null if the token is missing or invalid.
+ */
+export async function getUserIdFromRequest(request: Request): Promise<string | null> {
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const match = cookieHeader.match(/(?:^|;\s*)sb-token=([^;]+)/);
+  const token = match ? decodeURIComponent(match[1]) : null;
+  if (!token) return null;
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data: { user } } = await supabase.auth.getUser(token);
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
+}

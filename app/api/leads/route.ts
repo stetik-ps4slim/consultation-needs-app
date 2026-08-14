@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase";
+import { createSupabaseAdminClient, getUserIdFromRequest } from "@/lib/supabase";
 import { hasSupabaseConfig, normalizeLeadInsert, type LeadPayload } from "@/lib/leads";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!hasSupabaseConfig()) {
     return NextResponse.json(
       { error: "Supabase is not configured for persistent leads yet." },
@@ -12,16 +12,18 @@ export async function GET() {
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("leads")
       .select("*")
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ leads: data ?? [] });
   } catch {
@@ -39,6 +41,9 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = (await request.json()) as LeadPayload;
@@ -63,6 +68,7 @@ export async function POST(request: Request) {
       .from("leads")
       .insert({
         ...payload,
+        user_id: userId,
         status: "new",
         follow_up_calls: payload.follow_up_calls,
         consultation_sessions_completed: payload.consultation_sessions_completed,
@@ -78,10 +84,7 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({
-      message: "Lead saved successfully.",
-      lead: data
-    });
+    return NextResponse.json({ message: "Lead saved successfully.", lead: data });
   } catch {
     return NextResponse.json(
       { error: "Something went wrong while sending your request." },

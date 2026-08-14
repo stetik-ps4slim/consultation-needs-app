@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase";
+import { createSupabaseAdminClient, getUserIdFromRequest } from "@/lib/supabase";
 import {
   hasSupabaseConfig,
   normalizeClientInsert,
   type ScreeningClientInsert
 } from "@/lib/movement-screening";
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!hasSupabaseConfig()) {
     return NextResponse.json(
       { error: "Supabase is not configured for persistent screenings yet." },
@@ -14,16 +14,18 @@ export async function GET() {
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("movement_screenings")
       .select("*")
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .order("updated_at", { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     const clients = (data ?? []).map((record) => ({
       id: record.id,
@@ -57,6 +59,9 @@ export async function POST(request: Request) {
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const body = (await request.json()) as Partial<ScreeningClientInsert>;
     const payload = normalizeClientInsert(body);
@@ -80,14 +85,13 @@ export async function POST(request: Request) {
         conducted_by: payload.conductedBy,
         warmup_notes: payload.warmupNotes,
         overall_notes: payload.overallNotes,
-        sections: payload.sections
+        sections: payload.sections,
+        user_id: userId
       })
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       client: {

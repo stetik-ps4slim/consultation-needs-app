@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase";
-import {
-  hasSupabaseConfig,
-  normalizeClientUpdate
-} from "@/lib/movement-screening";
+import { createSupabaseAdminClient, getUserIdFromRequest } from "@/lib/supabase";
+import { hasSupabaseConfig, normalizeClientUpdate } from "@/lib/movement-screening";
 
 export async function PATCH(
   request: Request,
@@ -16,10 +13,12 @@ export async function PATCH(
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await context.params;
     const clientId = Number(id);
-
     if (!Number.isInteger(clientId) || clientId <= 0) {
       return NextResponse.json({ error: "Invalid client id." }, { status: 400 });
     }
@@ -31,9 +30,7 @@ export async function PATCH(
       .update({
         ...(updates.name !== undefined ? { name: updates.name } : {}),
         ...(updates.injury !== undefined ? { injury: updates.injury } : {}),
-        ...(updates.screeningDate !== undefined
-          ? { screening_date: updates.screeningDate || null }
-          : {}),
+        ...(updates.screeningDate !== undefined ? { screening_date: updates.screeningDate || null } : {}),
         ...(updates.contact !== undefined ? { contact: updates.contact } : {}),
         ...(updates.health !== undefined ? { health: updates.health } : {}),
         ...(updates.conductedBy !== undefined ? { conducted_by: updates.conductedBy } : {}),
@@ -42,12 +39,11 @@ export async function PATCH(
         ...(updates.sections !== undefined ? { sections: updates.sections } : {})
       })
       .eq("id", clientId)
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       client: {
@@ -74,7 +70,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   if (!hasSupabaseConfig()) {
@@ -84,10 +80,12 @@ export async function DELETE(
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await context.params;
     const clientId = Number(id);
-
     if (!Number.isInteger(clientId) || clientId <= 0) {
       return NextResponse.json({ error: "Invalid client id." }, { status: 400 });
     }
@@ -96,11 +94,10 @@ export async function DELETE(
     const { error } = await supabase
       .from("movement_screenings")
       .delete()
-      .eq("id", clientId);
+      .eq("id", clientId)
+      .or(`user_id.eq.${userId},user_id.is.null`);
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch {

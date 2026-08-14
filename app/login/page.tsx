@@ -2,8 +2,10 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
 
 function LoginForm() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,19 +18,21 @@ function LoginForm() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password })
-      });
+      const supabase = createBrowserSupabaseClient();
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (res.ok) {
-        const redirect = searchParams.get("redirect") || "/";
-        router.push(redirect);
-        router.refresh();
-      } else {
-        setError("Incorrect password. Please try again.");
+      if (authError || !data.session) {
+        setError("Incorrect email or password. Please try again.");
+        return;
       }
+
+      // Store the access token in a cookie for middleware + API route auth
+      const secure = location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `sb-token=${encodeURIComponent(data.session.access_token)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
+
+      const redirect = searchParams.get("redirect") || "/";
+      router.push(redirect);
+      router.refresh();
     } catch {
       setError("Could not connect. Please try again.");
     } finally {
@@ -44,10 +48,19 @@ function LoginForm() {
             The Upper Notch
           </span>
           <h1 className="text-2xl font-bold text-[#15314a]">Dashboard Access</h1>
-          <p className="text-sm text-slate-500 mt-1">Enter your password to continue</p>
+          <p className="text-sm text-slate-500 mt-1">Sign in with your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email address"
+            className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
+            required
+            autoFocus
+          />
           <input
             type="password"
             value={password}
@@ -55,7 +68,6 @@ function LoginForm() {
             placeholder="Password"
             className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[#10233f] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#9a6820] focus:ring-2 focus:ring-[#9a6820]/20"
             required
-            autoFocus
           />
 
           {error && (
@@ -67,7 +79,7 @@ function LoginForm() {
             disabled={loading}
             className="rounded-2xl bg-[#d2a86c] py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9a6820] disabled:opacity-60 cursor-pointer"
           >
-            {loading ? "Checking…" : "Sign In"}
+            {loading ? "Signing in…" : "Sign In"}
           </button>
         </form>
       </div>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase";
+import { createSupabaseAdminClient, getUserIdFromRequest } from "@/lib/supabase";
 import {
   buildConsultationNeedsInsert,
   hasSupabaseConfig,
@@ -8,7 +8,7 @@ import {
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!hasSupabaseConfig()) {
     return NextResponse.json(
       { error: "Supabase is not configured for consultation form storage yet." },
@@ -16,16 +16,20 @@ export async function GET() {
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("consultation_needs")
       .select("*")
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .order("updated_at", { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ records: data ?? [] });
   } catch {
@@ -43,6 +47,9 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+
+  // user_id is optional — public intake form submissions have no user context
+  const userId = await getUserIdFromRequest(request);
 
   try {
     const body = (await request.json()) as Partial<ConsultationNeedsForm>;
@@ -65,16 +72,13 @@ export async function POST(request: Request) {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("consultation_needs")
-      .insert(payload)
+      .insert({ ...payload, ...(userId ? { user_id: userId } : {}) })
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    // ── Auto-create lead from intake form ─────────────────────────────────────
-    // Check if a lead already exists with the same phone or email to avoid duplicates
+    // Auto-create lead from intake form
     try {
       const orFilters: string[] = [];
       if (payload.client_phone) orFilters.push(`phone.eq.${payload.client_phone}`);
@@ -102,11 +106,12 @@ export async function POST(request: Request) {
           notes: `Auto-added from intake form submission.`,
           follow_up_calls: 0,
           consultation_sessions_completed: 0,
-          last_contacted_at: null
+          last_contacted_at: null,
+          ...(userId ? { user_id: userId } : {})
         });
       }
     } catch {
-      // Lead creation is best-effort — don't fail the whole request if it errors
+      // Lead creation is best-effort
     }
 
     return NextResponse.json({

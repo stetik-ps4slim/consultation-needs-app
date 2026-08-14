@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase";
-import {
-  buildConsultationNeedsInsert,
-  hasSupabaseConfig,
-  type ConsultationNeedsForm
-} from "@/lib/consultation-needs";
+import { createSupabaseAdminClient, getUserIdFromRequest } from "@/lib/supabase";
+import { hasSupabaseConfig } from "@/lib/consultation-needs";
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   if (!hasSupabaseConfig()) {
@@ -17,10 +13,12 @@ export async function DELETE(
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await context.params;
     const recordId = Number(id);
-
     if (!Number.isInteger(recordId) || recordId <= 0) {
       return NextResponse.json({ error: "Invalid consultation form id." }, { status: 400 });
     }
@@ -29,7 +27,8 @@ export async function DELETE(
     const { error } = await supabase
       .from("consultation_needs")
       .delete()
-      .eq("id", recordId);
+      .eq("id", recordId)
+      .or(`user_id.eq.${userId},user_id.is.null`);
 
     if (error) throw error;
 
@@ -42,8 +41,6 @@ export async function DELETE(
   }
 }
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
@@ -55,17 +52,17 @@ export async function PATCH(
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await context.params;
     const recordId = Number(id);
-
     if (!Number.isInteger(recordId) || recordId <= 0) {
       return NextResponse.json({ error: "Invalid consultation form id." }, { status: 400 });
     }
 
     const body = (await request.json()) as Record<string, unknown>;
-
-    // Support partial updates (e.g. just updating client_name)
     const partialUpdate: Record<string, unknown> = {};
     if (body.client_name !== undefined) partialUpdate.client_name = String(body.client_name).trim();
     if (body.client_phone !== undefined) partialUpdate.client_phone = String(body.client_phone).trim();
@@ -81,17 +78,13 @@ export async function PATCH(
       .from("consultation_needs")
       .update(partialUpdate)
       .eq("id", recordId)
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    return NextResponse.json({
-      message: "Consultation form updated successfully.",
-      record: data
-    });
+    return NextResponse.json({ message: "Consultation form updated successfully.", record: data });
   } catch {
     return NextResponse.json(
       { error: "Something went wrong while updating the consultation form." },

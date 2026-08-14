@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase";
+import { createSupabaseAdminClient, getUserIdFromRequest } from "@/lib/supabase";
 import { hasSupabaseConfig, normalizeLeadUpdate } from "@/lib/leads";
 
 function parseLeadId(id: string) {
@@ -18,13 +18,13 @@ export async function PATCH(
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await context.params;
     const leadId = parseLeadId(id);
-
-    if (!leadId) {
-      return NextResponse.json({ error: "Invalid lead id." }, { status: 400 });
-    }
+    if (!leadId) return NextResponse.json({ error: "Invalid lead id." }, { status: 400 });
 
     const updates = normalizeLeadUpdate((await request.json()) as Record<string, unknown>);
     const supabase = createSupabaseAdminClient();
@@ -32,12 +32,11 @@ export async function PATCH(
       .from("leads")
       .update(updates)
       .eq("id", leadId)
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ lead: data });
   } catch {
@@ -49,7 +48,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   if (!hasSupabaseConfig()) {
@@ -59,23 +58,22 @@ export async function DELETE(
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await context.params;
     const leadId = parseLeadId(id);
-
-    if (!leadId) {
-      return NextResponse.json({ error: "Invalid lead id." }, { status: 400 });
-    }
+    if (!leadId) return NextResponse.json({ error: "Invalid lead id." }, { status: 400 });
 
     const supabase = createSupabaseAdminClient();
     const { error } = await supabase
       .from("leads")
       .delete()
-      .eq("id", leadId);
+      .eq("id", leadId)
+      .or(`user_id.eq.${userId},user_id.is.null`);
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch {

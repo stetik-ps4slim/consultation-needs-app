@@ -4,15 +4,13 @@ import type { NextRequest } from "next/server";
 /**
  * Protected dashboard middleware.
  *
- * Public (no password needed):
+ * Public (no auth needed):
  *   - /intake          — client-facing consultation form
  *   - /login           — login page itself
- *   - /api/auth        — login / logout API
+ *   - /api/auth        — logout API
  *   - POST /api/consultation-needs — intake form submission from clients
  *
- * Everything else requires the DASHBOARD_PASSWORD cookie to be set.
- * If DASHBOARD_PASSWORD env var is not configured, auth is skipped
- * so the app keeps working without extra setup.
+ * Everything else requires the sb-token cookie (Supabase JWT).
  */
 
 const PUBLIC_PAGE_PREFIXES = ["/intake", "/login", "/api/auth", "/_next", "/favicon"];
@@ -20,7 +18,6 @@ const PUBLIC_PAGE_PREFIXES = ["/intake", "/login", "/api/auth", "/_next", "/favi
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow public pages and Next.js internals
   if (pathname === "/" || PUBLIC_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
@@ -30,26 +27,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const expectedPassword = process.env.DASHBOARD_PASSWORD;
+  const token = request.cookies.get("sb-token")?.value;
 
-  // If no password is configured, skip auth (backward-compatible for dev)
-  if (!expectedPassword) {
-    return NextResponse.next();
-  }
-
-  const authToken = request.cookies.get("auth_token")?.value;
-
-  if (authToken !== expectedPassword) {
-    // API routes → 401 JSON
+  if (!token) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    // Pages → redirect to login
     const loginUrl = new URL("/login", request.url);
-    if (pathname !== "/") {
-      loginUrl.searchParams.set("redirect", pathname);
-    }
+    if (pathname !== "/") loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 

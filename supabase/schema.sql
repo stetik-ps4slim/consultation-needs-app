@@ -206,3 +206,37 @@ alter table public.pricing_presentations
   add column if not exists accepted_package_name text not null default '',
   add column if not exists follow_up_at timestamptz,
   add column if not exists follow_up_note text not null default '';
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Multi-user support: add user_id to all tables
+-- Run this in the Supabase SQL Editor for each project (yours + colleague's).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+alter table public.leads
+  add column if not exists user_id uuid references auth.users(id);
+
+alter table public.movement_screenings
+  add column if not exists user_id uuid references auth.users(id);
+
+alter table public.consultation_needs
+  add column if not exists user_id uuid references auth.users(id);
+
+alter table public.pricing_presentations
+  add column if not exists user_id uuid references auth.users(id);
+
+-- Indexes for fast user-filtered queries
+create index if not exists leads_user_id_idx on public.leads (user_id);
+create index if not exists movement_screenings_user_id_idx on public.movement_screenings (user_id);
+create index if not exists consultation_needs_user_id_idx on public.consultation_needs (user_id);
+create index if not exists pricing_presentations_user_id_idx on public.pricing_presentations (user_id);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- IMPORTANT: After creating your Supabase Auth account and logging in once,
+-- run the query below (replacing <your-user-id> with your actual UUID from
+-- Supabase > Authentication > Users) to claim your existing records:
+--
+-- update public.leads set user_id = '<your-user-id>' where user_id is null;
+-- update public.movement_screenings set user_id = '<your-user-id>' where user_id is null;
+-- update public.consultation_needs set user_id = '<your-user-id>' where user_id is null;
+-- update public.pricing_presentations set user_id = '<your-user-id>' where user_id is null;
+-- ─────────────────────────────────────────────────────────────────────────────

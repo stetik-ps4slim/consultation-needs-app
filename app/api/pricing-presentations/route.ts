@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient } from "@/lib/supabase";
+import { createSupabaseAdminClient, getUserIdFromRequest } from "@/lib/supabase";
 import {
   buildPricingPresentationInsert,
   hasSupabaseConfig,
@@ -8,7 +8,7 @@ import {
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!hasSupabaseConfig()) {
     return NextResponse.json(
       { error: "Supabase is not configured for pricing presentation storage yet." },
@@ -16,16 +16,18 @@ export async function GET() {
     );
   }
 
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("pricing_presentations")
       .select("*")
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .order("updated_at", { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({ pricingPresentations: data ?? [] });
   } catch {
@@ -43,6 +45,9 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = (await request.json()) as Partial<PricingPresentationForm>;
@@ -65,13 +70,11 @@ export async function POST(request: Request) {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("pricing_presentations")
-      .insert(payload)
+      .insert({ ...payload, user_id: userId })
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       message: "Pricing presentation saved successfully.",

@@ -29,6 +29,7 @@ function LoginForm() {
       // Store the access token in a cookie for middleware + API route auth
       const secure = location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `sb-token=${encodeURIComponent(data.session.access_token)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
+      document.cookie = `sb-refresh-token=${encodeURIComponent(data.session.refresh_token)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax${secure}`;
 
       const redirect = searchParams.get("redirect") || "/";
       router.push(redirect);

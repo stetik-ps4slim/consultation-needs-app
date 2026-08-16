@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { siteContent } from "@/lib/site-content";
+import { SessionRefresher } from "@/components/session-refresher";
 
 export const metadata: Metadata = {
   title: `${siteContent.brand.name} | Premium Personal Training`,
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en-AU">
       <body className="bg-canvas text-ink antialiased">
+        <SessionRefresher />
         {children}
       </body>
     </html>

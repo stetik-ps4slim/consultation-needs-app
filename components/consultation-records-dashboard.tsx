@@ -515,7 +515,7 @@ export function ConsultationRecordsDashboard() {
   const [nameSaving, setNameSaving] = useState(false);
   const [showScript, setShowScript] = useState(false);
 
-  async function loadRecords() {
+  async function loadRecords(retrying = false) {
     setIsLoading(true);
     setStatus("Loading saved Supabase data...");
 
@@ -539,6 +539,14 @@ export function ConsultationRecordsDashboard() {
           ? [result.reason instanceof Error ? result.reason.message : "A data source failed to load."]
           : []
       );
+
+      // If all sources are unauthorized and we haven't retried yet,
+      // wait for the session refresher to update the token then try again.
+      const allUnauthorized = loadErrors.length === 4 && loadErrors.every((e) => e.toLowerCase().includes("unauthorized"));
+      if (allUnauthorized && !retrying) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return loadRecords(true);
+      }
 
       setConsultations(nextConsultations);
       setLeads(nextLeads);
